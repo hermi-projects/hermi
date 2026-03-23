@@ -1,0 +1,36 @@
+#!/bin/sh
+
+echo "Running code format and style validation..."
+
+# Check if Maven wrapper is available, otherwise fall back to global maven
+if [ -f "./mvnw" ]; then
+    MVN_CMD="./mvnw"
+else
+    MVN_CMD="mvn"
+fi
+
+# Run the validation
+$MVN_CMD spotless:check checkstyle:check
+
+# Capture the exit code of maven
+EXIT_CODE=$?
+
+# If validation failed, block the commit and show a helpful error message
+if [ $EXIT_CODE -ne 0 ]; then
+    echo ""
+    echo "=========================================================================="
+    echo "❌ CODE FORMAT OR CHECKSTYLE VALIDATION FAILED ❌"
+    echo "=========================================================================="
+    echo "Your commit has been blocked because it does not match the project's"
+    echo "required code style rules."
+    echo ""
+    echo "💡 TIP: You can automatically fix many formatting issues by running:"
+    echo "   $MVN_CMD spotless:apply"
+    echo ""
+    echo "Please fix the formatting, stage your changes again, and then commit."
+    echo "=========================================================================="
+    exit 1
+fi
+
+echo "✅ Code format is valid. Proceeding with commit..."
+exit 0

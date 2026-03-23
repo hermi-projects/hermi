@@ -1,0 +1,31 @@
+root = true
+
+[*.{adoc,bat,groovy,html,java,js,jsp,kt,kts,md,properties,py,rb,sh,sql,svg,txt,xml,xsd}]
+charset = utf-8
+
+end_of_line = lf
+insert_final_newline = true
+indent_style = space
+indent_size = 2
+trim_trailing_whitespace = true
+
+[*.java]
+# Matches Google Java Format (Spotless default)
+ij_java_use_tab_character = false
+ij_java_imports_layout = $*,|,java.**,|,javax.**,|,org.**,|,com.**,|,com.diffplug.**,|,*
+ij_java_use_single_class_imports = true
+ij_java_class_count_to_use_import_on_demand = 999
+ij_java_names_count_to_use_import_on_demand = 999
+ij_java_names_count_to_use_import_with_asterisk = 99
+ij_java_static_names_count_to_use_import_with_asterisk = 99
+
+# Matches your RightCurlyCheck: <property name="option" value="alone" />
+ij_java_right_curly_on_new_line = true
+
+# Matches Spring spacing conventions
+ij_java_spaces_within_brackets = false
+ij_java_space_before_method_parentheses = false
+
+# md (GitHub shows code fences with 8 spaces)
+[*.md]
+trim_trailing_whitespace = false

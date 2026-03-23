@@ -1,0 +1,409 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.hermi</groupId>
+  <artifactId>hermi-use-case</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>hermi-use-case</name>
+  <description>Building applications with Clean Architecture</description>
+  <url>https://github.com/hermi/hermi-use-case</url>
+
+  <licenses>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <id>yansanli</id>
+      <name>Yansan Li</name>
+    </developer>
+  </developers>
+  <modules>
+    <module>hermi-use-case-core</module>
+    <module>hermi-use-case-commons</module>
+  </modules>
+
+  <scm>
+    <connection>scm:git:https://github.com/hermi/hermi-use-case.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/hermi/hermi-use-case.git</developerConnection>
+    <url>https://github.com/hermi/hermi-use-case</url>
+  </scm>
+
+  <distributionManagement>
+    <repository>
+      <id>local-repo</id>
+      <url>file:///Users/yansanli/public/maven-local-repo</url>
+    </repository>
+  </distributionManagement>
+
+  <properties>
+    <java.version>21</java.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+    <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
+    <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
+    <maven-source-plugin.version>3.3.0</maven-source-plugin.version>
+    <maven-javadoc-plugin.version>3.6.3</maven-javadoc-plugin.version>
+    <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
+    <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
+    <exec-maven-plugin.version>3.1.1</exec-maven-plugin.version>
+
+    <!-- Style & Quality -->
+    <spotless-maven-plugin.version>2.43.0</spotless-maven-plugin.version>
+    <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
+    <maven-checkstyle-plugin.failsOnError>true</maven-checkstyle-plugin.failsOnError>
+    <maven-checkstyle-plugin.failOnViolation>true</maven-checkstyle-plugin.failOnViolation>
+    <puppycrawl-tools-checkstyle.version>9.3</puppycrawl-tools-checkstyle.version>
+    <commons-logging.version>1.3.5</commons-logging.version>
+
+    <!-- Sub-module External Dependencies -->
+    <jakarta.validation.version>3.1.1</jakarta.validation.version>
+    <hibernate-validator.version>8.0.3.Final</hibernate-validator.version>
+    <jakarta.el.version>4.0.2</jakarta.el.version>
+    <apache.commons.version>3.18.0</apache.commons.version>
+    <archunit.version>1.4.1</archunit.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- External Dependencies -->
+      <!-- Apache Commons Logging: A logging bridge allowing configurable selection of underlying logging backends -->
+      <dependency>
+        <groupId>commons-logging</groupId>
+        <artifactId>commons-logging</artifactId>
+        <version>${commons-logging.version}</version>
+      </dependency>
+      <!-- Jakarta Bean Validation API: Standard interface for JavaBean validation (e.g., @NotNull, @Size) -->
+      <dependency>
+        <groupId>jakarta.validation</groupId>
+        <artifactId>jakarta.validation-api</artifactId>
+        <version>${jakarta.validation.version}</version>
+      </dependency>
+      <!-- Hibernate Validator: The reference implementation for Jakarta Bean Validation API -->
+      <dependency>
+        <groupId>org.hibernate.validator</groupId>
+        <artifactId>hibernate-validator</artifactId>
+        <version>${hibernate-validator.version}</version>
+      </dependency>
+      <!-- Jakarta Expression Language: Required by Hibernate Validator for dynamic message interpolation -->
+      <dependency>
+        <groupId>org.glassfish</groupId>
+        <artifactId>jakarta.el</artifactId>
+        <version>${jakarta.el.version}</version>
+      </dependency>
+      <!-- Apache Commons Lang: Provides highly reusable utility methods for core Java API (like StringUtils) -->
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-lang3</artifactId>
+        <version>${apache.commons.version}</version>
+      </dependency>
+      <!-- ArchUnit: Java architecture testing library for enforcing architectural rules via unit tests -->
+      <dependency>
+        <groupId>com.tngtech.archunit</groupId>
+        <artifactId>archunit</artifactId>
+        <version>${archunit.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <!-- Maven Compiler Plugin: Compiles the Java source files using the specified Java version -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>${maven-compiler-plugin.version}</version>
+          <configuration>
+            <release>${java.version}</release>
+            <compilerArgs>
+              <arg>-parameters</arg>
+            </compilerArgs>
+          </configuration>
+        </plugin>
+        <!-- Maven Surefire Plugin: Executes application unit tests during the build test phase -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>${maven-surefire-plugin.version}</version>
+        </plugin>
+        <!-- Maven Resources Plugin: Handles copying of project resources to the output directory -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-resources-plugin</artifactId>
+          <version>${maven-resources-plugin.version}</version>
+        </plugin>
+        <!-- Spotless Plugin: Formats code via defined rules -->
+        <plugin>
+          <groupId>com.diffplug.spotless</groupId>
+          <artifactId>spotless-maven-plugin</artifactId>
+          <version>${spotless-maven-plugin.version}</version>
+          <configuration>
+            <java>
+              <googleJavaFormat/>
+              <removeUnusedImports/>
+            </java>
+            <pom>
+              <sortPom>
+                <expandEmptyElements>false</expandEmptyElements>
+              </sortPom>
+            </pom>
+            <formats>
+              <format>
+                <!-- Format XML files but exclude pom.xml (handled by <pom>) and checkstyle suppressions -->
+                <includes>
+                  <include>**/*.xml</include>
+                </includes>
+                <excludes>
+                  <exclude>**/pom.xml</exclude>
+                  <exclude>**/checkstyle-suppressions.xml</exclude>
+                  <exclude>**/target/**</exclude>
+                </excludes>
+                <eclipseWtp>
+                  <type>XML</type>
+                </eclipseWtp>
+              </format>
+              <format>
+                <!-- Format YAML files -->
+                <includes>
+                  <include>**/*.yml</include>
+                  <include>**/*.yaml</include>
+                </includes>
+                <prettier>
+                  <config>
+                    <printWidth>100</printWidth>
+                    <singleQuote>true</singleQuote>
+                    <tabWidth>2</tabWidth>
+                  </config>
+                </prettier>
+              </format>
+            </formats>
+          </configuration>
+        </plugin>
+        <!-- Maven Checkstyle Plugin: Executes code style checks and ensures adherence to best practices -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>${maven-checkstyle-plugin.version}</version>
+          <configuration>
+            <configLocation>${maven.multiModuleProjectDirectory}/src/checkstyle/checkstyle.xml</configLocation>
+            <headerLocation>${maven.multiModuleProjectDirectory}/src/checkstyle/checkstyle-header.txt</headerLocation>
+          </configuration>
+        </plugin>
+        <!-- Maven Source Plugin: Builds a JAR archive containing the project's source code -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>${maven-source-plugin.version}</version>
+        </plugin>
+        <!-- Maven Javadoc Plugin: Generates API documentation in HTML format from Javadoc comments -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>${maven-javadoc-plugin.version}</version>
+        </plugin>
+        <!-- Maven Enforcer Plugin: Enforces build environment constraints (Java/Maven version) -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-enforcer-plugin</artifactId>
+          <version>${maven-enforcer-plugin.version}</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
+    <plugins>
+      <!-- Maven Enforcer Plugin: Ensures the build environment meets minimum requirements -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>enforce-versions</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireMavenVersion>
+                  <version>3.8.1</version>
+                </requireMavenVersion>
+                <requireJavaVersion>
+                  <version>${java.version}</version>
+                </requireJavaVersion>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- Sources and Javadoc Generation -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <goals>
+              <goal>jar-no-fork</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <doclint>none</doclint>
+        </configuration>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>format-check</id>
+      <activation>
+        <property>
+          <name>env.CI</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.diffplug.spotless</groupId>
+            <artifactId>spotless-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>format-check</id>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+                <phase>validate</phase>
+                <inherited>true</inherited>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>format-apply</id>
+      <activation>
+        <property>
+          <name>!env.CI</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.diffplug.spotless</groupId>
+            <artifactId>spotless-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>format-apply</id>
+                <goals>
+                  <goal>apply</goal>
+                </goals>
+                <phase>process-sources</phase>
+                <inherited>true</inherited>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>git-hooks-setup</id>
+      <activation>
+        <property>
+          <name>!env.CI</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>${exec-maven-plugin.version}</version>
+            <executions>
+              <execution>
+                <id>setup-git-hooks</id>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <phase>initialize</phase>
+                <configuration>
+                  <executable>git</executable>
+                  <arguments>
+                    <argument>config</argument>
+                    <argument>core.hooksPath</argument>
+                    <argument>.githooks</argument>
+                  </arguments>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>checkstyle-check</id>
+      <activation>
+        <property>
+          <name>!env.BOGUS</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-checkstyle-plugin</artifactId>
+            <version>${maven-checkstyle-plugin.version}</version>
+            <dependencies>
+              <dependency>
+                <groupId>com.puppycrawl.tools</groupId>
+                <artifactId>checkstyle</artifactId>
+                <version>${puppycrawl-tools-checkstyle.version}</version>
+              </dependency>
+            </dependencies>
+            <executions>
+              <execution>
+                <id>checkstyle-validation</id>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+                <phase>process-sources</phase>
+                <inherited>true</inherited>
+                <configuration>
+                  <skip>${disable.checks}</skip>
+                  <configLocation>${maven.multiModuleProjectDirectory}/src/checkstyle/checkstyle.xml</configLocation>
+                  <headerLocation>${maven.multiModuleProjectDirectory}/src/checkstyle/checkstyle-header.txt</headerLocation>
+                  <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                  <consoleOutput>true</consoleOutput>
+                  <failsOnError>${maven-checkstyle-plugin.failsOnError}</failsOnError>
+                  <failOnViolation>${maven-checkstyle-plugin.failOnViolation}</failOnViolation>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+</project>

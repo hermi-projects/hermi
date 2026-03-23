@@ -1,0 +1,29 @@
+#!/bin/sh
+
+echo "Running tests before push..."
+
+# Check if Maven wrapper is available, otherwise fall back to global maven
+if [ -f "./mvnw" ]; then
+    MVN_CMD="./mvnw"
+else
+    MVN_CMD="mvn"
+fi
+
+# Run tests
+$MVN_CMD test
+
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -ne 0 ]; then
+    echo ""
+    echo "=========================================================================="
+    echo "❌ PUSH BLOCKED: TESTS FAILED ❌"
+    echo "=========================================================================="
+    echo "Your push has been aborted because the test suite is currently failing."
+    echo "Please investigate and fix the failing tests before running git push again."
+    echo "=========================================================================="
+    exit 1
+fi
+
+echo "✅ All tests passed. Proceeding with push..."
+exit 0
