@@ -1,0 +1,6 @@
+package org.hermi.commons.validation;
+
+public interface Validatable {
+  /** Validates the object. */
+  boolean isValid();
+}
