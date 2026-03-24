@@ -1,8 +1,10 @@
 package org.hermi.usecase.util;
 
+import jakarta.validation.ConstraintViolation;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Objects;
+import java.util.Set;
 import org.hermi.commons.validation.InputValidationException;
 import org.hermi.commons.validation.Validatable;
 import org.hermi.commons.validation.Validator;
@@ -19,25 +21,40 @@ public abstract class Executor<C, R> {
 
   protected void validateCommand(C command) {
     Objects.requireNonNull(
-        command, getSimpleName() + ": Command, " + getGenericTypeName(0) + ", cannot be null");
-    Validator.validate(command);
-    if ((command instanceof Validatable) && !((Validatable) command).isValid()) {
+        command, getSimpleClassName() + ": Command, " + getCommandTypeName() + ", cannot be null");
+    if (!(command instanceof Validatable)) {
+      return;
+    }
+    Set<ConstraintViolation<C>> violations = Validator.validate(command);
+    if (!violations.isEmpty()) {
       throw new InputValidationException(
-          getSimpleName() + ": Command, " + getGenericTypeName(0) + ", is not valid");
+          getSimpleClassName() + ": Command, " + getCommandTypeName() + ", is not valid",
+          violations);
     }
   }
 
   protected void validateResult(R result) {
     Objects.requireNonNull(
-        result, getSimpleName() + ": Result, " + getGenericTypeName(1) + ", cannot be null");
-    Validator.validate(result);
-    if ((result instanceof Validatable) && !((Validatable) result).isValid()) {
+        result, getSimpleClassName() + ": Result, " + getResultTypeName() + ", cannot be null");
+    if (!(result instanceof Validatable)) {
+      return;
+    }
+    Set<ConstraintViolation<R>> violations = Validator.validate(result);
+    if (!violations.isEmpty()) {
       throw new InputValidationException(
-          getSimpleName() + ": Result, " + getGenericTypeName(1) + ", is not valid");
+          getSimpleClassName() + ": Result, " + getResultTypeName() + ", is not valid", violations);
     }
   }
 
-  protected String getGenericTypeName(int index) {
+  protected String getCommandTypeName() {
+    return getGenericTypeName(0);
+  }
+
+  protected String getResultTypeName() {
+    return getGenericTypeName(1);
+  }
+
+  private String getGenericTypeName(int index) {
     Type superclass = getClass().getGenericSuperclass();
     if (superclass instanceof ParameterizedType) {
       Type[] actualTypeArguments = ((ParameterizedType) superclass).getActualTypeArguments();
@@ -53,7 +70,7 @@ public abstract class Executor<C, R> {
     return "UnknownType";
   }
 
-  protected String getSimpleName() {
+  protected String getSimpleClassName() {
     return getClass().getSimpleName();
   }
 }
