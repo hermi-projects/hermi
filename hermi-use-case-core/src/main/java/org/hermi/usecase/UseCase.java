@@ -3,8 +3,8 @@ package org.hermi.usecase;
 import java.util.Objects;
 import org.hermi.commons.conversion.Converter;
 import org.hermi.commons.conversion.Convertible;
+import org.hermi.commons.execution.Executor;
 import org.hermi.commons.validation.Validatable;
-import org.hermi.usecase.util.Executor;
 
 public abstract class UseCase<C extends Validatable, R> extends Executor<C, R> {
   protected abstract R doExecute(C command);

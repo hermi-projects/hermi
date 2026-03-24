@@ -1,7 +1,7 @@
 package org.hermi.usecase;
 
+import org.hermi.commons.execution.Executor;
 import org.hermi.commons.validation.Validatable;
-import org.hermi.usecase.util.Executor;
 
 public abstract class Messenger<C, R extends Validatable> extends Executor<C, R> {
   protected abstract R doSend(C command);

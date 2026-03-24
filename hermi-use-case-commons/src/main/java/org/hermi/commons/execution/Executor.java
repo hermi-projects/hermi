@@ -1,4 +1,4 @@
-package org.hermi.usecase.util;
+package org.hermi.commons.execution;
 
 import jakarta.validation.ConstraintViolation;
 import java.lang.reflect.ParameterizedType;
