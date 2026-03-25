@@ -41,6 +41,10 @@
       <name>GitHub Packages</name>
       <url>https://maven.pkg.github.com/hermi-projects/hermi-use-case</url>
     </repository>
+    <snapshotRepository>
+      <id>local-repo</id>
+      <url>file:///Users/yansanli/public/maven-local-repo</url>
+    </snapshotRepository>
   </distributionManagement>
 
   <properties>
