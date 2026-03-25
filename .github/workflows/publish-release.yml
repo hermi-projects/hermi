@@ -1,0 +1,45 @@
+name: Publish Release with Changelog
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          server-id: github
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_TOKEN
+
+      - name: Build & Publish to GitHub Packages
+        run: mvn -B deploy
+
+      - name: Generate Changelog
+        id: changelog
+        uses: metcalfc/changelog-generator@v4
+        with:
+          myToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: ${{ steps.changelog.outputs.changelog }}
