@@ -34,3 +34,6 @@ target/
 .project
 .classpath
 *.swp
+
+# Environment
+.env

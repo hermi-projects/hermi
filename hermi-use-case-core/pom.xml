@@ -9,14 +9,10 @@
 
   <groupId>org.hermi</groupId>
   <artifactId>hermi-use-case-core</artifactId>
-  <properties>
-    <hermi-use-case-commons.version>${project.version}</hermi-use-case-commons.version>
-  </properties>
   <dependencies>
     <dependency>
       <groupId>org.hermi</groupId>
       <artifactId>hermi-use-case-commons</artifactId>
-      <version>${hermi-use-case-commons.version}</version>
     </dependency>
   </dependencies>
 </project>
