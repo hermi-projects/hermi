@@ -3,6 +3,7 @@ package org.hermi.commons.execution;
 import jakarta.validation.ConstraintViolation;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.util.Objects;
 import java.util.Set;
 import org.hermi.commons.validation.InputValidationException;
@@ -54,23 +55,45 @@ public abstract class Executor<C, R> {
     return getGenericTypeName(1);
   }
 
-  private String getGenericTypeName(int index) {
-    Type superclass = getClass().getGenericSuperclass();
-    if (superclass instanceof ParameterizedType) {
-      Type[] actualTypeArguments = ((ParameterizedType) superclass).getActualTypeArguments();
-      if (actualTypeArguments != null && index < actualTypeArguments.length) {
-        Type type = actualTypeArguments[index];
-        if (type instanceof Class<?>) {
-          return ((Class<?>) type).getSimpleName();
-        } else {
-          return type.getTypeName();
-        }
-      }
-    }
-    return "UnknownType";
-  }
-
   protected String getSimpleClassName() {
     return getClass().getSimpleName();
+  }
+
+  private String getGenericTypeName(int index) {
+    Type type = resolveGenericType(getClass(), index);
+    if (type instanceof Class<?>) {
+      return ((Class<?>) type).getSimpleName();
+    }
+    return type.getTypeName();
+  }
+
+  private Type resolveGenericType(Class<?> clazz, int index) {
+    Type superclass = clazz.getGenericSuperclass();
+
+    if (superclass instanceof ParameterizedType) {
+      ParameterizedType pt = (ParameterizedType) superclass;
+      Type[] args = pt.getActualTypeArguments();
+      if (index < args.length) {
+        return unwrap(args[index]);
+      }
+    }
+
+    // Walk up the hierarchy
+    if (clazz.getSuperclass() != null) {
+      return resolveGenericType(clazz.getSuperclass(), index);
+    }
+
+    return Object.class;
+  }
+
+  private Type unwrap(Type type) {
+    if (type instanceof ParameterizedType) {
+      return ((ParameterizedType) type).getRawType();
+    }
+    if (type instanceof TypeVariable<?>) {
+      Type[] bounds = ((TypeVariable<?>) type).getBounds();
+      return bounds.length > 0 ? unwrap(bounds[0]) : Object.class;
+    }
+    return type;
   }
 }
