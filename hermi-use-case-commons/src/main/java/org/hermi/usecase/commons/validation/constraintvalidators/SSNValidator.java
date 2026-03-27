@@ -1,9 +1,9 @@
-package org.hermi.commons.validation.constraintvalidators;
+package org.hermi.usecase.commons.validation.constraintvalidators;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.util.regex.Pattern;
-import org.hermi.commons.validation.constraints.SSN;
+import org.hermi.usecase.commons.validation.constraints.SSN;
 
 /** Validator for {@link SSN} constraint. */
 public final class SSNValidator implements ConstraintValidator<SSN, CharSequence> {

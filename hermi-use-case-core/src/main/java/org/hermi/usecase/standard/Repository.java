@@ -1,7 +1,7 @@
-package org.hermi.usecase;
+package org.hermi.usecase.standard;
 
-import org.hermi.commons.execution.Executor;
-import org.hermi.commons.validation.Validatable;
+import org.hermi.usecase.commons.execution.Executor;
+import org.hermi.usecase.commons.validation.Validatable;
 
 public abstract class Repository<C, R extends Validatable> extends Executor<C, R> {
 

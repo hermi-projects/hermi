@@ -1,4 +1,4 @@
-package org.hermi.dispatcher;
+package org.hermi.usecase.dispatcher;
 
 public class HandlerNotFoundException extends RuntimeException {
   public HandlerNotFoundException(String message) {

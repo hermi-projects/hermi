@@ -1,4 +1,4 @@
-package org.hermi.commons.validation.constraints;
+package org.hermi.usecase.commons.validation.constraints;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
@@ -7,7 +7,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import org.hermi.commons.validation.constraintvalidators.SSNValidator;
+import org.hermi.usecase.commons.validation.constraintvalidators.SSNValidator;
 
 /** Social Security Number validation constraint. */
 @Documented

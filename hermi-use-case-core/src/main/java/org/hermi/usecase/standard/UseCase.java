@@ -1,10 +1,10 @@
-package org.hermi.usecase;
+package org.hermi.usecase.standard;
 
 import java.util.Objects;
-import org.hermi.commons.conversion.Converter;
-import org.hermi.commons.conversion.Convertible;
-import org.hermi.commons.execution.Executor;
-import org.hermi.commons.validation.Validatable;
+import org.hermi.usecase.commons.conversion.Converter;
+import org.hermi.usecase.commons.conversion.Convertible;
+import org.hermi.usecase.commons.execution.Executor;
+import org.hermi.usecase.commons.validation.Validatable;
 
 public abstract class UseCase<C extends Validatable, R> extends Executor<C, R> {
   protected abstract R doExecute(C command);

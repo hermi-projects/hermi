@@ -1,9 +1,9 @@
-package org.hermi.dispatcher;
+package org.hermi.usecase.dispatcher;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.hermi.commons.validation.Validatable;
-import org.hermi.usecase.UseCase;
+import org.hermi.usecase.commons.validation.Validatable;
+import org.hermi.usecase.standard.UseCase;
 
 public abstract class DispatcherUseCase<C extends Validatable, R> extends UseCase<C, R> {
   private final List<Handler<C, R>> handlers;

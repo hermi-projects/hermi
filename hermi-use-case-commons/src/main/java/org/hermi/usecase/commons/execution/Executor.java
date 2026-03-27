@@ -1,4 +1,4 @@
-package org.hermi.commons.execution;
+package org.hermi.usecase.commons.execution;
 
 import jakarta.validation.ConstraintViolation;
 import java.lang.reflect.ParameterizedType;
@@ -6,9 +6,9 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Objects;
 import java.util.Set;
-import org.hermi.commons.validation.InputValidationException;
-import org.hermi.commons.validation.Validatable;
-import org.hermi.commons.validation.Validator;
+import org.hermi.usecase.commons.validation.InputValidationException;
+import org.hermi.usecase.commons.validation.Validatable;
+import org.hermi.usecase.commons.validation.Validator;
 
 public abstract class Executor<C, R> {
   protected abstract R doRun(C command);

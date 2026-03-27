@@ -1,4 +1,4 @@
-package org.hermi.commons.validation;
+package org.hermi.usecase.commons.validation;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
