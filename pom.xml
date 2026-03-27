@@ -3,10 +3,10 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.hermi</groupId>
-  <artifactId>hermi-use-case</artifactId>
+  <artifactId>hermi-use-case-parent</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
-  <name>hermi-use-case</name>
+  <name>hermi-use-case-parent</name>
   <description>Building applications with Clean Architecture</description>
   <url>https://github.com/hermi/hermi-use-case</url>
 
@@ -27,7 +27,7 @@
   <modules>
     <module>hermi-use-case-core</module>
     <module>hermi-use-case-commons</module>
-    <module>hermi-use-case-pom</module>
+    <module>hermi-use-case</module>
   </modules>
 
   <scm>
