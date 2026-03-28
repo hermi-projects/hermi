@@ -234,18 +234,162 @@ void testFindUser() {
 ### Phase 2: Shell Layer (`org.hermi.user.find.shell`)
 
 #### Step 6: Implement Real Adapters
-Implement production-ready adapters with technology prefixes:
+Implement production-ready adapters with technology prefixes. These implementations handle the technical details of communication and data transformation.
 
 ```java
 @Component
-public class JpaSaveUserRepository extends SaveUserRepository implements RepositoryAdapter<UserEntity, UserEntity, ...> {
-    // Real JPA implementation using specialized adapter
+public class RestFindUserClient extends FindUserClient
+    implements ClientAdapter<ApiRequest, ApiResponse, FindUserClient.Command, FindUserClient.Result> {
+
+  private final RestTemplate restTemplate;
+
+  @Override
+  protected Result doSend(Command command) {
+    ApiRequest apiRequest = convertCommand(command);
+    ApiResponse apiResponse = process(apiRequest);
+    return convertResult(apiResponse);
+  }
+
+  @Override
+  public ApiRequest convertCommand(Command command) {
+    return new ApiRequest(command.ssn());
+  }
+
+  @Override
+  public ApiResponse process(ApiRequest input) {
+    return restTemplate.postForObject("/api/users", input, ApiResponse.class);
+  }
+
+  @Override
+  public Result convertResult(ApiResponse output) {
+    return new Result(output.getName(), output.getEmail());
+  }
 }
 
 @Component
-public class KafkaUserNotificationMessenger extends UserNotificationMessenger implements MessengerAdapter<ProducerRecord<String, String>, RecordMetadata, ...> {
-    // Real Kafka implementation using specialized adapter
+public class JpaSaveUserRepository extends SaveUserRepository
+    implements RepositoryAdapter<UserEntity, UserEntity, SaveUserRepository.Command, SaveUserRepository.Result> {
+
+  private final UserJpaRepository jpaRepository;
+
+  @Override
+  protected Result doSend(Command command) {
+    UserEntity entity = convertCommand(command);
+    UserEntity savedEntity = process(entity);
+    return convertResult(savedEntity);
+  }
+
+  @Override
+  public UserEntity convertCommand(Command command) {
+    return new UserEntity(command.name(), command.email());
+  }
+
+  @Override
+  public UserEntity process(UserEntity entity) {
+    return jpaRepository.save(entity);
+  }
+
+  @Override
+  public Result convertResult(UserEntity entity) {
+    return new Result(entity.getId());
+  }
 }
+
+@Component
+public class KafkaUserNotificationMessenger extends UserNotificationMessenger
+    implements MessengerAdapter<ProducerRecord<String, String>, RecordMetadata, UserNotificationMessenger.Command, UserNotificationMessenger.Result> {
+
+  private final KafkaTemplate<String, String> kafkaTemplate;
+
+  @Override
+  protected Result doSend(Command command) {
+    ProducerRecord<String, String> record = convertCommand(command);
+    RecordMetadata metadata = process(record);
+    return convertResult(metadata);
+  }
+
+  @Override
+  public ProducerRecord<String, String> convertCommand(Command command) {
+    return new ProducerRecord<>("user.notifications", command.message());
+  }
+
+  @Override
+  public RecordMetadata process(ProducerRecord<String, String> record) {
+    try {
+      return kafkaTemplate.send(record).get().getRecordMetadata();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public Result convertResult(RecordMetadata metadata) {
+    return new Result(metadata.toString());
+  }
+}
+```
+~~~java
+@Service
+@Transactional
+public class FindUserService {
+    private final FindUserUseCase findUserUseCase;
+    @Autowired
+    public FindUserService(RestFindUserClient restFindUserClient, JpaSaveUserRepository jpaSaveUserRepository, KafkaUserNotificationMessenger kafkaUserNotificationMessenger) {
+        this.findUserUseCase = new DefaultFindUserUseCase(
+            restFindUserClient,
+            jpaSaveUserRepository,
+            kafkaUserNotificationMessenger
+        );
+    }
+
+    public FindUserUseCase.Result findUser(FindUserUseCase.Command command) {
+        return findUserUseCase.execute(command);
+    }
+}
+~~~
+
+~~~java
+@RestController
+@RequestMapping("/users")
+public class FindUserController {
+    private final FindUserService findUserService;
+
+    @GetMapping
+    public FindUserUseCase.Result findUser(@RequestBody FindUserUseCase.Command command) {
+        return findUserService.findUser(command);
+    }
+}
+~~~
+## Maven Multi-Module Project Structure
+
+Organize your project into separate modules to enforce the Phase 1/2 separation and dependency rules.
+
+```text
+hermi-user (Parent)
+├── pom.xml
+├── use-cases/hermi-user-usecase (Phase 1 Layer)
+│   ├── pom.xml
+│   ├── src/main/java/org/hermi/user/find/usecase
+│   │   ├── FindUserUseCase.java          (Contract)
+│   │   ├── DefaultFindUserUseCase.java   (Implementation)
+│   │   ├── User.java                     (Scoped Domain Model)
+│   │   ├── FindUserClient.java           (I/O Contract)
+│   │   ├── SaveUserRepository.java       (I/O Contract)
+│   │   └── UserNotificationMessenger.java (I/O Contract)
+│   └── src/test/java/org/hermi/user/find/shell
+│       ├── FindUserUseCaseTest.java      (JUnit Test)
+│       ├── LocalFindUserClient.java           (Adapter Implementation)
+│       ├── InMemorySaveUserRepository.java       (Adapter Implementation)
+│       └── ConsoleUserNotificationMessenger.java (Adapter Implementation)
+│
+└── hermi-user-spring-shell (Phase 2 Layer)
+    ├── pom.xml
+    └── src/main/java/org/hermi/user/find/shell
+        ├── FindUserController.java        (RestController)
+        ├── FindUserService.java     (Spring Service Wrapper/Support)
+        ├── RestFindUserClient.java        (Adapter Implementation)
+        ├── JpaSaveUserRepository.java     (Adapter Implementation)
+        └── KafkaUserNotificationMessenger.java (Adapter Implementation)
 ```
 
 ## Validation Rules
