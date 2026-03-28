@@ -38,6 +38,13 @@
     <developerConnection>scm:git:ssh://git@github.com/hermi/hermi-use-case.git</developerConnection>
     <url>https://github.com/hermi/hermi-use-case</url>
   </scm>
+  <distributionManagement>
+    <repository>
+      <id>github</id>
+      <name>GitHub Packages</name>
+      <url>https://maven.pkg.github.com/hermi-projects/hermi-use-case</url>
+    </repository>
+  </distributionManagement>
 
   <properties>
     <hermi-use-case-commons.version>${project.version}</hermi-use-case-commons.version>
