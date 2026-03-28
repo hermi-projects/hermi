@@ -19,27 +19,27 @@ public abstract class Repository<C, R extends Validatable> extends Executor<C, R
    * Saves the repository request to an external data source and returns the response.
    *
    * <ul>
-   *   <li><b>Use Case Layer</b>: Defines the contract by extending this class and specifying the
-   *       command type {@code C} and result type {@code R}.
-   *   <li><b>Shell Layer</b>: Implements the real-world data access logic, typically by adopting
-   *       the adapter design pattern by implementing {@link
-   *       org.hermi.shell.adapter.RepositoryAdapter RepositoryAdapter} to coordinate data
-   *       transformation and storage execution.
+   *   <li><b>Use Case Layer (Phase 1)</b>: Defines the contract by extending this class and
+   *       specifying the command type {@code C} and result type {@code R}. Only the Result (which
+   *       returns to the Use Case) typically implements {@link
+   *       org.hermi.usecase.commons.validation.Validatable Validatable}.
+   *   <li><b>Shell Layer (Phase 2)</b>: Implements the real-world data access logic using specific
+   *       technologies, prefixed with the technology name (e.g., {@code JpaSaveUserRepository}).
    * </ul>
    *
-   * <p>Example SaveUserRepository Contract in Use Case:
+   * <p>Example SaveUserRepository Contract in Use Case (Phase 1):
    *
    * <pre>{@code
    * public abstract class SaveUserRepository extends Repository<SaveUserRepository.Command, SaveUserRepository.Result> {
-   *   public static record Command(String name, String email) implements Validatable {}
+   *   public static record Command(String name, String email) {}
    *   public static record Result(String id) implements Validatable {}
    * }
    * }</pre>
    *
-   * <p>Example SaveUserRepository Implementation in Shell Layer:
+   * <p>Example SaveUserRepository Implementation in Shell Layer (Phase 2):
    *
    * <pre>{@code
-   * public class DefaultSaveUserRepository extends SaveUserRepository
+   * public class JpaSaveUserRepository extends SaveUserRepository
    *     implements RepositoryAdapter<UserEntity, UserEntity, SaveUserRepository.Command, SaveUserRepository.Result> {
    *
    *   private final UserJpaRepository jpaRepository;

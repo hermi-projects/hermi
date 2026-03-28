@@ -18,26 +18,28 @@ public abstract class Client<C, R extends Validatable> extends Executor<C, R> {
    * Sends the client request to an external system and returns the response.
    *
    * <ul>
-   *   <li><b>Use Case Layer</b>: Defines the contract by extending this class and specifying the
-   *       command type {@code C} and result type {@code R}.
-   *   <li><b>Shell Layer</b>: Implements the real-world communication logic, typically by adopting
-   *       the adapter design pattern by implementing {@link org.hermi.shell.adapter.ClientAdapter
-   *       ClientAdapter} to coordinate data transformation and API execution.
+   *   <li><b>Use Case Layer (Phase 1)</b>: Defines the contract by extending this class and
+   *       specifying the command type {@code C} and result type {@code R}. Only the Result (which
+   *       returns to the Use Case) typically implements {@link
+   *       org.hermi.usecase.commons.validation.Validatable Validatable}.
+   *   <li><b>Shell Layer (Phase 2)</b>: Implements the real-world communication logic using
+   *       specific technologies, prefixed with the technology name (e.g., {@code
+   *       RestFindUserClient}).
    * </ul>
    *
-   * <p>Example Use Case Layer:
+   * <p>Example Use Case Layer (Phase 1):
    *
    * <pre>{@code
    * public abstract class FindUserClient extends Client<FindUserClient.Command, FindUserClient.Result> {
-   *   public static record Command(@NotNull @NotBlank String ssn) implements Validatable {}
+   *   public static record Command(String ssn) {}
    *   public static record Result(String name, String email) implements Validatable {}
    * }
    * }</pre>
    *
-   * <p>Example Shell Layer (Implementation):
+   * <p>Example Shell Layer (Phase 2):
    *
    * <pre>{@code
-   * public class DefaultFindUserClient extends FindUserClient
+   * public class RestFindUserClient extends FindUserClient
    *     implements ClientAdapter<ApiRequest, ApiResponse, FindUserClient.Command, FindUserClient.Result> {
    *
    *   private final RestTemplate restTemplate;

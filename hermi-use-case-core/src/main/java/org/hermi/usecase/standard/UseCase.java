@@ -7,7 +7,29 @@ import org.hermi.usecase.commons.execution.Executor;
 import org.hermi.usecase.commons.validation.Validatable;
 
 /**
- * An abstract class representing a use case for business logic execution.
+ * An abstract class representing a business use case.
+ *
+ * <p>Implementation of a use case follows a two-phase life cycle:
+ *
+ * <h3>Phase 1: Use Case Layer (Core Business Logic)</h3>
+ *
+ * <ol>
+ *   <li><b>Define the Contract</b>: Specify the command type {@code C} (typically {@link
+ *       org.hermi.usecase.commons.validation.Validatable Validatable}) and result type {@code R}.
+ *   <li><b>Start Implementation</b>: Create the default implementation of the use case.
+ *   <li><b>Discover & Define I/O Contracts (JIT)</b>: As you implement business logic, if you need
+ *       to talk to an external system, define the contract (Client, Repository, or Messenger) right
+ *       then.
+ *   <li><b>Verify with JUnit Shell</b>: Verify the logic using minimal technology-prefixed
+ *       implementations (e.g., {@code MemorySaveUserRepository}) in your test suite.
+ * </ol>
+ *
+ * <h3>Phase 2: Shell Layer (Infrastructure)</h3>
+ *
+ * <ol>
+ *   <li><b>Implement Real Adapters</b>: Create production implementations using specific technology
+ *       prefixes (e.g., {@code JpaSaveUserRepository}, {@code KafkaUserNotificationMessenger}).
+ * </ol>
  *
  * @param <C> the type of the command
  * @param <R> the type of the response
@@ -17,28 +39,23 @@ public abstract class UseCase<C extends Validatable, R> extends Executor<C, R> {
   /**
    * Executes the business logic of the use case.
    *
-   * <p>When implementing a use case in the <b>Use Case Layer</b>, follow these steps:
-   *
-   * <ol>
-   *   <li><b>Define the Contract</b>: Specify the command type {@code C} (must implement {@link
-   *       org.hermi.usecase.commons.validation.Validatable Validatable}) and result type {@code R}.
-   *   <li><b>Provide the Implementation</b>: Create a default implementation that:
-   *       <ul>
-   *         <li>Performs business rule validation and logic.
-   *         <li>Orchestrates I/O operations by calling {@link org.hermi.usecase.standard.Client
-   *             Client}, {@link org.hermi.usecase.standard.Messenger Messenger}, or {@link
-   *             org.hermi.usecase.standard.Repository Repository} components.
-   *       </ul>
-   * </ol>
-   *
-   * <p>Example:
+   * <p>Example: Find User Use Case
    *
    * <pre>{@code
+   * // 1. Use Case Contract & Scoped Domain Model
    * public abstract class FindUserUseCase extends UseCase<FindUserUseCase.Command, FindUserUseCase.Result> {
    *   public static record Command(@NotNull @NotBlank String ssn) implements Validatable {}
    *   public static record Result(String name, String email) {}
    * }
    *
+   * public record User(String ssn, String name, String email) {}
+   *
+   * // 2. JIT I/O Contracts discovered during implementation
+   * public abstract class FindUserClient extends Client<FindUserClient.Command, FindUserClient.Result> { ... }
+   * public abstract class SaveUserRepository extends Repository<SaveUserRepository.Command, SaveUserRepository.Result> { ... }
+   * public abstract class UserNotificationMessenger extends Messenger<UserNotificationMessenger.Command, UserNotificationMessenger.Result> { ... }
+   *
+   * // 3. Use Case Implementation
    * public class DefaultFindUserUseCase extends FindUserUseCase {
    *   private final SaveUserRepository userRepository;
    *   private final FindUserClient findUserClient;
@@ -58,13 +75,16 @@ public abstract class UseCase<C extends Validatable, R> extends Executor<C, R> {
    *     // 1. Find user from 3rd party API
    *     FindUserClient.Result clientResult = findUserClient.send(new FindUserClient.Command(command.ssn()));
    *
-   *     // 2. Save user to database
-   *     userRepository.send(new SaveUserRepository.Command(clientResult.name(), clientResult.email()));
+   *     // 2. Map to Domain Model
+   *     User user = new User(command.ssn(), clientResult.name(), clientResult.email());
    *
-   *     // 3. Send notification message
-   *     messenger.send(new UserNotificationMessenger.Command(clientResult.email(), "User found: " + clientResult.name()));
+   *     // 3. Save user to database
+   *     userRepository.send(new SaveUserRepository.Command(user.name(), user.email()));
    *
-   *     return new Result(clientResult.name(), clientResult.email());
+   *     // 4. Send notification message
+   *     messenger.send(new UserNotificationMessenger.Command(user.email(), "User found: " + user.name()));
+   *
+   *     return new Result(user.name(), user.email());
    *   }
    * }
    * }</pre>

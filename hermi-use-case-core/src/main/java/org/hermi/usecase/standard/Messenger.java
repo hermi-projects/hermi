@@ -20,24 +20,25 @@ public abstract class Messenger<C, R extends Validatable> extends Executor<C, R>
    * <p>This method following a two-layer architectural pattern:
    *
    * <ul>
-   *   <li><b>Use Case Layer</b>: Defines the contract by extending this class and specifying the
-   *       command type {@code C} and result type {@code R}.
-   *   <li><b>Shell Layer</b>: Implements the real-world communication logic, typically by adopting
-   *       the adapter design pattern by implementing {@link
-   *       org.hermi.shell.adapter.MessengerAdapter MessengerAdapter} to coordinate data
-   *       transformation and message transmission.
+   *   <li><b>Use Case Layer (Phase 1)</b>: Defines the contract by extending this class and
+   *       specifying the command type {@code C} and result type {@code R}. Only the Result (which
+   *       returns to the Use Case) typically implements {@link
+   *       org.hermi.usecase.commons.validation.Validatable Validatable}.
+   *   <li><b>Shell Layer (Phase 2)</b>: Implements the real-world communication logic using
+   *       specific technologies, prefixed with the technology name (e.g., {@code
+   *       KafkaUserNotificationMessenger}).
    * </ul>
    *
-   * <p>Example UserNotificationMessenger Contract in Use Case Layer:
+   * <p>Example UserNotificationMessenger Contract in Use Case Layer (Phase 1):
    *
    * <pre>{@code
    * public abstract class UserNotificationMessenger extends Messenger<UserNotificationMessenger.Command, UserNotificationMessenger.Result> {
-   *   public static record Command(String userId, String message) implements Validatable {}
+   *   public static record Command(String userId, String message) {}
    *   public static record Result(String messageId) implements Validatable {}
    * }
    * }</pre>
    *
-   * <p>Example KafkaUserNotificationMessenger Implementation in Shell Layer:
+   * <p>Example KafkaUserNotificationMessenger Implementation in Shell Layer (Phase 2):
    *
    * <pre>{@code
    * public class KafkaUserNotificationMessenger extends UserNotificationMessenger
