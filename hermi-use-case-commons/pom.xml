@@ -10,26 +10,17 @@
   <artifactId>hermi-use-case-commons</artifactId>
   <packaging>jar</packaging>
   <dependencies>
-    <!-- Jakarta Validation API: Provides @NotNull, @Valid, etc. annotations -->
-    <!-- This is the specification API for bean validation -->
     <dependency>
       <groupId>jakarta.validation</groupId>
       <artifactId>jakarta.validation-api</artifactId>
     </dependency>
-
-    <!-- Hibernate Validator: Reference implementation of Jakarta Validation -->
-    <!-- Provides runtime validation logic for constraint annotations -->
     <dependency>
       <groupId>org.hibernate.validator</groupId>
       <artifactId>hibernate-validator</artifactId>
     </dependency>
-
-    <!-- Jakarta Expression Language: Required for validation message interpolation -->
-    <!-- Enables dynamic messages like "must be between {min} and {max}" -->
     <dependency>
       <groupId>org.glassfish</groupId>
       <artifactId>jakarta.el</artifactId>
     </dependency>
-
   </dependencies>
 </project>

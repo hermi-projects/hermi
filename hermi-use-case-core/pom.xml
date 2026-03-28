@@ -13,6 +13,7 @@
     <dependency>
       <groupId>org.hermi</groupId>
       <artifactId>hermi-use-case-commons</artifactId>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 </project>
