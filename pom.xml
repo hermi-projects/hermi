@@ -45,12 +45,10 @@
       <url>https://maven.pkg.github.com/hermi-projects/hermi-use-case</url>
     </repository>
   </distributionManagement>
-
   <properties>
     <hermi-use-case-commons.version>${project.version}</hermi-use-case-commons.version>
     <hermi-use-case-core.version>${project.version}</hermi-use-case-core.version>
   </properties>
-
   <dependencyManagement>
     <dependencies>
       <dependency>
