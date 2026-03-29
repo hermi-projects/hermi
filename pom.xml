@@ -9,6 +9,7 @@
 
   <artifactId>hermi-use-case-parent</artifactId>
   <packaging>pom</packaging>
+  <name>hermi-use-case-parent</name>
   <description>Building applications with Clean Architecture</description>
   <url>https://github.com/hermi/hermi-use-case</url>
 
