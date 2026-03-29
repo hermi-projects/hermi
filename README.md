@@ -1,8 +1,12 @@
 # Hermi Use Case Framework
 
-A lightweight, opinionated framework for building Java applications rooted in Clean Architecture principles.
+A lightweight, opinionated framework for building Java applications rooted in Clean Architecture and Engineering-First principles.
 
-The Hermi framework enforces a strict boundary between business logic and infrastructure, ensuring your application remains highly testable, technology-agnostic, and fiercely focused on core domain rules.
+By enforcing a strict boundary between business logic and infrastructure, Hermi ensures your system remains:
+- Independent of Frameworks: Frameworks are tools, not constraints.
+- Testable: Business rules are verified without UI, Database, or Web Servers.
+- Independent of UI & Database: Swap a Web API for a CLI, or SQL for MongoDB, without touching a single line of core logic.
+- Independent of External Agencies: Your business rules simply don’t know anything at all about the outside world.
 
 ## Architectural Responsibilities
 
@@ -15,20 +19,23 @@ The framework divides your application into two distinct, non-overlapping domain
 
 To guarantee a clean separation of concerns, development in Hermi Use Case Framework mandates a strict, two-phase implementation process. You must prove your business logic works before writing a single line of framework-specific infrastructure.
 
-### Phase 1: Use Case (Business Logic)
+### Phase 1: The Core Logic Lifecycle (The Brain)
+Phase 1 is where we prove the business logic is bulletproof using nothing but pure Java. We follow a path of Discovery-Driven Development.
 
-- **Step 1: Define the Contract**: Create an abstract `UseCase` class along with its `Command` (Input) and `Result` (Output) records.
-- **Steps 2 & 3: Implementation & JIT I/O Contracts**: Begin implementing the business logic. When you discover the need to interact with the outside world, define the I/O contract (`Client`, `Repository`, or `Messenger`) Just-In-Time (JIT).
-- **Step 4: Finalize Orchestration**: Complete the Use Case by coordinating the flow between your newly defined I/O contracts.
-- **Step 5: Verify via Test Shell (The Phase 1 Gate)**: Create technology-agnostic implementations (e.g., `InMemoryRepository`, `ConsoleMessenger`) in your test suite. Do not use Mocks. Phase 1 is only complete when the Use Case is verified against these local, stateful adapters.
+- **Step 1: Establish the Boundary**: Define your UseCase contract (Command/Result).
+- **Step 2: Initialize Core Implementation**: Create a skeletal DefaultUseCase class.
+- **Step 3: The Test Shell (Harness)**: Build a minimal JUnit "Play Button" for instant execution/debugging.
+- **Step 4: JIT I/O Discovery**: Write logic; define Client/Repository contracts the moment you need them.
+- **Step 5: Final Orchestration**: Coordinate the flow between your discovered I/O contracts.
+- **Step 6: The Phase 1 Gate**: Attack the logic with edge cases; fix issues until verified.
 
 ### Phase 2: Shell (Infrastructure)
+Phase 2 is about Implementation and Wiring. While Phase 1 was about "What," Phase 2 is about "How."
+- **Step 7: Implement Real Adapters**: Build the production-ready classes for the I/O contracts discovered in Phase 1.
 
-- **Step 6: Implement Real Adapters**: Move to the Shell layer and create the production-ready implementations of your Phase 1 contracts. Suffix these classes with the specific technology or vendor being used (e.g., `JpaSaveUserRepository`, `LexisNexisFindUserClient`, `KafkaUserNotificationMessenger`).
+## Detailed Example: The "Find User" Use Case
 
-## Example: The "Find User" Use Case
-
-**Scenario**: Retrieve a user by SSN from a 3rd-party API, save them to a local database, and publish a notification to a message broker.
+**Scenario**: Retrieve a user by SSN from a 3rd-party API, save them to a local database, and publish a notification.
 
 **Use Case Naming Rule**: `{project}-{action}-{resource}-usecase` (e.g., `hermi-find-user-usecase`)
 
@@ -36,7 +43,7 @@ To guarantee a clean separation of concerns, development in Hermi Use Case Frame
 
 **Package Naming Rule**: `{org}.{resource}.{action}.usecase` (e.g., `org.hermi.user.find.usecase`)
 
-#### Step 1: Define Use Case Contract
+#### Step 1: Establish the Boundary
 
 Define the boundary of the use case.
 
@@ -51,9 +58,8 @@ public abstract class FindUserUseCase extends UseCase<FindUserUseCase.Command, F
 }
 ```
 
-#### Step 2 & 3 & 4: Implementation and Just-In-Time Contracts
-
-As we build the DefaultFindUserUseCase, we iteratively discover infrastructure requirements and define their contracts immediately.
+#### Step 2 & 3: Skeletal Implementation & Harness
+Create the core class and its execution harness immediately.
 
 **Use case implementation Naming Rule**: `Default{action}{resource}UseCase` (e.g., `DefaultFindUserUseCase`)
 
@@ -76,7 +82,20 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
  */
 public record User(String ssn, String name, String email) {}
 ```
+```java
+@DisplayName("Find User Use Case: Execution Harness")
+class FindUserUseCaseComponentTest {
+    @Test
+    void debug_run() {
+        // Setup skeletal implementation
+        var useCase = new DefaultFindUserUseCase();
+        // Run and debug instantly
+        var result = useCase.execute(new FindUserUseCase.Command("123-456-789"));
+    }
+}
+```
 
+#### Step 4: Just-In-Time Contracts
 **1. Need to fetch user?** Define `FindUserClient` contract:
 ```java
 // a. Need to fetch user from 3rd party API.
@@ -220,7 +239,7 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
 }
 ```
 
-#### Step 4: Final Orchestration
+#### Step 5: Final Orchestration
 ```java
 // j. Final Orchestration
 public class DefaultFindUserUseCase extends FindUserUseCase {
@@ -245,9 +264,9 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
 }
 ```
 
-Step 5: Verify with the Test Shell
+#### Step 6: Verify with the Test Shell
 
-Before touching Spring or Kafka, prove the logic works using plain Java state.
+Stop building and start attacking. Write edge cases in your test suite to break the logic. Phase 1 is complete only when the Use Case survives this trial.
 
 **Package Naming Rule**: `{org}.{resource}.{action}.shell.{type}` (e.g., `org.hermi.user.find.shell.junit`)
 
@@ -267,7 +286,21 @@ class FindUserShellComponentTest {
     @Test
     @DisplayName("Test Find User Use Case")
     void testFindUser() {
-        
+        //happy path test   
+    }
+    
+    @Test
+    @DisplayName("Phase 1 Gate: Edge Case Verification")
+    void shouldHandleUserNotFound() {
+        // 1. Setup Local Adapters to simulate failure
+        var client = new LocalFindUserClient().simulateNotFound(); 
+        var repo = new InMemorySaveUserRepository();
+        var messenger = new ConsoleNotificationMessenger();
+    
+        var useCase = new DefaultFindUserUseCase(client, repo, messenger);
+        // 2. Assert logic handles the edge case correctly
+        assertThrows(UserNotFoundException.class, () -> 
+            useCase.execute(new FindUserUseCase.Command("999-00-9999")));
     }
 }
 ```
@@ -278,7 +311,7 @@ Now that the business logic is proven, implement production-ready infrastructure
 
 **Shell Naming Rule**: `{project}-{framework}-{type}-shell` (e.g., `hermi-spring-rest-shell`)
 
-#### Step 6: Implement Real Adapters
+#### Step 7: Implement Real Adapters
 Implement production-ready adapters. These implementations handle the technical details of communication and data transformation.
 
 **Package Naming Rule**: `{org}.{resource}.{action}.shell` (e.g., `org.hermi.user.find.shell`)
