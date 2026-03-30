@@ -9,28 +9,6 @@ import org.hermi.usecase.commons.validation.Validatable;
 /**
  * An abstract class representing a business use case.
  *
- * <p>Implementation of a use case follows a two-phase life cycle:
- *
- * <h3>Phase 1: Use Case Layer (Core Business Logic)</h3>
- *
- * <ol>
- *   <li><b>Define the Contract</b>: Specify the command type {@code C} (typically {@link
- *       org.hermi.usecase.commons.validation.Validatable Validatable}) and result type {@code R}.
- *   <li><b>Start Implementation</b>: Create the default implementation of the use case.
- *   <li><b>Discover & Define I/O Contracts (JIT)</b>: As you implement business logic, if you need
- *       to talk to an external system, define the contract (Client, Repository, or Messenger) right
- *       then.
- *   <li><b>Verify with JUnit Shell</b>: Verify the logic using minimal technology-prefixed
- *       implementations (e.g., {@code MemorySaveUserRepository}) in your test suite.
- * </ol>
- *
- * <h3>Phase 2: Shell Layer (Infrastructure)</h3>
- *
- * <ol>
- *   <li><b>Implement Real Adapters</b>: Create production implementations using specific technology
- *       prefixes (e.g., {@code JpaSaveUserRepository}, {@code KafkaUserNotificationMessenger}).
- * </ol>
- *
  * @param <C> the type of the command
  * @param <R> the type of the response
  */
@@ -39,52 +17,90 @@ public abstract class UseCase<C extends Validatable, R> extends Executor<C, R> {
   /**
    * Executes the business logic of the use case.
    *
-   * <p>Example: Find User Use Case
+   * <ul>
+   *   <li><b>Use Case Layer (Phase 1)</b>: Defines the boundary (Command/Result) and establishes
+   *       the core business logic. Discovers and defines I/O contracts (Client, Repository,
+   *       Messenger) Just-In-Time as needed. Verification uses stateful, technology-agnostic test
+   *       shells.
+   *   <li><b>Shell Layer (Phase 2)</b>: Orchestrates the execution by injecting production-grade
+   *       infrastructure adapters (e.g., from a Spring Web Layer) into the Use Case.
+   * </ul>
+   *
+   * <p>Example FindUserUseCase Contract & Core Logic (Phase 1):
    *
    * <pre>{@code
-   * // 1. Use Case Contract & Scoped Domain Model
    * public abstract class FindUserUseCase extends UseCase<FindUserUseCase.Command, FindUserUseCase.Result> {
-   *   public static record Command(@NotNull @NotBlank String ssn) implements Validatable {}
-   *   public static record Result(String name, String email) {}
+   *   public record Command(@NotNull @NotBlank String ssn) implements Validatable {}
+   *   public record Result(String name, String email) {}
    * }
    *
    * public record User(String ssn, String name, String email) {}
    *
-   * // 2. JIT I/O Contracts discovered during implementation
-   * public abstract class FindUserClient extends Client<FindUserClient.Command, FindUserClient.Result> { ... }
-   * public abstract class SaveUserRepository extends Repository<SaveUserRepository.Command, SaveUserRepository.Result> { ... }
-   * public abstract class UserNotificationMessenger extends Messenger<UserNotificationMessenger.Command, UserNotificationMessenger.Result> { ... }
-   *
-   * // 3. Use Case Implementation
    * public class DefaultFindUserUseCase extends FindUserUseCase {
-   *   private final SaveUserRepository userRepository;
    *   private final FindUserClient findUserClient;
+   *   private final SaveUserRepository saveUserRepository;
    *   private final UserNotificationMessenger messenger;
    *
    *   public DefaultFindUserUseCase(
-   *       SaveUserRepository userRepository,
    *       FindUserClient findUserClient,
+   *       SaveUserRepository saveUserRepository,
    *       UserNotificationMessenger messenger) {
-   *     this.userRepository = userRepository;
    *     this.findUserClient = findUserClient;
+   *     this.saveUserRepository = saveUserRepository;
    *     this.messenger = messenger;
    *   }
    *
    *   @Override
    *   protected Result doExecute(Command command) {
-   *     // 1. Find user from 3rd party API
-   *     FindUserClient.Result clientResult = findUserClient.send(new FindUserClient.Command(command.ssn()));
+   *     // 1. Fetch user data via the client contract
+   *     FindUserClient.Result apiResult = findUserClient.send(new FindUserClient.Command(command.ssn()));
+   *     User user = new User(command.ssn(), apiResult.name(), apiResult.email());
    *
-   *     // 2. Map to Domain Model
-   *     User user = new User(command.ssn(), clientResult.name(), clientResult.email());
+   *     // 2. Save the user via the repository contract
+   *     saveUserRepository.send(new SaveUserRepository.Command(user.name(), user.email()));
    *
-   *     // 3. Save user to database
-   *     userRepository.send(new SaveUserRepository.Command(user.name(), user.email()));
-   *
-   *     // 4. Send notification message
+   *     // 3. Send notification
    *     messenger.send(new UserNotificationMessenger.Command(user.email(), "User found: " + user.name()));
    *
    *     return new Result(user.name(), user.email());
+   *   }
+   * }
+   * }</pre>
+   *
+   * <p>Example FindUserService Orchestration in Shell Layer (Phase 2):
+   *
+   * <pre>{@code
+   * @Service
+   * @Transactional
+   * public class FindUserService {
+   *   private final FindUserUseCase findUserUseCase;
+   *
+   *   @Autowired
+   *   public FindUserService(LexisNexisFindUserClient client,
+   *                          JdbcSaveUserRepository repo,
+   *                          KafkaUserNotificationMessenger messenger) {
+   *     // Instantiate the Use Case with production adapters
+   *     this.findUserUseCase = new DefaultFindUserUseCase(client, repo, messenger);
+   *   }
+   *
+   *   public FindUserUseCase.Result findUser(FindUserUseCase.Command command) {
+   *     return findUserUseCase.execute(command);
+   *   }
+   * }
+   *
+   * @RestController
+   * @RequestMapping("/users")
+   * public class FindUserController {
+   *   private final FindUserService findUserService;
+   *
+   *   @Autowired
+   *   public FindUserController(FindUserService findUserService) {
+   *     this.findUserService = findUserService;
+   *   }
+   *
+   *   @GetMapping
+   *   public FindUserUseCase.Result findUser(@RequestBody FindUserUseCase.Command command) {
+   *     return findUserService.findUser(command);
    *   }
    * }
    * }</pre>

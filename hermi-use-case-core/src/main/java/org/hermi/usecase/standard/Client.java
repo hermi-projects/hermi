@@ -39,7 +39,8 @@ public abstract class Client<C, R extends Validatable> extends Executor<C, R> {
    * <p>Example Shell Layer (Phase 2):
    *
    * <pre>{@code
-   * public class RestFindUserClient extends FindUserClient
+   * @Component
+   * public class LexisNexisFindUserClient extends FindUserClient
    *     implements ClientAdapter<ApiRequest, ApiResponse, FindUserClient.Command, FindUserClient.Result> {
    *
    *   private final RestTemplate restTemplate;

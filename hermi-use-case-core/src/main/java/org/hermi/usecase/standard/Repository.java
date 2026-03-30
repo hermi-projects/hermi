@@ -39,6 +39,7 @@ public abstract class Repository<C, R extends Validatable> extends Executor<C, R
    * <p>Example SaveUserRepository Implementation in Shell Layer (Phase 2):
    *
    * <pre>{@code
+   * @Component
    * public class JpaSaveUserRepository extends SaveUserRepository
    *     implements RepositoryAdapter<UserEntity, UserEntity, SaveUserRepository.Command, SaveUserRepository.Result> {
    *

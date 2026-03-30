@@ -41,6 +41,7 @@ public abstract class Messenger<C, R extends Validatable> extends Executor<C, R>
    * <p>Example KafkaUserNotificationMessenger Implementation in Shell Layer (Phase 2):
    *
    * <pre>{@code
+   * @Component
    * public class KafkaUserNotificationMessenger extends UserNotificationMessenger
    *     implements MessengerAdapter<ProducerRecord<String, String>, RecordMetadata, UserNotificationMessenger.Command, UserNotificationMessenger.Result> {
    *
