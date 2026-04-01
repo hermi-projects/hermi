@@ -1,0 +1,17 @@
+{
+  "skill_name": "hermi-use-case-creator",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Use the hermi-use-case-creator skill to build a CreateOrder use case. input: user ID, list of item IDs, payment amount",
+      "expected_output": "The AI must NOT generate any Java code or Phase 1 components. It must identify that the Output (Result) and I/O operations are missing, and explicitly ask the user to provide them in a multi-round conversation.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "For the CreateOrder use case, the Input is: userId, itemIds, paymentAmount. The Output is: orderId, status. The external I/O dependencies are: all of them.",
+      "expected_output": "The AI must NOT generate any Java code yet. It must recognize the vague 'all of them' dependency answer and invoke 'Proactive Elaboration'. It should list out assumed contracts (e.g. CheckInventoryClient, SaveOrderRepository, OrderNotificationMessenger) and then present 'The Final Confirmation' checklist. It must explicitly ask the user to reply 'Yes' before proceeding to Phase 1.",
+      "files": []
+    }
+  ]
+}

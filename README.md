@@ -452,6 +452,9 @@ Strict predictable boundaries are enforced entirely by stringent naming conventi
 
 To protect the integrity of the application, data crossing boundaries into the Use Case is heavily policed. All entries must be explicitly validated.
 
+> [!NOTE]
+> **Validation Philosophy**: In the Hermi Framework, backend input validation acts as a strict contract enforcement. If a validation error is triggered, it serves as an explicit signal to the upstream developer that their client (e.g., a Web UI or Mobile App) is missing necessary validation logic. By failing fast, the framework forces developers to add missing validations directly to the user interface, improving the end-user experience via instant client-side feedback rather than relying on network round-trips.
+
 | Boundary | Interface | Requirement |
 | :--- | :--- | :--- |
 | **Entering Use Case** | `UseCase.Command` | `implements Validatable` (Mandatory) |
