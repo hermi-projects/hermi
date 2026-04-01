@@ -164,9 +164,6 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
 }
 ```
 
-> [!NOTE]
-> **Why `.send(Command)`?** Notice that the framework abstracts all I/O interactions into a universal `Result send(Command)` signature, rather than traditional DAO methods like `save()` or `findById()`. Because Hermi strictly enforces Interface Segregation (one contract class per action), the method name no longer needs to describe the action — the class name already does (`FindUserClient`). This universal Command Pattern signature makes it trivial to apply cross-cutting middleware (like retries, circuit breakers, or logging) to all boundary-crossing calls.
-
 #### Step 5: Just-In-Time Discovery (Saving the User)
 When the logic requires data persistence, define a repository contract.
 
@@ -247,6 +244,9 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
     }
 }
 ```
+
+> [!NOTE]
+> **Why `.send(Command)`?** Notice that the framework abstracts all I/O interactions into a universal `Result send(Command)` signature, rather than traditional DAO methods like `save()` or `findById()`. Because Hermi strictly enforces Interface Segregation (one contract class per action), the method name no longer needs to describe the action — the class name already does (`FindUserClient`). This universal Command Pattern signature makes it trivial to apply cross-cutting middleware (like retries, circuit breakers, or logging) to all boundary-crossing calls.
 
 #### Step 7: Verify with the Test Shell
 With the orchestration complete, verify all boundary and edge cases within the test suite. Unlike mocking frameworks which couple tests to implementation details, state-backed test adapters prove your logic handles real-world state transitions.
