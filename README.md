@@ -3,10 +3,10 @@
 A lightweight, opinionated framework for building Java applications rooted in Clean Architecture and Engineering-First principles.
 
 By enforcing a strict boundary between business logic and infrastructure, the Hermi framework ensures your system remains:
-- **Independent of Frameworks**: Frameworks are tools, not constraints. 
-- **Testable**: Business rules are verified without UI, Database, or Web Servers.
+- **Independent of Frameworks**: Treat frameworks as tools, not constraints. Swap one for another without altering a single business rule.
+- **Testable**: Verify business rules without UI, databases, or web servers.
 - **Independent of UI & Database**: Swap a Web API for a CLI, or SQL for MongoDB, without touching a single line of core logic.
-- **Independent of External Agencies**: Your business rules simply don’t know anything at all about the outside world.
+- **Independent of External Agencies**: Business rules know nothing about the outside world — and are never allowed to.
 
 ## Table of Contents
 1. [Core Philosophy](#core-philosophy)
@@ -42,29 +42,43 @@ The framework divides your application into two distinct, non-overlapping domain
 
 ## 3. The Engineering-First Lifecycle
 
-To guarantee a clean separation of concerns, development in the Hermi Framework mandates a strict, two-phase implementation process. You must prove your business logic works before writing a single line of framework-specific infrastructure.
+To guarantee a clean separation of concerns, development in the Hermi Framework mandates a strict, two-phase implementation process. You must prove your business logic works before writing a single line of infrastructure-specific code.
+
+### Traversal Strategy: Top-Down, Breadth-First
+
+Phase 1 deliberately employs a **top-down, breadth-first traversal** over business logic. Rather than front-loading the design of all external dependencies before a single line of business logic exists — a speculative, depth-first approach — Phase 1 inverts this order entirely.
+
+The engineer begins at the highest level of abstraction: what does this use case *accept*, and what does it *return*? From that boundary, the orchestration logic is written top-down, as if all necessary collaborators already exist. External dependencies — whether for data retrieval, persistence, or event publishing — are only defined at the exact moment the business logic *reveals* it needs them.
+
+This is not a stylistic preference. It is a disciplined response to a well-known failure mode: **speculative dependency design**. In traditional depth-first development, engineers pre-design schemas, repositories, and API clients before any domain logic is written. This embeds infrastructure assumptions directly into the business domain before the domain is even understood. In Hermi, **business logic drives dependency discovery** — not the other way around.
+
+> [!NOTE]
+> This traversal strategy is also why the framework prohibits mocking frameworks. Mocks require pre-specifying dependencies that haven't been discovered yet, directly violating the JIT discovery principle. Local test adapters are the correct substitute because they are written *after* a contract is revealed — never before.
 
 ### Phase 1: The Core Logic Lifecycle (The Brain)
-Phase 1 ensures the business logic is rigorously validated using exclusively pure Java (Discovery-Driven Development):
+Phase 1 is about Discovery and Verification. It answers _"What"_ the system does — all business rules, workflow orchestration, and domain models — proven correct using exclusively pure Java:
 1. **Establish the Boundary**: Define your `UseCase` contract (`Command` and `Result`).
 2. **Initialize Core Implementation**: Create a skeletal `DefaultUseCase` class.
-3. **The Test Shell (Harness)**: Build a minimal JUnit "Play Button" for instant execution/debugging.
-4. **JIT I/O Discovery**: Write logic; define `Client/Repository` contracts the moment you need a specific I/O behavior.
+3. **The Test Harness**: Build a minimal test execution harness as a "Play Button" for continuous, instant execution and debugging during development.
+4. **JIT I/O Discovery**: Write logic; define I/O contracts the moment you need a specific behavior, categorizing them strictly by architectural intent:
+   - **`Client` (Inbound / Exchange)**: Retrieves external data or performs transactional external actions (e.g., 3rd-party APIs, RPCs).
+   - **`Repository` (State Persistence)**: Manages the application's own persistent state (e.g., SQL, NoSQL, Caching).
+   - **`Messenger` (Outbound)**: Fire-and-forget notifications to the rest of the world (e.g., Kafka, Event Bus, Emails).
 5. **Final Orchestration**: Coordinate the flow between your discovered I/O contracts.
 6. **The Phase 1 Gate**: Assert the logic against edge cases in the Test Shell. Phase 1 is complete when all edge cases pass.
 
 ### Phase 2: Shell (Infrastructure)
-Phase 2 is about Implementation and Wiring. While Phase 1 was about _"What"_, Phase 2 is about _"How"_.
+Phase 2 is about Implementation and Wiring. It answers _"How"_ the system does it — translating each I/O contract into a technology-specific adapter and wiring it into the chosen Shell.
 
-7. **Implement Real Adapters**: Build the production-ready classes for the I/O contracts discovered in Phase 1 (e.g., wiring to actual DBs or APIs).
+7. **Implement Production Adapters**: For each I/O contract discovered in Phase 1, build the technology-specific or vendor-specific adapter class (e.g., `JdbcSaveUserRepository`, `LexisNexisFindUserClient`, `KafkaUserNotificationMessenger`).
 
-8. **Final Orchestration**: Wire the instances and entry points (e.g., Spring RestControllers) together.
+8. **Expose via Entry Points**: Wire the production adapters into the appropriate entry point for the chosen Shell — e.g., a REST controller, a message consumer, a CLI runner, or an AI MCP tool handler. If cross-cutting infrastructure concerns (such as transaction management or AOP) are required, introduce an intermediate service layer between the adapters and the entry point.
 
 ---
 
 ## 4. Progressive Tutorial: Implementation Workflow
 
-The following tutorial demonstrates the implementation of a real Use Case step-by-step.
+The following tutorial demonstrates the implementation of a Use Case step-by-step. By the end, you will have a complete, fully testable Use Case with three I/O contracts — all verified in isolation before a single line of infrastructure is written.
 
 **Scenario**: We want to build a feature to retrieve a user by their SSN from a 3rd-party API, save them to a local database, and publish a notification.
 
@@ -99,8 +113,8 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
 }
 ```
 
-#### Step 3: The Test Harness
-Establish the execution harness (JUnit test) to enable continuous execution and debugging during development.
+#### Step 3: The Test Harness：JUnit Component Test
+Establish the execution harness to enable continuous execution and debugging during development.
 
 ```java
 @DisplayName("Find User Use Case: Execution Harness")
@@ -212,7 +226,7 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
 
     @Override
     protected Result doExecute(Command command) {
-        // 1. Fetch user stream
+        // 1. Fetch user data
         var apiResult = findUserClient.send(new FindUserClient.Command(command.ssn()));
         var user = new User(command.ssn(), apiResult.name(), apiResult.email());
         
@@ -243,7 +257,7 @@ class LocalFindUserClient extends FindUserClient { ... }
 ```
 ```java
 @DisplayName("Find User Use Case Shell")
-class FindUserShellComponentTest {
+class FindUserUseCaseComponentTest {
     @Test
     @DisplayName("Phase 1 Gate: Edge Case Verification - User Not Found")
     void shouldHandleUserNotFound() {
@@ -260,10 +274,10 @@ class FindUserShellComponentTest {
 }
 ```
 
-### Phase 2: Building the Framework Shell
+### Phase 2: Building the Shell (Example: Spring Boot)
 
-#### Step 8: Implement Real Adapters
-With Phase 1 complete and the core logic verified, safely cross the boundary to implement production-grade infrastructure (`Tech / Vendor / Framework` specific adapters).
+#### Step 8: Implement Production Adapters
+With Phase 1 complete and the core logic verified, build a technology-specific adapter class for each I/O contract discovered in Phase 1.
 
 ```java
 @Component
@@ -366,8 +380,8 @@ public class KafkaUserNotificationMessenger extends UserNotificationMessenger
 }
 ```
 
-#### Step 9: Expose via Framework Web Layers
-Assemble the final application entry points by injecting the specific Spring `@Component` adapters into the Framework Shell Web Layer.
+#### Step 9: Expose via Entry Points
+Wire the production adapters into the appropriate entry point for your Shell. The exact mechanism depends on the chosen framework. In this Spring Boot example, a `@RestController` is used, with an intermediate `@Service` layer to support `@Transactional`. If no cross-cutting concerns are required, the `DefaultFindUserUseCase` can be wired directly into the entry point without a dedicated Service class. Other Shell implementations (e.g., Quarkus, CLI runners, message consumers, AI MCP servers) will differ in their wiring approach, but the Use Case core remains unchanged.
 
 ```java
 @Service
@@ -375,7 +389,6 @@ Assemble the final application entry points by injecting the specific Spring `@C
 public class FindUserService {
     private final FindUserUseCase findUserUseCase;
 
-    // We inject actual Use Case instances and provide the real framework components
     @Autowired
     public FindUserService(LexisNexisFindUserClient client, 
                            JdbcSaveUserRepository repo, 
@@ -419,6 +432,7 @@ Strict predictable boundaries are enforced entirely by stringent naming conventi
 | **Module** | Use Case | `{project}-{action}-{resource}-usecase` | `hermi-find-user-usecase` |
 | **Package** | Use Case | `{org}.{resource}.{action}.usecase` | `org.hermi.user.find.usecase` |
 | **Use Case** | Use Case | `{Action}{Resource}UseCase` | `FindUserUseCase` |
+| **Implementation** | Use Case | `Default{Action}{Resource}UseCase` | `DefaultFindUserUseCase` |
 | **I/O Contract** | Use Case | `{Action}{Resource}{Type}` | `FindUserClient`, `SaveUserRepository` |
 | **Adapter (Test)** | Use Case | `{Local/InMemory}{Action}{Resource}{Type}` | `InMemorySaveUserRepository` |
 | **Adapter (Prod)**| Shell | `{Tech/Vendor}{Action}{Resource}{Type}` | `JdbcSaveUserRepository` |
@@ -463,7 +477,7 @@ hermi-user (Parent)
 │   │   ├── SaveUserRepository.java                 (I/O Contract)
 │   │   └── UserNotificationMessenger.java          (I/O Contract)
 │   └── src/test/java/org/hermi/user/find/shell
-│       ├── FindUserUseCaseTest.java                (JUnit Test)
+│       ├── FindUserUseCaseComponentTest.java       (Test Harness)
 │       ├── LocalFindUserClient.java                (Test Adapter)
 │       ├── InMemorySaveUserRepository.java         (Test Adapter)
 │       └── ConsoleUserNotificationMessenger.java   (Test Adapter)
