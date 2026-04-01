@@ -24,7 +24,7 @@ By enforcing a strict boundary between business logic and infrastructure, the He
 - **Business First**: The Use Case (Phase 1) must be fully functional using only plain Java and in-memory/console adapters before any Phase 2 infrastructure is written.
 - **Just-In-Time (JIT) Contracts**: I/O contracts (`Client`, `Repository`, `Messenger`) are defined *exactly* when the business logic requires them, rather than attempting to guess external dependencies upfront.
 - **No Mocks**: Verification uses stateful, technology-agnostic "Test Shells" (e.g., `InMemoryRepository`), rather than fragile mocking frameworks like Mockito.
-- **Scoped Models**: Domain models are local to the use case package and are not shared globally. This prevents the emergence of fragile "God-classes".
+- **Scoped Models**: Domain models are local to the use case package and are never shared globally. While this introduces intentional duplication (trading DRY for isolation), it guarantees independent evolvability and prevents the emergence of fragile "God-classes" where modifying a shared entity breaks unrelated features.
 
 ---
 
@@ -89,6 +89,9 @@ Everything starts with defining the exact input (`Command`) and output (`Result`
 
 > [!WARNING]
 > Data entering the Use Case boundary **MUST** implement the `Validatable` interface.
+
+> [!NOTE]
+> This is not just a marker. The framework's base `execute()` method automatically invokes validation on any `Validatable` input before ever delegating to your `doExecute()` core logic. Your business logic is guaranteed to receive safe data.
 
 ```java
 public abstract class FindUserUseCase extends UseCase<FindUserUseCase.Command, FindUserUseCase.Result> {
@@ -160,6 +163,9 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
     }
 }
 ```
+
+> [!NOTE]
+> **Why `.send(Command)`?** Notice that the framework abstracts all I/O interactions into a universal `Result send(Command)` signature, rather than traditional DAO methods like `save()` or `findById()`. Because Hermi strictly enforces Interface Segregation (one contract class per action), the method name no longer needs to describe the action — the class name already does (`FindUserClient`). This universal Command Pattern signature makes it trivial to apply cross-cutting middleware (like retries, circuit breakers, or logging) to all boundary-crossing calls.
 
 #### Step 5: Just-In-Time Discovery (Saving the User)
 When the logic requires data persistence, define a repository contract.
@@ -243,10 +249,10 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
 ```
 
 #### Step 7: Verify with the Test Shell
-With the orchestration complete, verify all boundary and edge cases within the test suite.
+With the orchestration complete, verify all boundary and edge cases within the test suite. Unlike mocking frameworks which couple tests to implementation details, state-backed test adapters prove your logic handles real-world state transitions.
 
 > [!TIP]
-> Implement local abstractions (e.g., in-memory repositories or console messengers) to verify logic flows independently of external systems.
+> Maintaining local abstractions (e.g., in-memory repositories) for every use case can feel heavy. The `hermi-shell` project provides pre-built, reusable test adapters and utilities to significantly reduce this boilerplate.
 
 ```java
 class InMemorySaveUserRepository extends SaveUserRepository { ... }
