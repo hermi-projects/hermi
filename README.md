@@ -89,8 +89,9 @@ Everything starts with defining the exact input (`Command`) and output (`Result`
 
 > [!WARNING]
 > Data entering the Use Case boundary **MUST** implement the `Validatable` interface.
+
 > [!NOTE]
-> This is not just a marker. The framework's base `execute()` method automatically invokes validation on any `Validatable` input before ever delegating to your `doExecute()` core logic. Your business logic is guaranteed to receive safe data.
+> `Validatable` is not just a marker. The framework's base `execute()` method automatically invokes validation on any `Validatable` input before ever delegating to your `doExecute()` core logic. Your business logic is guaranteed to receive safe data.
 
 ```java
 public abstract class FindUserUseCase extends UseCase<FindUserUseCase.Command, FindUserUseCase.Result> {
