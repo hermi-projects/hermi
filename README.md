@@ -156,7 +156,7 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
     @Override
     protected Output doExecute(Input input) {
         // 1. Fetch user data via the client contract
-        var apiOutput = findUserClient.send(new FindUserClient.Input(input.ssn()));
+        var apiOutput = findUserClient.call(new FindUserClient.Input(input.ssn()));
         var user = new User(input.ssn(), apiOutput.name(), apiOutput.email());
         
         return new Output(user.name(), user.email());
@@ -189,7 +189,7 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
 
     @Override
     protected Output doExecute(Input input) {
-        var apiOutput = findUserClient.send(new FindUserClient.Input(input.ssn()));
+        var apiOutput = findUserClient.call(new FindUserClient.Input(input.ssn()));
         var user = new User(input.ssn(), apiOutput.name(), apiOutput.email());
         
         // 2. Save the user via the repository contract
@@ -230,7 +230,7 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
     @Override
     protected Output doExecute(Input input) {
         // 1. Fetch user data
-        var apiOutput = findUserClient.send(new FindUserClient.Input(input.ssn()));
+        var apiOutput = findUserClient.call(new FindUserClient.Input(input.ssn()));
         var user = new User(input.ssn(), apiOutput.name(), apiOutput.email());
         
         // 2. Save user
@@ -279,7 +279,7 @@ class LocalFindUserClient extends FindUserClient {
     public void setOutput(Output output) { this.output = output; }
 
     @Override
-    protected Output doSend(Input input) {
+    protected Output doCall(Input input) {
         return output;
     }
 }
@@ -326,7 +326,7 @@ public class LexisNexisFindUserClient extends FindUserClient
   private RestTemplate restTemplate;
 
   @Override
-  protected Output doSend(Input input) {
+  protected Output doCall(Input input) {
     ApiRequest apiRequest = convertInput(input);
     ApiResponse apiResponse = process(apiRequest);
     return convertOutput(apiResponse);

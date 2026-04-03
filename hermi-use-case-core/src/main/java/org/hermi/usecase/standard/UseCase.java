@@ -52,7 +52,7 @@ public abstract class UseCase<I extends Validatable, O> extends Executor<I, O> {
    *   @Override
    *   protected Output doExecute(Input input) {
    *     // 1. Fetch user data via the client contract
-   *     FindUserClient.Output apiResult = findUserClient.send(new FindUserClient.Input(input.ssn()));
+   *     FindUserClient.Output apiResult = findUserClient.call(new FindUserClient.Input(input.ssn()));
    *     User user = new User(input.ssn(), apiResult.name(), apiResult.email());
    *
    *     // 2. Save the user via the repository contract

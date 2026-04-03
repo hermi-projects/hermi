@@ -15,7 +15,7 @@ import org.hermi.usecase.commons.validation.Validatable;
  */
 public abstract class Client<I, O extends Validatable> extends Executor<I, O> {
   /**
-   * Sends the client request to an external system and returns the response.
+   * Calls the external system with the client request and returns the response.
    *
    * <ul>
    *   <li><b>Use Case Layer (Phase 1)</b>: Defines the contract by extending this class and
@@ -46,7 +46,7 @@ public abstract class Client<I, O extends Validatable> extends Executor<I, O> {
    *   private final RestTemplate restTemplate;
    *
    *   @Override
-   *   protected Output doSend(Input input) {
+   *   protected Output doCall(Input input) {
    *     ApiRequest apiRequest = convertInput(input);
    *     ApiResponse apiResponse = process(apiRequest);
    *     return convertOutput(apiResponse);
@@ -72,26 +72,26 @@ public abstract class Client<I, O extends Validatable> extends Executor<I, O> {
    * @param input the client request input
    * @return the client response output
    */
-  protected abstract O doSend(I input);
+  protected abstract O doCall(I input);
 
-  public O send(I input) {
+  public O call(I input) {
     return run(input);
   }
 
-  public O send(Convertible<I> convertibleInput) {
+  public O call(Convertible<I> convertibleInput) {
     Objects.requireNonNull(
         convertibleInput, getSimpleClassName() + ", convertible input cannot be null");
-    return send(convertibleInput.convert());
+    return call(convertibleInput.convert());
   }
 
-  public <S> O send(S source, Converter<S, I> converter) {
+  public <S> O call(S source, Converter<S, I> converter) {
     Objects.requireNonNull(source, getSimpleClassName() + ", source cannot be null");
     Objects.requireNonNull(converter, getSimpleClassName() + ", converter cannot be null");
-    return send(converter.convert(source));
+    return call(converter.convert(source));
   }
 
   @Override
   protected O doRun(I input) {
-    return doSend(input);
+    return doCall(input);
   }
 }
