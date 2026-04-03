@@ -59,7 +59,7 @@ This is not a stylistic preference. It is a disciplined response to a well-known
 Phase 1 is about Discovery and Verification. It answers _"What"_ the system does — all business rules, workflow orchestration, and domain models — proven correct using exclusively pure Java:
 1. **Establish the Boundary**: Define your `UseCase` contract (`Input` and `Output`).
 2. **Initialize Core Implementation**: Create a skeletal `DefaultUseCase` class.
-3. **The Test Harness**: Build a minimal test execution harness as a "Play Button" for continuous, instant execution and debugging during development.
+3. **The Test Shell**: Build a minimal test execution shell as a "Play Button" for continuous, instant execution and debugging during development.
 4. **JIT I/O Discovery**: Write logic; define I/O contracts the moment you need a specific behavior, categorizing them strictly by architectural intent:
    - **`Client` (Inbound / Exchange)**: Retrieves external data or performs transactional external actions (e.g., 3rd-party APIs, RPCs).
    - **`Repository` (State Persistence)**: Manages the application's own persistent state (e.g., SQL, NoSQL, Caching).
@@ -120,10 +120,10 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
 Establish the execution harness to enable continuous execution and debugging during development.
 
 ```java
-@DisplayName("Find User Use Case: Execution Harness")
-class FindUserUseCaseComponentTest {
+@DisplayName("Find User Use Case: Test Shell")
+class FindUserUseCaseTestShell {
     @Test
-    void debug_run() {
+    void main() {
         var useCase = new DefaultFindUserUseCase();
         
         // Execute this test iteratively to verify the logic
@@ -285,13 +285,23 @@ class LocalFindUserClient extends FindUserClient {
 }
 ```
 ```java
-@DisplayName("Find User Use Case Shell")
-class FindUserUseCaseComponentTest {
+@DisplayName("Find User Use Case Test Shell")
+class FindUserUseCaseTestShell {
+    @Test
+    void main() {
+        var client = new LocalFindUserClient(); 
+        var repo = new InMemorySaveUserRepository();
+        var messenger = new ConsoleNotificationMessenger();
+        var useCase = new DefaultFindUserUseCase(client, repo, messenger);
+        var result = useCase.execute(new FindUserUseCase.Input("123-45-6789"));
+        assertTrue(result != null);
+    }
+
     @Test
     @DisplayName("Phase 1 Gate: Edge Case Verification - User Not Found")
     void shouldHandleUserNotFound() {
         // Setup local stubs/state simulators
-        var client = new LocalFindUserClient().simulateNotFound(); 
+        var client = new LocalFindUserClient(); 
         var repo = new InMemorySaveUserRepository();
         var messenger = new ConsoleNotificationMessenger();
     
@@ -483,6 +493,7 @@ Strict predictable boundaries are enforced entirely by stringent naming conventi
 | **Use Case** | Use Case | `{Action}{Resource}UseCase` | `FindUserUseCase` |
 | **Implementation** | Use Case | `Default{Action}{Resource}UseCase` | `DefaultFindUserUseCase` |
 | **I/O Contract** | Use Case | `{Action}{Resource}{Type}` | `FindUserClient`, `SaveUserRepository` |
+| **Test Shell** | Use Case | `{Action}UseCaseTestShell` | `FindUserUseCaseTestShell` |
 | **Adapter (Test)** | Use Case | `{Local/InMemory}{Action}{Resource}{Type}` | `InMemorySaveUserRepository` |
 | **Adapter (Prod)**| Shell | `{Tech/Vendor}{Action}{Resource}{Type}` | `JdbcSaveUserRepository` |
 | **Entry Point** | Shell | `{Action}{Resource}{Type}Shell` | `FindUserApiShell`, `FindUserKafkaConsumerShell` |
@@ -530,7 +541,7 @@ hermi-user (Parent)
 │   │   ├── SaveUserRepository.java                 (I/O Contract)
 │   │   └── UserNotificationMessenger.java          (I/O Contract)
 │   └── src/test/java/org/hermi/user/find/shell
-│       ├── FindUserUseCaseComponentTest.java       (Test Harness)
+│       ├── FindUserUseCaseTestShell.java           (Test Shell)
 │       ├── LocalFindUserClient.java                (Test Adapter)
 │       ├── InMemorySaveUserRepository.java         (Test Adapter)
 │       └── ConsoleUserNotificationMessenger.java   (Test Adapter)
