@@ -252,11 +252,37 @@ With the orchestration complete, verify all boundary and edge cases within the t
 > Maintaining local abstractions (e.g., in-memory repositories) for every use case can feel heavy. The `hermi-shell` project provides pre-built, reusable test adapters and utilities to significantly reduce this boilerplate.
 
 ```java
-class InMemorySaveUserRepository extends SaveUserRepository { ... }
+// 1. A stateful in-memory repository (Simple Implementation)
+class InMemorySaveUserRepository extends SaveUserRepository {
+    public final Map<String, String> db = new HashMap<>(); // Standard Java Map for state
+
+    @Override
+    protected Output doSend(Input input) {
+        db.put(input.email(), input.name());
+        return new Output("id-001");
+    }
+}
  
-class ConsoleNotificationMessenger extends UserNotificationMessenger { ... }
+// 2. A simple console-logging messenger
+class ConsoleNotificationMessenger extends UserNotificationMessenger {
+    @Override
+    protected Output doPublish(Input input) {
+        System.out.println("[Notification] To: " + input.email() + ", Msg: " + input.message());
+        return new Output("msg-123");
+    }
+}
  
-class LocalFindUserClient extends FindUserClient { ... }
+// 3. A programmable local client
+class LocalFindUserClient extends FindUserClient {
+    private Output output = new Output("John Doe", "john@example.com");
+
+    public void setOutput(Output output) { this.output = output; }
+
+    @Override
+    protected Output doSend(Input input) {
+        return output;
+    }
+}
 ```
 ```java
 @DisplayName("Find User Use Case Shell")
