@@ -435,17 +435,37 @@ public class FindUserService {
 ```java
 @RestController
 @RequestMapping("/users")
-public class FindUserController {
+public class FindUserApiShell {
     private final FindUserService findUserService;
 
     @Autowired
-    public FindUserController(FindUserService findUserService) {
+    public FindUserApiShell(FindUserService findUserService) {
         this.findUserService = findUserService;
     }
 
     @GetMapping
     public FindUserUseCase.Output findUser(@RequestBody FindUserUseCase.Input input) {
         return findUserService.findUser(input);
+    }
+}
+```
+
+Alternatively, for event-driven architectures, you can expose the Use Case via a message-driven entry point. In this example, a Spring `@KafkaListener` processes requests from an inbound topic by delegating to the `FindUserService`.
+
+```java
+@Component
+public class FindUserKafkaConsumerShell {
+    private final FindUserService findUserService;
+
+    @Autowired
+    public FindUserKafkaConsumerShell(FindUserService findUserService) {
+        this.findUserService = findUserService;
+    }
+
+    @KafkaListener(topics = "user.find.requests", groupId = "user-service-group")
+    public void consume(String ssn) {
+        FindUserUseCase.Input input = new FindUserUseCase.Input(ssn);
+        findUserService.findUser(input);
     }
 }
 ```
@@ -465,6 +485,7 @@ Strict predictable boundaries are enforced entirely by stringent naming conventi
 | **I/O Contract** | Use Case | `{Action}{Resource}{Type}` | `FindUserClient`, `SaveUserRepository` |
 | **Adapter (Test)** | Use Case | `{Local/InMemory}{Action}{Resource}{Type}` | `InMemorySaveUserRepository` |
 | **Adapter (Prod)**| Shell | `{Tech/Vendor}{Action}{Resource}{Type}` | `JdbcSaveUserRepository` |
+| **Entry Point** | Shell | `{Action}{Resource}{Type}Shell` | `FindUserApiShell`, `FindUserKafkaConsumerShell` |
 | **Shell Module**| Shell | `{project}-{framework}-{type}-shell` | `hermi-spring-rest-shell` |
 
 *(Type refers to `Client`, `Repository`, or `Messenger`)*
@@ -517,7 +538,8 @@ hermi-user (Parent)
 └── hermi-spring-api-shell (Phase 2 Layer: Framework)
     ├── pom.xml
     └── src/main/java/org/hermi/user/find/shell
-        ├── FindUserController.java                 (Spring RestController)
+        ├── FindUserApiShell.java                   (Spring RestController)
+        ├── FindUserKafkaConsumerShell.java         (Spring KafkaConsumer)
         ├── FindUserService.java                    (Spring Service)
         ├── LexisNexisFindUserClient.java           (Production Adapter)
         ├── JdbcSaveUserRepository.java             (Production Adapter)

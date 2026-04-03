@@ -89,11 +89,11 @@ public abstract class UseCase<I extends Validatable, O> extends Executor<I, O> {
    *
    * @RestController
    * @RequestMapping("/users")
-   * public class FindUserController {
+   * public class FindUserApiShell {
    *   private final FindUserService findUserService;
    *
    *   @Autowired
-   *   public FindUserController(FindUserService findUserService) {
+   *   public FindUserApiShell(FindUserService findUserService) {
    *     this.findUserService = findUserService;
    *   }
    *
