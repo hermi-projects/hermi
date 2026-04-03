@@ -5,26 +5,26 @@ import java.util.List;
 import org.hermi.usecase.commons.validation.Validatable;
 import org.hermi.usecase.standard.UseCase;
 
-public abstract class DispatcherUseCase<C extends Validatable, R> extends UseCase<C, R> {
-  private final List<Handler<C, R>> handlers;
+public abstract class DispatcherUseCase<I extends Validatable, O> extends UseCase<I, O> {
+  private final List<Handler<I, O>> handlers;
 
   @SuppressWarnings("unchecked")
-  public DispatcherUseCase(Handler<C, R>... handlers) {
+  public DispatcherUseCase(Handler<I, O>... handlers) {
     this(List.of(handlers));
   }
 
-  public DispatcherUseCase(List<Handler<C, R>> handlers) {
+  public DispatcherUseCase(List<Handler<I, O>> handlers) {
     this.handlers = new ArrayList<>();
     this.handlers.addAll(handlers);
   }
 
-  public void register(Handler<C, R> handler) {
+  public void register(Handler<I, O> handler) {
     this.handlers.add(handler);
   }
 
   @Override
-  public R doExecute(C input) {
-    for (Handler<C, R> handler : handlers) {
+  public O doExecute(I input) {
+    for (Handler<I, O> handler : handlers) {
       if (handler.support(input)) {
         return handler.execute(input);
       }

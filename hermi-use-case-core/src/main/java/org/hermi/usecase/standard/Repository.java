@@ -10,17 +10,17 @@ import org.hermi.usecase.commons.validation.Validatable;
  * An abstract class representing a repository for data access, including database, file system,
  * memory, etc.
  *
- * @param <C> the type of the command
- * @param <R> the type of the response
+ * @param <I> the type of the input
+ * @param <O> the type of the output
  */
-public abstract class Repository<C, R extends Validatable> extends Executor<C, R> {
+public abstract class Repository<I, O extends Validatable> extends Executor<I, O> {
 
   /**
    * Saves the repository request to an external data source and returns the response.
    *
    * <ul>
    *   <li><b>Use Case Layer (Phase 1)</b>: Defines the contract by extending this class and
-   *       specifying the command type {@code C} and result type {@code R}. Only the Result (which
+   *       specifying the input type {@code I} and output type {@code O}. Only the Output (which
    *       returns to the Use Case) typically implements {@link
    *       org.hermi.usecase.commons.validation.Validatable Validatable}.
    *   <li><b>Shell Layer (Phase 2)</b>: Implements the real-world data access logic using specific
@@ -30,9 +30,9 @@ public abstract class Repository<C, R extends Validatable> extends Executor<C, R
    * <p>Example SaveUserRepository Contract in Use Case (Phase 1):
    *
    * <pre>{@code
-   * public abstract class SaveUserRepository extends Repository<SaveUserRepository.Command, SaveUserRepository.Result> {
-   *   public static record Command(String name, String email) {}
-   *   public static record Result(String id) implements Validatable {}
+   * public abstract class SaveUserRepository extends Repository<SaveUserRepository.Input, SaveUserRepository.Output> {
+   *   public static record Input(String name, String email) {}
+   *   public static record Output(String id) implements Validatable {}
    * }
    * }</pre>
    *
@@ -41,20 +41,20 @@ public abstract class Repository<C, R extends Validatable> extends Executor<C, R
    * <pre>{@code
    * @Component
    * public class JpaSaveUserRepository extends SaveUserRepository
-   *     implements RepositoryAdapter<UserEntity, UserEntity, SaveUserRepository.Command, SaveUserRepository.Result> {
+   *     implements RepositoryAdapter<UserEntity, UserEntity, SaveUserRepository.Input, SaveUserRepository.Output> {
    *
    *   private final UserJpaRepository jpaRepository;
    *
    *   @Override
-   *   protected Result doSend(Command command) {
-   *     UserEntity entity = convertCommand(command);
+   *   protected Output doSend(Input input) {
+   *     UserEntity entity = convertInput(input);
    *     UserEntity savedEntity = process(entity);
-   *     return convertResult(savedEntity);
+   *     return convertOutput(savedEntity);
    *   }
    *
    *   @Override
-   *   public UserEntity convertCommand(Command command) {
-   *     return new UserEntity(command.name(), command.email());
+   *   public UserEntity convertInput(Input input) {
+   *     return new UserEntity(input.name(), input.email());
    *   }
    *
    *   @Override
@@ -63,35 +63,35 @@ public abstract class Repository<C, R extends Validatable> extends Executor<C, R
    *   }
    *
    *   @Override
-   *   public Result convertResult(UserEntity entity) {
-   *     return new Result(entity.getId());
+   *   public Output convertOutput(UserEntity entity) {
+   *     return new Output(entity.getId());
    *   }
    * }
    * }</pre>
    *
-   * @param command the repository request command
-   * @return the repository response result
+   * @param input the repository request input
+   * @return the repository response output
    */
-  protected abstract R doSend(C command);
+  protected abstract O doSend(I input);
 
-  public R send(C command) {
-    return run(command);
+  public O send(I input) {
+    return run(input);
   }
 
-  public R send(Convertible<C> convertibleCommand) {
+  public O send(Convertible<I> convertibleInput) {
     Objects.requireNonNull(
-        convertibleCommand, getSimpleClassName() + ", convertible command cannot be null");
-    return send(convertibleCommand.convert());
+        convertibleInput, getSimpleClassName() + ", convertible input cannot be null");
+    return send(convertibleInput.convert());
   }
 
-  public <S> R send(S source, Converter<S, C> converter) {
+  public <S> O send(S source, Converter<S, I> converter) {
     Objects.requireNonNull(source, getSimpleClassName() + ", source cannot be null");
     Objects.requireNonNull(converter, getSimpleClassName() + ", converter cannot be null");
     return send(converter.convert(source));
   }
 
   @Override
-  protected R doRun(C command) {
-    return doSend(command);
+  protected O doRun(I input) {
+    return doSend(input);
   }
 }

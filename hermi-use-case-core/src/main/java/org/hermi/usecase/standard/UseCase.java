@@ -9,19 +9,18 @@ import org.hermi.usecase.commons.validation.Validatable;
 /**
  * An abstract class representing a business use case.
  *
- * @param <C> the type of the command
- * @param <R> the type of the response
+ * @param <I> the type of the input
+ * @param <O> the type of the output
  */
-public abstract class UseCase<C extends Validatable, R> extends Executor<C, R> {
+public abstract class UseCase<I extends Validatable, O> extends Executor<I, O> {
 
   /**
    * Executes the business logic of the use case.
    *
    * <ul>
-   *   <li><b>Use Case Layer (Phase 1)</b>: Defines the boundary (Command/Result) and establishes
-   *       the core business logic. Discovers and defines I/O contracts (Client, Repository,
-   *       Messenger) Just-In-Time as needed. Verification uses stateful, technology-agnostic test
-   *       shells.
+   *   <li><b>Use Case Layer (Phase 1)</b>: Defines the boundary (Input/Output) and establishes the
+   *       core business logic. Discovers and defines I/O contracts (Client, Repository, Messenger)
+   *       Just-In-Time as needed. Verification uses stateful, technology-agnostic test shells.
    *   <li><b>Shell Layer (Phase 2)</b>: Orchestrates the execution by injecting production-grade
    *       infrastructure adapters (e.g., from a Spring Web Layer) into the Use Case.
    * </ul>
@@ -29,9 +28,9 @@ public abstract class UseCase<C extends Validatable, R> extends Executor<C, R> {
    * <p>Example FindUserUseCase Contract & Core Logic (Phase 1):
    *
    * <pre>{@code
-   * public abstract class FindUserUseCase extends UseCase<FindUserUseCase.Command, FindUserUseCase.Result> {
-   *   public record Command(@NotNull @NotBlank String ssn) implements Validatable {}
-   *   public record Result(String name, String email) {}
+   * public abstract class FindUserUseCase extends UseCase<FindUserUseCase.Input, FindUserUseCase.Output> {
+   *   public record Input(@NotNull @NotBlank String ssn) implements Validatable {}
+   *   public record Output(String name, String email) {}
    * }
    *
    * public record User(String ssn, String name, String email) {}
@@ -51,18 +50,18 @@ public abstract class UseCase<C extends Validatable, R> extends Executor<C, R> {
    *   }
    *
    *   @Override
-   *   protected Result doExecute(Command command) {
+   *   protected Output doExecute(Input input) {
    *     // 1. Fetch user data via the client contract
-   *     FindUserClient.Result apiResult = findUserClient.send(new FindUserClient.Command(command.ssn()));
-   *     User user = new User(command.ssn(), apiResult.name(), apiResult.email());
+   *     FindUserClient.Output apiResult = findUserClient.send(new FindUserClient.Input(input.ssn()));
+   *     User user = new User(input.ssn(), apiResult.name(), apiResult.email());
    *
    *     // 2. Save the user via the repository contract
-   *     saveUserRepository.send(new SaveUserRepository.Command(user.name(), user.email()));
+   *     saveUserRepository.send(new SaveUserRepository.Input(user.name(), user.email()));
    *
    *     // 3. Send notification
-   *     messenger.send(new UserNotificationMessenger.Command(user.email(), "User found: " + user.name()));
+   *     messenger.send(new UserNotificationMessenger.Input(user.email(), "User found: " + user.name()));
    *
-   *     return new Result(user.name(), user.email());
+   *     return new Output(user.name(), user.email());
    *   }
    * }
    * }</pre>
@@ -83,8 +82,8 @@ public abstract class UseCase<C extends Validatable, R> extends Executor<C, R> {
    *     this.findUserUseCase = new DefaultFindUserUseCase(client, repo, messenger);
    *   }
    *
-   *   public FindUserUseCase.Result findUser(FindUserUseCase.Command command) {
-   *     return findUserUseCase.execute(command);
+   *   public FindUserUseCase.Output findUser(FindUserUseCase.Input input) {
+   *     return findUserUseCase.execute(input);
    *   }
    * }
    *
@@ -99,34 +98,34 @@ public abstract class UseCase<C extends Validatable, R> extends Executor<C, R> {
    *   }
    *
    *   @GetMapping
-   *   public FindUserUseCase.Result findUser(@RequestBody FindUserUseCase.Command command) {
-   *     return findUserService.findUser(command);
+   *   public FindUserUseCase.Output findUser(@RequestBody FindUserUseCase.Input input) {
+   *     return findUserService.findUser(input);
    *   }
    * }
    * }</pre>
    *
-   * @param command the use case command
-   * @return the use case result
+   * @param input the use case input
+   * @return the use case output
    */
-  protected abstract R doExecute(C command);
+  protected abstract O doExecute(I input);
 
-  public R execute(C command) {
-    return run(command);
+  public O execute(I input) {
+    return run(input);
   }
 
-  public R execute(Convertible<C> command) {
-    Objects.requireNonNull(command, getSimpleClassName() + ", convertible command cannot be null");
-    return execute(command.convert());
+  public O execute(Convertible<I> input) {
+    Objects.requireNonNull(input, getSimpleClassName() + ", convertible input cannot be null");
+    return execute(input.convert());
   }
 
-  public <S> R execute(S source, Converter<S, C> converter) {
+  public <S> O execute(S source, Converter<S, I> converter) {
     Objects.requireNonNull(source, getSimpleClassName() + ", source cannot be null");
     Objects.requireNonNull(converter, getSimpleClassName() + ", converter cannot be null");
     return execute(converter.convert(source));
   }
 
   @Override
-  protected R doRun(C command) {
-    return doExecute(command);
+  protected O doRun(I input) {
+    return doExecute(input);
   }
 }
