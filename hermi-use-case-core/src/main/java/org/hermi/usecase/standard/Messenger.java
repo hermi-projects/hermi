@@ -48,7 +48,7 @@ public abstract class Messenger<I, O extends Validatable> extends Executor<I, O>
    *   private final KafkaTemplate<String, String> kafkaTemplate;
    *
    *   @Override
-   *   protected Output doSend(Input input) {
+   *   protected Output doPublish(Input input) {
    *     ProducerRecord<String, String> record = convertInput(input);
    *     RecordMetadata metadata = process(record);
    *     return convertOutput(metadata);

@@ -29,8 +29,8 @@ public abstract class UseCase<I extends Validatable, O> extends Executor<I, O> {
    *
    * <pre>{@code
    * public abstract class FindUserUseCase extends UseCase<FindUserUseCase.Input, FindUserUseCase.Output> {
-   *   public record Input(@NotNull @NotBlank String ssn) implements Validatable {}
-   *   public record Output(String name, String email) {}
+   *   public static record Input(@NotNull @NotBlank String ssn) implements Validatable {}
+   *   public static record Output(String name, String email) {}
    * }
    *
    * public record User(String ssn, String name, String email) {}
@@ -59,7 +59,7 @@ public abstract class UseCase<I extends Validatable, O> extends Executor<I, O> {
    *     saveUserRepository.send(new SaveUserRepository.Input(user.name(), user.email()));
    *
    *     // 3. Send notification
-   *     messenger.send(new UserNotificationMessenger.Input(user.email(), "User found: " + user.name()));
+   *     messenger.publish(new UserNotificationMessenger.Input(user.email(), "User found: " + user.name()));
    *
    *     return new Output(user.name(), user.email());
    *   }
