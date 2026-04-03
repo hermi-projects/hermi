@@ -57,7 +57,7 @@ This is not a stylistic preference. It is a disciplined response to a well-known
 
 ### Phase 1: The Core Logic Lifecycle (The Brain)
 Phase 1 is about Discovery and Verification. It answers _"What"_ the system does — all business rules, workflow orchestration, and domain models — proven correct using exclusively pure Java:
-1. **Establish the Boundary**: Define your `UseCase` contract (`Command` and `Result`).
+1. **Establish the Boundary**: Define your `UseCase` contract (`Input` and `Output`).
 2. **Initialize Core Implementation**: Create a skeletal `DefaultUseCase` class.
 3. **The Test Harness**: Build a minimal test execution harness as a "Play Button" for continuous, instant execution and debugging during development.
 4. **JIT I/O Discovery**: Write logic; define I/O contracts the moment you need a specific behavior, categorizing them strictly by architectural intent:
@@ -85,7 +85,7 @@ The following tutorial demonstrates the implementation of a Use Case step-by-ste
 ### Phase 1: Use Case (The Core)
 
 #### Step 1: Establish the Boundary
-Everything starts with defining the exact input (`Command`) and output (`Result`) representing the Use Case.
+Everything starts with defining the exact input (`Input`) and output (`Output`) representing the Use Case.
 
 > [!WARNING]
 > Data entering the Use Case boundary **MUST** implement the `Validatable` interface.
@@ -94,9 +94,9 @@ Everything starts with defining the exact input (`Command`) and output (`Result`
 > `Validatable` is not just a marker. The framework's base `execute()` method automatically invokes validation on any `Validatable` input before ever delegating to your `doExecute()` core logic. Your business logic is guaranteed to receive safe data.
 
 ```java
-public abstract class FindUserUseCase extends UseCase<FindUserUseCase.Command, FindUserUseCase.Result> {
-    public record Command(@NotNull @NotBlank String ssn) implements Validatable {}
-    public record Result(String name, String email) {}
+public abstract class FindUserUseCase extends UseCase<FindUserUseCase.Input, FindUserUseCase.Output> {
+    public static record Input(@NotNull @NotBlank String ssn) implements Validatable {}
+    public static record Output(String name, String email) {}
 }
 ```
 
@@ -109,9 +109,9 @@ public record User(String ssn, String name, String email) {}
 
 public class DefaultFindUserUseCase extends FindUserUseCase {
     @Override
-    protected Result doExecute(Command command) {
+    protected Output doExecute(Input input) {
         // Business logic goes here
-        return new Result(null, null);
+        return new Output(null, null);
     }
 }
 ```
@@ -127,7 +127,7 @@ class FindUserUseCaseComponentTest {
         var useCase = new DefaultFindUserUseCase();
         
         // Execute this test iteratively to verify the logic
-        var result = useCase.execute(new FindUserUseCase.Command("123-456-789"));
+        var output = useCase.execute(new FindUserUseCase.Input("123-456-789"));
     }
 }
 ```
@@ -137,9 +137,9 @@ When the core logic requires external data retrieval, do not implement a protoco
 
 ```java
 // Define the required client contract:
-public abstract class FindUserClient extends Client<FindUserClient.Command, FindUserClient.Result> {
-    public record Command(String ssn) {}
-    public record Result(String name, String email) implements Validatable {}
+public abstract class FindUserClient extends Client<FindUserClient.Input, FindUserClient.Output> {
+    public record Input(String ssn) {}
+    public record Output(String name, String email) implements Validatable {}
 }
 ```
 
@@ -154,12 +154,12 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
     }
 
     @Override
-    protected Result doExecute(Command command) {
+    protected Output doExecute(Input input) {
         // 1. Fetch user data via the client contract
-        var apiResult = findUserClient.send(new FindUserClient.Command(command.ssn()));
-        var user = new User(command.ssn(), apiResult.name(), apiResult.email());
+        var apiOutput = findUserClient.send(new FindUserClient.Input(input.ssn()));
+        var user = new User(input.ssn(), apiOutput.name(), apiOutput.email());
         
-        return new Result(user.name(), user.email());
+        return new Output(user.name(), user.email());
     }
 }
 ```
@@ -169,9 +169,9 @@ When the logic requires data persistence, define a repository contract.
 
 ```java
 // Define the required repository contract:
-public abstract class SaveUserRepository extends Repository<SaveUserRepository.Command, SaveUserRepository.Result> {
-    public record Command(String name, String email) {}
-    public record Result(String id) implements Validatable {}
+public abstract class SaveUserRepository extends Repository<SaveUserRepository.Input, SaveUserRepository.Output> {
+    public record Input(String name, String email) {}
+    public record Output(String id) implements Validatable {}
 }
 ```
 
@@ -188,14 +188,14 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
     }
 
     @Override
-    protected Result doExecute(Command command) {
-        var apiResult = findUserClient.send(new FindUserClient.Command(command.ssn()));
-        var user = new User(command.ssn(), apiResult.name(), apiResult.email());
+    protected Output doExecute(Input input) {
+        var apiOutput = findUserClient.send(new FindUserClient.Input(input.ssn()));
+        var user = new User(input.ssn(), apiOutput.name(), apiOutput.email());
         
         // 2. Save the user via the repository contract
-        saveUserRepository.send(new SaveUserRepository.Command(user.name(), user.email()));
+        saveUserRepository.send(new SaveUserRepository.Input(user.name(), user.email()));
         
-        return new Result(user.name(), user.email());
+        return new Output(user.name(), user.email());
     }
 }
 ```
@@ -205,9 +205,9 @@ If an outbound event is required upon completion, define a messenger contract an
 
 ```java
 // Define the required messenger contract:
-public abstract class UserNotificationMessenger extends Messenger<UserNotificationMessenger.Command, UserNotificationMessenger.Result> {
-    public record Command(String email, String message) {}
-    public record Result(String messageId) implements Validatable {}
+public abstract class UserNotificationMessenger extends Messenger<UserNotificationMessenger.Input, UserNotificationMessenger.Output> {
+    public record Input(String email, String message) {}
+    public record Output(String messageId) implements Validatable {}
 }
 ```
 
@@ -228,25 +228,22 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
     }
 
     @Override
-    protected Result doExecute(Command command) {
+    protected Output doExecute(Input input) {
         // 1. Fetch user data
-        var apiResult = findUserClient.send(new FindUserClient.Command(command.ssn()));
-        var user = new User(command.ssn(), apiResult.name(), apiResult.email());
+        var apiOutput = findUserClient.send(new FindUserClient.Input(input.ssn()));
+        var user = new User(input.ssn(), apiOutput.name(), apiOutput.email());
         
         // 2. Save user
-        saveUserRepository.send(new SaveUserRepository.Command(user.name(), user.email()));
+        saveUserRepository.send(new SaveUserRepository.Input(user.name(), user.email()));
         
         // 3. Send notification
-        var notificationCommand = new UserNotificationMessenger.Command(user.email(), "User found: " + user.name());
-        messenger.send(notificationCommand);
+        var notificationInput = new UserNotificationMessenger.Input(user.email(), "User found: " + user.name());
+        messenger.publish(notificationInput);
         
-        return new Result(user.name(), user.email());
+        return new Output(user.name(), user.email());
     }
 }
 ```
-
-> [!NOTE]
-> **Why `.send(Command)`?** Notice that the framework abstracts all I/O interactions into a universal `Result send(Command)` signature, rather than traditional DAO methods like `save()` or `findById()`. Because Hermi strictly enforces Interface Segregation (one contract class per action), the method name no longer needs to describe the action — the class name already does (`FindUserClient`). This universal Command Pattern signature makes it trivial to apply cross-cutting middleware (like retries, circuit breakers, or logging) to all boundary-crossing calls.
 
 #### Step 7: Verify with the Test Shell
 With the orchestration complete, verify all boundary and edge cases within the test suite. Unlike mocking frameworks which couple tests to implementation details, state-backed test adapters prove your logic handles real-world state transitions.
@@ -275,7 +272,7 @@ class FindUserUseCaseComponentTest {
         var useCase = new DefaultFindUserUseCase(client, repo, messenger);
         
         // Assert logic holds up on error states
-        assertThrows(UserNotFoundException.class, () -> useCase.execute(new FindUserUseCase.Command("999-00-9999")));
+        assertThrows(UserNotFoundException.class, () -> useCase.execute(new FindUserUseCase.Input("999-00-9999")));
     }
 }
 ```
@@ -288,20 +285,20 @@ With Phase 1 complete and the core logic verified, build a technology-specific a
 ```java
 @Component
 public class LexisNexisFindUserClient extends FindUserClient
-    implements ClientAdapter<ApiRequest, ApiResponse, FindUserClient.Command, FindUserClient.Result> {
+    implements ClientAdapter<ApiRequest, ApiResponse, FindUserClient.Input, FindUserClient.Output> {
 
   private RestTemplate restTemplate;
 
   @Override
-  protected Result doSend(Command command) {
-    ApiRequest apiRequest = convertCommand(command);
+  protected Output doSend(Input input) {
+    ApiRequest apiRequest = convertInput(input);
     ApiResponse apiResponse = process(apiRequest);
-    return convertResult(apiResponse);
+    return convertOutput(apiResponse);
   }
 
   @Override
-  public ApiRequest convertCommand(Command command) {
-    return new ApiRequest(command.ssn());
+  public ApiRequest convertInput(Input input) {
+    return new ApiRequest(input.ssn());
   }
 
   @Override
@@ -310,14 +307,14 @@ public class LexisNexisFindUserClient extends FindUserClient
   }
 
   @Override
-  public Result convertResult(ApiResponse output) {
-    return new Result(output.getName(), output.getEmail());
+  public Output convertOutput(ApiResponse output) {
+    return new Output(output.getName(), output.getEmail());
   }
 }
 
 @Component
 public class JdbcSaveUserRepository extends SaveUserRepository
-    implements RepositoryAdapter<UserEntity, UserEntity, SaveUserRepository.Command, SaveUserRepository.Result> {
+    implements RepositoryAdapter<UserEntity, UserEntity, SaveUserRepository.Input, SaveUserRepository.Output> {
 
   private final UserJpaRepository jpaRepository;
 
@@ -326,15 +323,15 @@ public class JdbcSaveUserRepository extends SaveUserRepository
   }
 
   @Override
-  protected Result doSend(Command command) {
-    UserEntity entity = convertCommand(command);
+  protected Output doSend(Input input) {
+    UserEntity entity = convertInput(input);
     UserEntity savedEntity = process(entity);
-    return convertResult(savedEntity);
+    return convertOutput(savedEntity);
   }
 
   @Override
-  public UserEntity convertCommand(Command command) {
-    return new UserEntity(command.name(), command.email());
+  public UserEntity convertInput(Input input) {
+    return new UserEntity(input.name(), input.email());
   }
 
   @Override
@@ -343,14 +340,14 @@ public class JdbcSaveUserRepository extends SaveUserRepository
   }
 
   @Override
-  public Result convertResult(UserEntity entity) {
-    return new Result(entity.getId());
+  public Output convertOutput(UserEntity entity) {
+    return new Output(entity.getId());
   }
 }
 
 @Component
 public class KafkaUserNotificationMessenger extends UserNotificationMessenger
-    implements MessengerAdapter<ProducerRecord<String, String>, RecordMetadata, UserNotificationMessenger.Command, UserNotificationMessenger.Result> {
+    implements MessengerAdapter<ProducerRecord<String, String>, RecordMetadata, UserNotificationMessenger.Input, UserNotificationMessenger.Output> {
 
   private final KafkaTemplate<String, String> kafkaTemplate;
 
@@ -359,15 +356,15 @@ public class KafkaUserNotificationMessenger extends UserNotificationMessenger
   }
 
   @Override
-  protected Result doSend(Command command) {
-    ProducerRecord<String, String> record = convertCommand(command);
+  protected Output doPublish(Input input) {
+    ProducerRecord<String, String> record = convertInput(input);
     RecordMetadata metadata = process(record);
-    return convertResult(metadata);
+    return convertOutput(metadata);
   }
 
   @Override
-  public ProducerRecord<String, String> convertCommand(Command command) {
-    return new ProducerRecord<>("user.notifications", command.message());
+  public ProducerRecord<String, String> convertInput(Input input) {
+    return new ProducerRecord<>("user.notifications", input.message());
   }
 
   @Override
@@ -380,8 +377,8 @@ public class KafkaUserNotificationMessenger extends UserNotificationMessenger
   }
 
   @Override
-  public Result convertResult(RecordMetadata metadata) {
-    return new Result(metadata.toString());
+  public Output convertOutput(RecordMetadata metadata) {
+    return new Output(metadata.toString());
   }
 }
 ```
@@ -403,8 +400,8 @@ public class FindUserService {
         this.findUserUseCase = new DefaultFindUserUseCase(client, repo, messenger);
     }
 
-    public FindUserUseCase.Result findUser(FindUserUseCase.Command command) {
-        return findUserUseCase.execute(command);
+    public FindUserUseCase.Output findUser(FindUserUseCase.Input input) {
+        return findUserUseCase.execute(input);
     }
 }
 ```
@@ -421,8 +418,8 @@ public class FindUserController {
     }
 
     @GetMapping
-    public FindUserUseCase.Result findUser(@RequestBody FindUserUseCase.Command command) {
-        return findUserService.findUser(command);
+    public FindUserUseCase.Output findUser(@RequestBody FindUserUseCase.Input input) {
+        return findUserService.findUser(input);
     }
 }
 ```
@@ -457,14 +454,14 @@ To protect the integrity of the application, data crossing boundaries into the U
 
 | Boundary | Interface | Requirement |
 | :--- | :--- | :--- |
-| **Entering Use Case** | `UseCase.Command` | `implements Validatable` (Mandatory) |
-| **Entering Use Case** | `Client.Result` | `implements Validatable` (Mandatory) |
-| **Entering Use Case** | `Repository.Result` | `implements Validatable` (Mandatory) |
-| **Entering Use Case** | `Messenger.Result` | `implements Validatable` (Mandatory) |
-| **Leaving Use Case** | `UseCase.Result` | Optional |
-| **Leaving Use Case** | `Client.Command` | Optional |
-| **Leaving Use Case** | `Repository.Command` | Optional |
-| **Leaving Use Case** | `Messenger.Command` | Optional |
+| **Entering Use Case** | `UseCase.Input` | `implements Validatable` (Mandatory) |
+| **Entering Use Case** | `Client.Output` | `implements Validatable` (Mandatory) |
+| **Entering Use Case** | `Repository.Output` | `implements Validatable` (Mandatory) |
+| **Entering Use Case** | `Messenger.Output` | `implements Validatable` (Mandatory) |
+| **Leaving Use Case** | `UseCase.Output` | Optional |
+| **Leaving Use Case** | `Client.Input` | Optional |
+| **Leaving Use Case** | `Repository.Input` | Optional |
+| **Leaving Use Case** | `Messenger.Input` | Optional |
 
 ---
 
