@@ -1,15 +1,15 @@
-# Hermi Framework
+# Hermi: Intent-Driven Architecture
 
-A lightweight, opinionated framework for building Java applications rooted in Clean Architecture and Engineering-First principles.
+Hermi is a lightweight, opinionated framework for building Java applications where business intent is protected from infrastructure complexity. It transforms the way we build systems by shifting the focus from data-processing to **Intent-Driven Execution**.
 
 > [!NOTE]
-> **The Hermi Manifesto**: In Hermi, you are not just processing data streams. You are driving an **Action** within a specific **Context** to generate a definitive **Result**. This semantic shift from I/O to Context/Result is the cornerstone of our **Action-Driven Architecture**.
+> **The Hermi Manifesto**: In Hermi, you are not just processing data streams. You are driving an **Action** within a specific **Context** to achieve a definitive **Result**. This semantic focus on **Intent-Driven Architecture** is our cornerstone: we protect the **Intent**, we ignore the Delivery.
 
-By enforcing a strict boundary between business logic and infrastructure, the Hermi framework ensures your system remains:
-- **Independent of Frameworks**: Treat frameworks as tools, not constraints. Swap one for another without altering a single business rule.
-- **Testable**: Verify business rules without UI, databases, or web servers.
-- **Independent of UI & Database**: Swap a Web API for a CLI, or SQL for MongoDB, without touching a single line of core logic.
-- **Independent of External Agencies**: Business rules know nothing about the outside world — and are never allowed to.
+By enforcing a strict boundary between execution intent and infrastructure delivery, Hermi ensures your system remains:
+- **Independent of Delivery Layers**: Swap a Web API for a CLI, a Kafka Consumer, or an AI MCP server without touching a single line of business logic.
+- **Independent of Frameworks**: Treat Spring, Quarkus, or Micronaut as tools, not constraints. 
+- **Independent of Persistence**: Business actions know nothing about SQL or NoSQL; they only specify state intentions.
+- **100% Testable**: Verify the most complex business scenarios in milliseconds using stateful local adapters—no mocks, no databases, no network.
 
 ## Table of Contents
 1. [Core Philosophy](#core-philosophy)
@@ -24,11 +24,17 @@ By enforcing a strict boundary between business logic and infrastructure, the He
 
 ## 1. Core Philosophy
 
-- **Business First**: The Use Case (Phase 1) must be fully functional using only plain Java and in-memory/console adapters before any Phase 2 infrastructure is written.
-- **Just-In-Time (JIT) Contracts**: I/O contracts (`Client`, `Repository`, `Messenger`) are defined *exactly* when the business logic requires them, rather than attempting to guess external dependencies upfront.
-- **No Mocks**: Verification uses stateful, technology-agnostic "Test Shells" (e.g., `InMemoryRepository`), rather than fragile mocking frameworks like Mockito.
-- **Scoped Models**: Domain models are local to the use case package and are never shared globally. While this introduces intentional duplication (trading DRY for isolation), it guarantees independent evolvability and prevents the emergence of fragile "God-classes" where modifying a shared entity breaks unrelated features.
-- **Semantic Intent (Context/Result)**: We abandon generic "Input/Output" terminology. Every action is performed within a deliberate **Context** (background/data/environment) and produces a definitive **Result**. This elevates the codebase from data-processing to intent-execution.
+The framework is built on a single, uncompromising principle: **The Use Case is the Sovereign of the domain.** Everything else — databases, APIs, message brokers — is subordinate. We maintain this sovereignty through **The Three Pillars of Integrity**:
+
+1. **Boundary Integrity**: Strict physical separation via Maven modules. The Use Case is pure Java and knows absolutely nothing of the infrastructure; Localized domain models (**Scoped Models**) ensure the Core remains independent and evolves without friction.
+2. **Protocol Integrity**: Mandatory validation on every boundary crossing. Data entering the Core via `Context` or returning as a `Result` is strictly policed by the `Validatable` contract. 
+3. **Semantic Integrity**: Rigid naming conventions (**Action-Resource**, **Notify-Fact**) and Just-In-Time (JIT) contract discovery ensure the code is a precise mirror of the business intention, preventing technical "bleed" into the mental model.
+
+---
+
+**Key Tenets:**
+- **Intent-Driven Discovery**: Contracts are defined *exactly* when business logic reveals a need — never before.
+- **Empirical Proof (No Mocks)**: Verification uses stateful, technology-agnostic **Test Shells**, proving logic against real-world state transitions rather than fragile mocks.
 
 ---
 
@@ -489,7 +495,7 @@ public class FindUserConsumerShell {
 ## 5. Naming Conventions
 
 ### The Core Logic: Functional Soul in an OOP Body
-Strictly adhering to these naming rules is not just about aesthetics; it is about preserving the Economic and Architectural integrity of the framework.
+Strictly adhering to these naming rules is not just about aesthetics; it is about preserving the **Economic and Semantic Integrity** (as defined in Section 1) of the architecture.
 
 - **Functional Soul**: Though implemented as Classes (to preserve type metadata for validation), every Client, Repository, and Messenger is a Function at heart. Every component is an **Executor** with a single `execute()` entry point.
 - **Temporal Modeling**: We model the codebase after Time and Tense.
@@ -530,7 +536,7 @@ If you need a new action, you define a new class. Avoid "Utility", "Manager", or
 
 ## 6. Validation Rules
 
-To protect the integrity of the application, data crossing boundaries into the Use Case is heavily policed. All entries must be explicitly validated.
+To protect the **Protocol Integrity** (defined in Section 1) of the application, data crossing boundaries into the Use Case is heavily policed. All entries must be explicitly validated.
 
 > [!NOTE]
 > **Validation Philosophy**: In the Hermi Framework, backend input validation acts as a strict contract enforcement. If a validation error is triggered, it serves as an explicit signal to the upstream developer that their client (e.g., a Web UI or Mobile App) is missing necessary validation logic. By failing fast, the framework forces developers to add missing validations directly to the user interface, improving the end-user experience via instant client-side feedback rather than relying on network round-trips.
