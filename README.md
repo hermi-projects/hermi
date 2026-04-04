@@ -12,13 +12,13 @@ By enforcing a strict boundary between execution intent and infrastructure deliv
 - **100% Testable**: Verify the most complex business scenarios in milliseconds using stateful local adapters—no mocks, no databases, no network.
 
 ## Table of Contents
-1. [Core Philosophy](#core-philosophy)
-2. [Architectural Responsibilities](#architectural-responsibilities)
-3. [The Discovery Lifecycle](#the-discovery-lifecycle)
-4. [Progressive Tutorial: Realizing the Discovery](#progressive-tutorial-realizing-the-discovery)
-5. [Naming Conventions](#naming-conventions)
-6. [Validation Rules](#validation-rules)
-7. [Project Structure](#project-structure)
+1. [Core Philosophy](#1-core-philosophy)
+2. [Architectural Responsibilities](#2-architectural-responsibilities)
+3. [The Discovery Lifecycle](#3-the-discovery-lifecycle)
+4. [Progressive Tutorial: Realizing the Discovery](#4-progressive-tutorial-realizing-the-discovery)
+5. [Naming Conventions](#5-naming-conventions)
+6. [Validation Rules](#6-validation-rules)
+7. [Project Structure](#7-project-structure)
 
 ---
 
@@ -122,7 +122,7 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
 }
 ```
 
-#### Step 3: The Test Harness：JUnit Component Test
+#### Step 3: The Test Harness: JUnit Component Test
 Establish the execution harness to enable continuous execution and debugging during development.
 
 ```java
@@ -217,7 +217,8 @@ public abstract class NotifyUserFoundMessenger extends Messenger<NotifyUserFound
 }
 ```
 
-Our Phase 1 Use Case logic is finalized:
+#### Step 7: Holistic Orchestration
+Once the individual I/O intents are discovered, the Use Case orchestration is finalized:
 
 ```java
 public class DefaultFindUserUseCase extends FindUserUseCase {
@@ -251,7 +252,7 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
 }
 ```
 
-#### Step 7: Verify with the Test Shell
+#### Step 8: The Phase 1 Gate (Verification)
 With the orchestration complete, verify all boundary and edge cases within the test suite. Unlike mocking frameworks which couple tests to implementation details, state-backed test adapters prove your logic handles real-world state transitions.
 
 > [!TIP]
@@ -321,7 +322,7 @@ class FindUserTestShell {
 
 ### Phase 2: Building the Shell (Example: Spring Boot)
 
-#### Step 8: Implement Production Adapters
+#### Step 9: Realizing the Shell (Production Adapters)
 With Phase 1 complete and the core logic verified, build a technology-specific adapter class for each I/O contract discovered in Phase 1.
 
 ```java
@@ -425,7 +426,7 @@ public class KafkaNotifyUserFoundMessenger extends NotifyUserFoundMessenger
 }
 ```
 
-#### Step 9: Expose via Entry Points
+#### Step 10: Final Delivery (Entry Points)
 Wire the production adapters into the appropriate entry point for your Shell. The exact mechanism depends on the chosen framework. In this Spring Boot example, a `@RestController` is used, with an intermediate `@Service` layer to support `@Transactional`. If no cross-cutting concerns are required, the `DefaultFindUserUseCase` can be wired directly into the entry point without a dedicated Service class. Other Shell implementations (e.g., Quarkus, CLI runners, message consumers, AI MCP servers) will differ in their wiring approach, but the Use Case core remains unchanged.
 
 ```java
