@@ -2,6 +2,9 @@
 
 A lightweight, opinionated framework for building Java applications rooted in Clean Architecture and Engineering-First principles.
 
+> [!NOTE]
+> **The Hermi Manifesto**: In Hermi, you are not just processing data streams. You are driving an **Action** within a specific **Context** to generate a definitive **Result**. This semantic shift from I/O to Context/Result is the cornerstone of our **Action-Driven Architecture**.
+
 By enforcing a strict boundary between business logic and infrastructure, the Hermi framework ensures your system remains:
 - **Independent of Frameworks**: Treat frameworks as tools, not constraints. Swap one for another without altering a single business rule.
 - **Testable**: Verify business rules without UI, databases, or web servers.
@@ -25,6 +28,7 @@ By enforcing a strict boundary between business logic and infrastructure, the He
 - **Just-In-Time (JIT) Contracts**: I/O contracts (`Client`, `Repository`, `Messenger`) are defined *exactly* when the business logic requires them, rather than attempting to guess external dependencies upfront.
 - **No Mocks**: Verification uses stateful, technology-agnostic "Test Shells" (e.g., `InMemoryRepository`), rather than fragile mocking frameworks like Mockito.
 - **Scoped Models**: Domain models are local to the use case package and are never shared globally. While this introduces intentional duplication (trading DRY for isolation), it guarantees independent evolvability and prevents the emergence of fragile "God-classes" where modifying a shared entity breaks unrelated features.
+- **Semantic Intent (Context/Result)**: We abandon generic "Input/Output" terminology. Every action is performed within a deliberate **Context** (background/data/environment) and produces a definitive **Result**. This elevates the codebase from data-processing to intent-execution.
 
 ---
 
@@ -32,8 +36,8 @@ By enforcing a strict boundary between business logic and infrastructure, the He
 
 The framework divides your application into two distinct, non-overlapping domains:
 
-- **Use Case (The Core)**: Dictates _**What**_ the system does. This layer owns input validation, business rules, workflow orchestration, and domain models. 
-- **Shell (The Infrastructure)**: Dictates _**How**_ the system does it. This layer implements the I/O contracts defined by the Use Case using specific technologies, vendors, or frameworks (e.g., Spring Data JPA, REST clients, LexisNexis APIs).
+- **Use Case (The Core)**: Dictates _**What**_ the system does. This layer owns **Context** validation, business rules, **Action** orchestration, and domain models. 
+- **Shell (The Infrastructure)**: Dictates _**How**_ the system does it. Opting for specific technologies, vendors, or frameworks (e.g., Spring Data JPA, REST clients, Kafka) to implement the I/O contracts defined by the Use Case.
 
 > [!IMPORTANT]
 > The Use Case knows absolutely nothing about the Shell. The Shell depends entirely on the contracts defined by the Use Case.
@@ -48,7 +52,7 @@ To guarantee a clean separation of concerns, development in the Hermi Framework 
 
 Phase 1 deliberately employs a **top-down, breadth-first traversal** over business logic. Rather than front-loading the design of all external dependencies before a single line of business logic exists — a speculative, depth-first approach — Phase 1 inverts this order entirely.
 
-The engineer begins at the highest level of abstraction: what does this use case *accept*, and what does it *return*? From that boundary, the orchestration logic is written top-down, as if all necessary collaborators already exist. External dependencies — whether for data retrieval, persistence, or event publishing — are only defined at the exact moment the business logic *reveals* it needs them.
+The engineer begins at the highest level of abstraction: what is the **Context** of this action, and what is its **Result**? From that boundary, the orchestration logic is written top-down, as if all collaborators already exist. External dependencies — whether for data retrieval, persistence, or event publishing — are only defined at the exact moment the business logic *reveals* it needs them.
 
 This is not a stylistic preference. It is a disciplined response to a well-known failure mode: **speculative dependency design**. In traditional depth-first development, engineers pre-design schemas, repositories, and API clients before any domain logic is written. This embeds infrastructure assumptions directly into the business domain before the domain is even understood. In Hermi, **business logic drives dependency discovery** — not the other way around.
 
@@ -321,20 +325,20 @@ With Phase 1 complete and the core logic verified, build a technology-specific a
 ```java
 @Component
 public class LexisNexisFindUserClient extends FindUserClient
-    implements ClientAdapter<ApiRequest, ApiResponse, FindUserClient.Input, FindUserClient.Output> {
+    implements ClientAdapter<ApiRequest, ApiResponse, FindUserClient.Context, FindUserClient.Result> {
 
   private RestTemplate restTemplate;
 
   @Override
-  protected Output doCall(Input input) {
-    ApiRequest apiRequest = convertInput(input);
+  protected Result doExecute(Context context) {
+    ApiRequest apiRequest = convertContext(context);
     ApiResponse apiResponse = process(apiRequest);
-    return convertOutput(apiResponse);
+    return convertResult(apiResponse);
   }
 
   @Override
-  public ApiRequest convertInput(Input input) {
-    return new ApiRequest(input.ssn());
+  public ApiRequest convertContext(Context context) {
+    return new ApiRequest(context.ssn());
   }
 
   @Override
@@ -343,14 +347,14 @@ public class LexisNexisFindUserClient extends FindUserClient
   }
 
   @Override
-  public Output convertOutput(ApiResponse output) {
-    return new Output(output.getName(), output.getEmail());
+  public Result convertResult(ApiResponse result) {
+    return new Result(result.getName(), result.getEmail());
   }
 }
 
 @Component
 public class JdbcSaveUserRepository extends SaveUserRepository
-    implements RepositoryAdapter<UserEntity, UserEntity, SaveUserRepository.Input, SaveUserRepository.Output> {
+    implements RepositoryAdapter<UserEntity, UserEntity, SaveUserRepository.Context, SaveUserRepository.Result> {
 
   private final UserJpaRepository jpaRepository;
 
@@ -359,15 +363,15 @@ public class JdbcSaveUserRepository extends SaveUserRepository
   }
 
   @Override
-  protected Output doSend(Input input) {
-    UserEntity entity = convertInput(input);
+  protected Result doExecute(Context context) {
+    UserEntity entity = convertContext(context);
     UserEntity savedEntity = process(entity);
-    return convertOutput(savedEntity);
+    return convertResult(savedEntity);
   }
 
   @Override
-  public UserEntity convertInput(Input input) {
-    return new UserEntity(input.name(), input.email());
+  public UserEntity convertContext(Context context) {
+    return new UserEntity(context.name(), context.email());
   }
 
   @Override
@@ -376,14 +380,14 @@ public class JdbcSaveUserRepository extends SaveUserRepository
   }
 
   @Override
-  public Output convertOutput(UserEntity entity) {
-    return new Output(entity.getId());
+  public Result convertResult(UserEntity entity) {
+    return new Result(entity.getId());
   }
 }
 
 @Component
 public class KafkaNotifyUserFoundMessenger extends NotifyUserFoundMessenger
-    implements MessengerAdapter<ProducerRecord<String, String>, RecordMetadata, NotifyUserFoundMessenger.Input, NotifyUserFoundMessenger.Output> {
+    implements MessengerAdapter<ProducerRecord<String, String>, RecordMetadata, NotifyUserFoundMessenger.Context, NotifyUserFoundMessenger.Result> {
 
   private final KafkaTemplate<String, String> kafkaTemplate;
 
@@ -392,15 +396,15 @@ public class KafkaNotifyUserFoundMessenger extends NotifyUserFoundMessenger
   }
 
   @Override
-  protected Output doPublish(Input input) {
-    ProducerRecord<String, String> record = convertInput(input);
+  protected Result doExecute(Context context) {
+    ProducerRecord<String, String> record = convertContext(context);
     RecordMetadata metadata = process(record);
-    return convertOutput(metadata);
+    return convertResult(metadata);
   }
 
   @Override
-  public ProducerRecord<String, String> convertInput(Input input) {
-    return new ProducerRecord<>("user.notifications", input.message());
+  public ProducerRecord<String, String> convertContext(Context context) {
+    return new ProducerRecord<>("user.notifications", context.message());
   }
 
   @Override
@@ -413,8 +417,8 @@ public class KafkaNotifyUserFoundMessenger extends NotifyUserFoundMessenger
   }
 
   @Override
-  public Output convertOutput(RecordMetadata metadata) {
-    return new Output(metadata.toString());
+  public Result convertResult(RecordMetadata metadata) {
+    return new Result(metadata.toString());
   }
 }
 ```
@@ -436,8 +440,8 @@ public class FindUserService {
         this.findUserUseCase = new DefaultFindUserUseCase(client, repo, messenger);
     }
 
-    public FindUserUseCase.Output findUser(FindUserUseCase.Input input) {
-        return findUserUseCase.execute(input);
+    public FindUserUseCase.Result findUser(FindUserUseCase.Context context) {
+        return findUserUseCase.execute(context);
     }
 }
 ```
@@ -454,8 +458,8 @@ public class FindUserApiShell {
     }
 
     @GetMapping
-    public FindUserUseCase.Output findUser(@RequestBody FindUserUseCase.Input input) {
-        return findUserService.findUser(input);
+    public FindUserUseCase.Result findUser(@RequestBody FindUserUseCase.Context context) {
+        return findUserService.findUser(context);
     }
 }
 ```
@@ -474,8 +478,8 @@ public class FindUserConsumerShell {
 
     @KafkaListener(topics = "user.find.requests", groupId = "user-service-group")
     public void consume(String ssn) {
-        FindUserUseCase.Input input = new FindUserUseCase.Input(ssn);
-        findUserService.findUser(input);
+        FindUserUseCase.Context context = new FindUserUseCase.Context(ssn);
+        findUserService.findUser(context);
     }
 }
 ```
@@ -514,7 +518,7 @@ Technology-specific implementations (e.g., Spring, JDBC, Kafka).
 ### 3. The Three Golden Rules
 
 #### Rule 1: The Tense Integrity
-Logic drives the tense. All I/O components are Actions and MUST start with a Verb (Find, Save, Notify). Universal execution is performed via the `.execute()` method.
+Logic drives the tense. Every I/O component is an **Action** and MUST start with a Verb (Find, Save, Notify). Total execution is performed by a single `.execute()` method within a specific **Context**, yielding a definitive **Result**. 
 
 #### Rule 2: Prefix Isolation
 The Core is pure; the Shell is tech-heavy. Any class containing infrastructure (JDBC, Kafka, etc.) MUST have the technology name as its very first word. No prefix means Pure Java.
@@ -533,14 +537,14 @@ To protect the integrity of the application, data crossing boundaries into the U
 
 | Boundary | Interface | Requirement |
 | :--- | :--- | :--- |
-| **Entering Use Case** | `UseCase.Input` | `implements Validatable` (Mandatory) |
-| **Entering Use Case** | `Client.Output` | `implements Validatable` (Mandatory) |
-| **Entering Use Case** | `Repository.Output` | `implements Validatable` (Mandatory) |
-| **Entering Use Case** | `Messenger.Output` | `implements Validatable` (Mandatory) |
-| **Leaving Use Case** | `UseCase.Output` | Optional |
-| **Leaving Use Case** | `Client.Input` | Optional |
-| **Leaving Use Case** | `Repository.Input` | Optional |
-| **Leaving Use Case** | `Messenger.Input` | Optional |
+| **Entering Use Case** | `UseCase.Context` | `implements Validatable` (Mandatory) |
+| **Entering Use Case** | `Client.Result` | `implements Validatable` (Mandatory) |
+| **Entering Use Case** | `Repository.Result` | `implements Validatable` (Mandatory) |
+| **Entering Use Case** | `Messenger.Result` | `implements Validatable` (Mandatory) |
+| **Leaving Use Case** | `UseCase.Result` | Optional |
+| **Leaving Use Case** | `Client.Context` | Optional |
+| **Leaving Use Case** | `Repository.Context` | Optional |
+| **Leaving Use Case** | `Messenger.Context` | Optional |
 
 ---
 
