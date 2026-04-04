@@ -464,11 +464,11 @@ Alternatively, for event-driven architectures, you can expose the Use Case via a
 
 ```java
 @Component
-public class FindUserKafkaConsumerShell {
+public class FindUserConsumerShell {
     private final FindUserService findUserService;
 
     @Autowired
-    public FindUserKafkaConsumerShell(FindUserService findUserService) {
+    public FindUserConsumerShell(FindUserService findUserService) {
         this.findUserService = findUserService;
     }
 
@@ -496,7 +496,7 @@ Strict predictable boundaries are enforced entirely by stringent naming conventi
 | **Test Shell** | Use Case | `{Action}TestShell` | `FindUserTestShell` |
 | **Adapter (Test)** | Use Case | `{Local/InMemory}{Action}{Resource}{Type}` | `InMemorySaveUserRepository` |
 | **Adapter (Prod)**| Shell | `{Tech/Vendor}{Action}{Resource}{Type}` | `JdbcSaveUserRepository` |
-| **Entry Point** | Shell | `{Action}{Resource}{Type}Shell` | `FindUserApiShell`, `FindUserKafkaConsumerShell` |
+| **Entry Point** | Shell | `{Action}{Resource}{Type}Shell` | `FindUserApiShell`, `FindUserConsumerShell` |
 | **Shell Module**| Shell | `{project}-{framework}-{type}-shell` | `hermi-spring-rest-shell` |
 
 *(Type refers to `Client`, `Repository`, or `Messenger`)*
@@ -550,7 +550,7 @@ hermi-user (Parent)
     ├── pom.xml
     └── src/main/java/org/hermi/user/find/shell
         ├── FindUserApiShell.java                   (Spring RestController)
-        ├── FindUserKafkaConsumerShell.java         (Spring KafkaConsumer)
+        ├── FindUserConsumerShell.java              (Spring KafkaConsumer)
         ├── FindUserService.java                    (Spring Service)
         ├── LexisNexisFindUserClient.java           (Production Adapter)
         ├── JdbcSaveUserRepository.java             (Production Adapter)

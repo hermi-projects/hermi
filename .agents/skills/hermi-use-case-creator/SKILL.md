@@ -108,7 +108,7 @@ public class {Tech}{Name}Repository extends {Name}Repository implements Reposito
 ### B. Expose via Entry Points (Shells)
 Generate the Spring `@Service` and the appropriate **Shell** (e.g., Controller or Consumer):
 - **Service**: Injects the production adapters (`@Autowired`), instantiates the `Default{Action}...UseCase`, and exposes a method to execute it.
-- **Entry Point Shell**: Injects the Service, and handles the delivery-specific logic. Entry points MUST use the **`Shell`** suffix (e.g., `{Action}{Resource}ApiShell`, `{Action}{Resource}KafkaConsumerShell`).
+- **Entry Point Shell**: Injects the Service, and handles the delivery-specific logic. Entry points MUST use the **`Shell`** suffix (e.g., `{Action}{Resource}ApiShell`, `{Action}{Resource}ConsumerShell`).
 
 ---
 
