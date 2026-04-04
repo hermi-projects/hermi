@@ -70,7 +70,7 @@ Phase 1 is about Discovery and Verification. It answers _"What"_ the system does
 ### Phase 2: Shell (Infrastructure)
 Phase 2 is about Implementation and Wiring. It answers _"How"_ the system does it — translating each I/O contract into a technology-specific adapter and wiring it into the chosen Shell.
 
-7. **Implement Production Adapters**: For each I/O contract discovered in Phase 1, build the technology-specific or vendor-specific adapter class (e.g., `JdbcSaveUserRepository`, `LexisNexisFindUserClient`, `KafkaUserNotificationMessenger`).
+7. **Implement Production Adapters**: For each I/O contract discovered in Phase 1, build the technology-specific or vendor-specific adapter class (e.g., `JdbcSaveUserRepository`, `LexisNexisFindUserClient`, `KafkaUserFoundMessenger`).
 
 8. **Expose via Entry Points**: Wire the production adapters into the appropriate entry point for the chosen Shell — e.g., a REST controller, a message consumer, a CLI runner, or an AI MCP tool handler. If cross-cutting infrastructure concerns (such as transaction management or AOP) are required, introduce an intermediate service layer between the adapters and the entry point.
 
@@ -205,7 +205,7 @@ If an outbound event is required upon completion, define a messenger contract an
 
 ```java
 // Define the required messenger contract:
-public abstract class UserNotificationMessenger extends Messenger<UserNotificationMessenger.Input, UserNotificationMessenger.Output> {
+public abstract class UserFoundMessenger extends Messenger<UserFoundMessenger.Input, UserFoundMessenger.Output> {
     public record Input(String email, String message) {}
     public record Output(String messageId) implements Validatable {}
 }
@@ -217,11 +217,11 @@ Our Phase 1 Use Case logic is finalized:
 public class DefaultFindUserUseCase extends FindUserUseCase {
     private final FindUserClient findUserClient;
     private final SaveUserRepository saveUserRepository;
-    private final UserNotificationMessenger messenger;
+    private final UserFoundMessenger messenger;
 
     public DefaultFindUserUseCase(FindUserClient findUserClient, 
                                   SaveUserRepository saveUserRepository, 
-                                  UserNotificationMessenger messenger) {
+                                  UserFoundMessenger messenger) {
         this.findUserClient = findUserClient;
         this.saveUserRepository = saveUserRepository;
         this.messenger = messenger;
@@ -237,7 +237,7 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
         saveUserRepository.send(new SaveUserRepository.Input(user.name(), user.email()));
         
         // 3. Send notification
-        var notificationInput = new UserNotificationMessenger.Input(user.email(), "User found: " + user.name());
+        var notificationInput = new UserFoundMessenger.Input(user.email(), "User found: " + user.name());
         messenger.publish(notificationInput);
         
         return new Output(user.name(), user.email());
@@ -264,7 +264,7 @@ class InMemorySaveUserRepository extends SaveUserRepository {
 }
  
 // 2. A simple console-logging messenger
-class ConsoleNotificationMessenger extends UserNotificationMessenger {
+class ConsoleUserFoundMessenger extends UserFoundMessenger {
     @Override
     protected Output doPublish(Input input) {
         System.out.println("[Notification] To: " + input.email() + ", Msg: " + input.message());
@@ -291,7 +291,7 @@ class FindUserTestShell {
     void main() {
         var client = new LocalFindUserClient(); 
         var repo = new InMemorySaveUserRepository();
-        var messenger = new ConsoleNotificationMessenger();
+        var messenger = new ConsoleUserFoundMessenger();
         var useCase = new DefaultFindUserUseCase(client, repo, messenger);
         var result = useCase.execute(new FindUserUseCase.Input("123-45-6789"));
         assertTrue(result != null);
@@ -303,7 +303,7 @@ class FindUserTestShell {
         // Setup local stubs/state simulators
         var client = new LocalFindUserClient(); 
         var repo = new InMemorySaveUserRepository();
-        var messenger = new ConsoleNotificationMessenger();
+        var messenger = new ConsoleUserFoundMessenger();
     
         var useCase = new DefaultFindUserUseCase(client, repo, messenger);
         
@@ -382,12 +382,12 @@ public class JdbcSaveUserRepository extends SaveUserRepository
 }
 
 @Component
-public class KafkaUserNotificationMessenger extends UserNotificationMessenger
-    implements MessengerAdapter<ProducerRecord<String, String>, RecordMetadata, UserNotificationMessenger.Input, UserNotificationMessenger.Output> {
+public class KafkaUserFoundMessenger extends UserFoundMessenger
+    implements MessengerAdapter<ProducerRecord<String, String>, RecordMetadata, UserFoundMessenger.Input, UserFoundMessenger.Output> {
 
   private final KafkaTemplate<String, String> kafkaTemplate;
 
-  public KafkaUserNotificationMessenger(KafkaTemplate<String, String> kafkaTemplate) {
+  public KafkaUserFoundMessenger(KafkaTemplate<String, String> kafkaTemplate) {
     this.kafkaTemplate = kafkaTemplate;
   }
 
@@ -431,7 +431,7 @@ public class FindUserService {
     @Autowired
     public FindUserService(LexisNexisFindUserClient client, 
                            JdbcSaveUserRepository repo, 
-                           KafkaUserNotificationMessenger messenger) {
+                           KafkaUserFoundMessenger messenger) {
         // Instantiate the Use Case with production adapters
         this.findUserUseCase = new DefaultFindUserUseCase(client, repo, messenger);
     }
@@ -539,12 +539,12 @@ hermi-user (Parent)
 │   │   ├── User.java                               (Scoped Domain Model)
 │   │   ├── FindUserClient.java                     (I/O Contract)
 │   │   ├── SaveUserRepository.java                 (I/O Contract)
-│   │   └── UserNotificationMessenger.java          (I/O Contract)
+│   │   └── UserFoundMessenger.java          (I/O Contract)
 │   └── src/test/java/org/hermi/user/find/shell
 │       ├── FindUserTestShell.java                  (Test Shell)
 │       ├── LocalFindUserClient.java                (Test Adapter)
 │       ├── InMemorySaveUserRepository.java         (Test Adapter)
-│       └── ConsoleUserNotificationMessenger.java   (Test Adapter)
+│       └── ConsoleUserFoundMessenger.java   (Test Adapter)
 │
 └── hermi-spring-api-shell (Phase 2 Layer: Framework)
     ├── pom.xml
@@ -554,7 +554,7 @@ hermi-user (Parent)
         ├── FindUserService.java                    (Spring Service)
         ├── LexisNexisFindUserClient.java           (Production Adapter)
         ├── JdbcSaveUserRepository.java             (Production Adapter)
-        └── KafkaUserNotificationMessenger.java     (Production Adapter)
+        └── KafkaUserFoundMessenger.java     (Production Adapter)
 ```
 ```mermaid
 graph TD
@@ -570,17 +570,17 @@ graph TD
     %% Use Case -> Contracts
     U -->|requests external data| D[FindUserClient]
     U -->|requests persistence| E[SaveUserRepository]
-    U -->|requests notification| F[UserNotificationMessenger]
+    U -->|requests notification| F[UserFoundMessenger]
 
     %% Test Implementations
     D -->|test implementation| G[LocalFindUserClient]
     E -->|test implementation| H[InMemorySaveUserRepository]
-    F -->|test implementation| I[ConsoleNotificationMessenger]
+    F -->|test implementation| I[ConsoleUserFoundMessenger]
 
     %% Production Implementations
     D -->|production implementation| J[LexisNexisFindUserClient]
     E -->|production implementation| K[JdbcSaveUserRepository]
-    F -->|production implementation| L[KafkaUserNotificationMessenger]
+    F -->|production implementation| L[KafkaUserFoundMessenger]
 
     %% Darker backgrounds + stronger contrast
     classDef test fill:#922B21,color:#FFFFFF,stroke:#641E16,stroke-width:1.5px

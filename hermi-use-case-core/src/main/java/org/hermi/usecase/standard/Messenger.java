@@ -26,24 +26,24 @@ public abstract class Messenger<I, O extends Validatable> extends Executor<I, O>
    *       org.hermi.usecase.commons.validation.Validatable Validatable}.
    *   <li><b>Shell Layer (Phase 2)</b>: Implements the real-world communication logic using
    *       specific technologies, prefixed with the technology name (e.g., {@code
-   *       KafkaUserNotificationMessenger}).
+   *       KafkaUserFoundMessenger}).
    * </ul>
    *
-   * <p>Example UserNotificationMessenger Contract in Use Case Layer (Phase 1):
+   * <p>Example UserFoundMessenger Contract in Use Case Layer (Phase 1):
    *
    * <pre>{@code
-   * public abstract class UserNotificationMessenger extends Messenger<UserNotificationMessenger.Input, UserNotificationMessenger.Output> {
+   * public abstract class UserFoundMessenger extends Messenger<UserFoundMessenger.Input, UserFoundMessenger.Output> {
    *   public static record Input(String userId, String message) {}
    *   public static record Output(String messageId) implements Validatable {}
    * }
    * }</pre>
    *
-   * <p>Example KafkaUserNotificationMessenger Implementation in Shell Layer (Phase 2):
+   * <p>Example KafkaUserFoundMessenger Implementation in Shell Layer (Phase 2):
    *
    * <pre>{@code
    * @Component
-   * public class KafkaUserNotificationMessenger extends UserNotificationMessenger
-   *     implements MessengerAdapter<ProducerRecord<String, String>, RecordMetadata, UserNotificationMessenger.Input, UserNotificationMessenger.Output> {
+   * public class KafkaUserFoundMessenger extends UserFoundMessenger
+   *     implements MessengerAdapter<ProducerRecord<String, String>, RecordMetadata, UserFoundMessenger.Input, UserFoundMessenger.Output> {
    *
    *   private final KafkaTemplate<String, String> kafkaTemplate;
    *

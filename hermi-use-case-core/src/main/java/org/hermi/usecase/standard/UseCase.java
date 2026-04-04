@@ -38,12 +38,12 @@ public abstract class UseCase<I extends Validatable, O> extends Executor<I, O> {
    * public class DefaultFindUserUseCase extends FindUserUseCase {
    *   private final FindUserClient findUserClient;
    *   private final SaveUserRepository saveUserRepository;
-   *   private final UserNotificationMessenger messenger;
+   *   private final UserFoundMessenger messenger;
    *
    *   public DefaultFindUserUseCase(
    *       FindUserClient findUserClient,
    *       SaveUserRepository saveUserRepository,
-   *       UserNotificationMessenger messenger) {
+   *       UserFoundMessenger messenger) {
    *     this.findUserClient = findUserClient;
    *     this.saveUserRepository = saveUserRepository;
    *     this.messenger = messenger;
@@ -59,7 +59,7 @@ public abstract class UseCase<I extends Validatable, O> extends Executor<I, O> {
    *     saveUserRepository.send(new SaveUserRepository.Input(user.name(), user.email()));
    *
    *     // 3. Send notification
-   *     messenger.publish(new UserNotificationMessenger.Input(user.email(), "User found: " + user.name()));
+   *     messenger.publish(new UserFoundMessenger.Input(user.email(), "User found: " + user.name()));
    *
    *     return new Output(user.name(), user.email());
    *   }
@@ -77,7 +77,7 @@ public abstract class UseCase<I extends Validatable, O> extends Executor<I, O> {
    *   @Autowired
    *   public FindUserService(LexisNexisFindUserClient client,
    *                          JdbcSaveUserRepository repo,
-   *                          KafkaUserNotificationMessenger messenger) {
+   *                          KafkaUserFoundMessenger messenger) {
    *     // Instantiate the Use Case with production adapters
    *     this.findUserUseCase = new DefaultFindUserUseCase(client, repo, messenger);
    *   }
