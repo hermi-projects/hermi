@@ -556,3 +556,41 @@ hermi-user (Parent)
         ├── JdbcSaveUserRepository.java             (Production Adapter)
         └── KafkaUserNotificationMessenger.java     (Production Adapter)
 ```
+```mermaid
+graph TD
+    %% Phase 1: Test Shell + Test Implementations
+    A[FindUserUseCaseTestShell] -->|executes| U[FindUserUseCase]
+
+    %% Phase 2: API Shell
+    B[FindUserApiShell] -->|handles request| U
+
+    %% Phase 3: Consumer Shell (Spring Kafka)
+    C[FindUserConsumerShell] -->|handles event| U
+
+    %% Use Case -> Contracts
+    U -->|requests external data| D[FindUserClient]
+    U -->|requests persistence| E[SaveUserRepository]
+    U -->|requests notification| F[UserNotificationMessenger]
+
+    %% Phase 1 Implementations
+    D -->|test implementation| G[LocalFindUserClient]
+    E -->|test implementation| H[InMemorySaveUserRepository]
+    F -->|test implementation| I[ConsoleNotificationMessenger]
+
+    %% Phase 2 Implementations
+    D -->|production implementation| J[LexisNexisFindUserClient]
+    E -->|production implementation| K[JdbcSaveUserRepository]
+    F -->|production implementation| L[KafkaUserNotificationMessenger]
+
+    %% Classes (using logo colors)
+    classDef test fill:#E74C3C,color:#ffffff,stroke:#C0392B,stroke-width:1px
+    classDef api fill:#6DB33F,color:#ffffff,stroke:#4E8F2F,stroke-width:1px
+    classDef consumer fill:#3A7F2C,color:#ffffff,stroke:#2E6A24,stroke-width:1px
+    classDef neutral fill:#424242,color:#ffffff,stroke:#212121,stroke-width:1px
+
+    %% Assign classes
+    class A,G,H,I test
+    class B,J,K,L api
+    class C consumer
+    class U,D,E,F neutral
+```
