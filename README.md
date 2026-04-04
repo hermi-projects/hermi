@@ -30,13 +30,9 @@ The framework is built on a single, uncompromising principle: **The Use Case is 
 2. **Protocol Integrity**: Mandatory validation on every boundary crossing. Data entering the Core via `Context` or returning as a `Result` is strictly policed by the `Validatable` contract. 
 3. **Semantic Integrity**: Rigid naming conventions (**Action-Resource**, **Notify-Fact**) and Just-In-Time (JIT) contract discovery ensure the code is a precise mirror of the business intention, preventing technical "bleed" into the mental model.
 
----
-
 **Key Tenets:**
 - **Intent-Driven Discovery**: Contracts are defined *exactly* when business logic reveals a need — never before.
 - **Empirical Proof (No Mocks)**: Verification uses stateful, technology-agnostic **Test Shells**, proving logic against real-world state transitions rather than fragile mocks.
-
----
 
 ## 2. Architectural Responsibilities
 
@@ -47,8 +43,6 @@ The framework divides your application into two distinct, non-overlapping domain
 
 > [!IMPORTANT]
 > The Use Case knows absolutely nothing about the Shell. The Shell depends entirely on the contracts defined by the Use Case.
-
----
 
 ## 3. The Discovery Lifecycle
 
@@ -79,8 +73,6 @@ Phase 2 is about materializing the discovered intents. We answer _"How"_ the sys
 
 7. **Implement Production Adapters**: For each I/O contract discovered in Phase 1, build the technology-specific adapter (e.g., `JdbcUserRepository`).
 8. **Expose via Entry Points**: Wire the adapters into the chosen delivery mechanism (e.g., REST Controller, Kafka Consumer, or AI MCP Server).
-
----
 
 ## 4. Progressive Tutorial: Realizing the Discovery
 
@@ -487,7 +479,6 @@ public class FindUserConsumerShell {
 }
 ```
 
----
 
 ## 5. Naming Conventions
 
@@ -529,7 +520,6 @@ The Core is pure; the Shell is tech-heavy. Any class containing infrastructure (
 #### Rule 3: Single Action Prophecy
 If you need a new action, you define a new class. Avoid "Utility", "Manager", or "Service" classes that group multiple unrelated behaviors.
 
----
 
 ## 6. Validation Rules
 
@@ -549,7 +539,6 @@ To protect the **Protocol Integrity** (defined in Section 1) of the application,
 | **Leaving Use Case** | `Repository.Context` | Optional |
 | **Leaving Use Case** | `Messenger.Context` | Optional |
 
----
 
 ## 7. Project Structure
 
