@@ -14,8 +14,8 @@ By enforcing a strict boundary between execution intent and infrastructure deliv
 ## Table of Contents
 1. [Core Philosophy](#core-philosophy)
 2. [Architectural Responsibilities](#architectural-responsibilities)
-3. [The Engineering-First Lifecycle](#the-engineering-first-lifecycle)
-4. [Progressive Tutorial: Implementation Workflow](#progressive-tutorial-implementation-workflow)
+3. [The Discovery Lifecycle](#the-discovery-lifecycle)
+4. [Progressive Tutorial: Realizing the Discovery](#progressive-tutorial-realizing-the-discovery)
 5. [Naming Conventions](#naming-conventions)
 6. [Validation Rules](#validation-rules)
 7. [Project Structure](#project-structure)
@@ -50,43 +50,39 @@ The framework divides your application into two distinct, non-overlapping domain
 
 ---
 
-## 3. The Engineering-First Lifecycle
+## 3. The Discovery Lifecycle
 
-To guarantee a clean separation of concerns, development in the Hermi Framework mandates a strict, two-phase implementation process. You must prove your business logic works before writing a single line of infrastructure-specific code.
+In Hermi, we avoid speculative design. We follow a **Discovery Lifecycle** where the business logic *reveals* its needs, and the infrastructure simply fulfills that revelation.
 
 ### Traversal Strategy: Top-Down, Breadth-First
 
-Phase 1 deliberately employs a **top-down, breadth-first traversal** over business logic. Rather than front-loading the design of all external dependencies before a single line of business logic exists — a speculative, depth-first approach — Phase 1 inverts this order entirely.
+Phase 1 follows a **top-down, breadth-first traversal**. Instead of drilling into implementation details, you focus on completing the **holistic orchestration** of the business intent first.
 
-The engineer begins at the highest level of abstraction: what is the **Context** of this action, and what is its **Result**? From that boundary, the orchestration logic is written top-down, as if all collaborators already exist. External dependencies — whether for data retrieval, persistence, or event publishing — are only defined at the exact moment the business logic *reveals* it needs them.
+The engineer begins by defining the **Context** and the **Result** of the action. From this boundary, the orchestration logic is written as a complete narrative, treating collaborators as if they already exist. External dependencies — for retrieval, persistence, or notification — are only formalized at the exact moment the business logic reveals a need for them.
 
-This is not a stylistic preference. It is a disciplined response to a well-known failure mode: **speculative dependency design**. In traditional depth-first development, engineers pre-design schemas, repositories, and API clients before any domain logic is written. This embeds infrastructure assumptions directly into the business domain before the domain is even understood. In Hermi, **business logic drives dependency discovery** — not the other way around.
+In Hermi, **we build the 'whole' before the 'details'**: the business logic drives the discovery of its dependencies, ensuring the architecture remains a pure reflection of the intent.
 
-> [!NOTE]
-> This traversal strategy is also why the framework prohibits mocking frameworks. Mocks require pre-specifying dependencies that haven't been discovered yet, directly violating the JIT discovery principle. Local test adapters are the correct substitute because they are written *after* a contract is revealed — never before.
+### Phase 1: Discovery & Verification (The Core)
 
-### Phase 1: The Core Logic Lifecycle (The Brain)
-Phase 1 is about Discovery and Verification. It answers _"What"_ the system does — all business rules, workflow orchestration, and domain models — proven correct using exclusively pure Java:
+Phase 1 is about revealing and proving the system's behavior. We answer _"What"_ the system does using exclusively pure Java:
+
 1. **Establish the Boundary**: Define your `UseCase` contract (`Context` and `Result`).
 2. **Initialize Core Implementation**: Create a skeletal `DefaultUseCase` class.
-3. **The Test Shell**: Build a minimal test execution shell as a "Play Button" for continuous, instant execution and debugging during development.
-4. **JIT I/O Discovery**: Write logic; define I/O contracts the moment you need a specific behavior, categorizing them strictly by architectural intent:
-   - **`Client` (Inbound / Exchange)**: Retrieves external data or performs transactional external actions (e.g., 3rd-party APIs, RPCs).
-   - **`Repository` (State Persistence)**: Manages the application's own persistent state (e.g., SQL, NoSQL, Caching).
-   - **`Messenger` (Outbound)**: Fire-and-forget notifications to the rest of the world (e.g., Kafka, Event Bus, Emails).
-5. **Final Orchestration**: Coordinate the flow between your discovered I/O contracts.
-6. **The Phase 1 Gate**: Assert the logic against edge cases in the Test Shell. Phase 1 is complete when all edge cases pass.
+3. **The Test Shell**: Build a minimal test execution environment as a "Play Button" for continuous validation.
+4. **JIT I/O Discovery**: Write logic; define I/O contracts the moment a specific behavior is revealed, categorizing them by architectural intent (Client, Repository, or Messenger).
+5. **Holistic Orchestration**: Finalize the narrative flow between the discovered I/O contracts.
+6. **The Phase 1 Gate**: Verify the logic against real-world state transitions in the Test Shell. Phase 1 is complete when all intents are proven.
 
-### Phase 2: Shell (Infrastructure)
-Phase 2 is about Implementation and Wiring. It answers _"How"_ the system does it — translating each I/O contract into a technology-specific adapter and wiring it into the chosen Shell.
+### Phase 2: Realization & Delivery (The Shell)
 
-7. **Implement Production Adapters**: For each I/O contract discovered in Phase 1, build the technology-specific or vendor-specific adapter class (e.g., `JdbcSaveUserRepository`, `LexisNexisFindUserClient`, `KafkaNotifyUserFoundMessenger`).
+Phase 2 is about materializing the discovered intents. We answer _"How"_ the system delivers value by mapping contracts to specific technologies:
 
-8. **Expose via Entry Points**: Wire the production adapters into the appropriate entry point for the chosen Shell — e.g., a REST controller, a message consumer, a CLI runner, or an AI MCP tool handler. If cross-cutting infrastructure concerns (such as transaction management or AOP) are required, introduce an intermediate service layer between the adapters and the entry point.
+7. **Implement Production Adapters**: For each I/O contract discovered in Phase 1, build the technology-specific adapter (e.g., `JdbcUserRepository`).
+8. **Expose via Entry Points**: Wire the adapters into the chosen delivery mechanism (e.g., REST Controller, Kafka Consumer, or AI MCP Server).
 
 ---
 
-## 4. Progressive Tutorial: Implementation Workflow
+## 4. Progressive Tutorial: Realizing the Discovery
 
 The following tutorial demonstrates the implementation of a Use Case step-by-step. By the end, you will have a complete, fully testable Use Case with three I/O contracts — all verified in isolation before a single line of infrastructure is written.
 
