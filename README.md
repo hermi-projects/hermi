@@ -582,12 +582,12 @@ graph TD
     E -->|production implementation| K[JdbcSaveUserRepository]
     F -->|production implementation| L[KafkaUserNotificationMessenger]
 
-    %% Classes (logo colors)
-    classDef test fill:#E74C3C,color:#ffffff,stroke:#C0392B,stroke-width:1px
-    classDef api fill:#6DB33F,color:#ffffff,stroke:#4E8F2F,stroke-width:1px
-    classDef consumer fill:#3A7F2C,color:#ffffff,stroke:#2E6A24,stroke-width:1px
+    %% Darker backgrounds + stronger contrast
+    classDef test fill:#922B21,color:#FFFFFF,stroke:#641E16,stroke-width:1.5px
+    classDef api fill:#4E8F2F,color:#FFFFFF,stroke:#2F5A1C,stroke-width:1.5px
+    classDef consumer fill:#2E6A24,color:#FFFFFF,stroke:#1B3F15,stroke-width:1.5px
 
-    %% Core: white background + black text
+    %% Core stays clean
     classDef core fill:#FFFFFF,color:#000000,stroke:#000000,stroke-width:1px
 
     %% Assign classes
