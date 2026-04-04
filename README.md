@@ -559,7 +559,7 @@ hermi-user (Parent)
 ```mermaid
 graph TD
     %% Phase 1: Test Shell + Test Implementations
-    A[FindUserUseCaseTestShell] -->|executes| U[FindUserUseCase]
+    A[FindUserTestShell] -->|executes| U[FindUserUseCase]
 
     %% Phase 2: API Shell
     B[FindUserApiShell] -->|handles request| U
