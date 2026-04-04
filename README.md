@@ -121,7 +121,7 @@ Establish the execution harness to enable continuous execution and debugging dur
 
 ```java
 @DisplayName("Find User Use Case: Test Shell")
-class FindUserUseCaseTestShell {
+class FindUserTestShell {
     @Test
     void main() {
         var useCase = new DefaultFindUserUseCase();
@@ -286,7 +286,7 @@ class LocalFindUserClient extends FindUserClient {
 ```
 ```java
 @DisplayName("Find User Use Case Test Shell")
-class FindUserUseCaseTestShell {
+class FindUserTestShell {
     @Test
     void main() {
         var client = new LocalFindUserClient(); 
@@ -493,7 +493,7 @@ Strict predictable boundaries are enforced entirely by stringent naming conventi
 | **Use Case** | Use Case | `{Action}{Resource}UseCase` | `FindUserUseCase` |
 | **Implementation** | Use Case | `Default{Action}{Resource}UseCase` | `DefaultFindUserUseCase` |
 | **I/O Contract** | Use Case | `{Action}{Resource}{Type}` | `FindUserClient`, `SaveUserRepository` |
-| **Test Shell** | Use Case | `{Action}UseCaseTestShell` | `FindUserUseCaseTestShell` |
+| **Test Shell** | Use Case | `{Action}TestShell` | `FindUserTestShell` |
 | **Adapter (Test)** | Use Case | `{Local/InMemory}{Action}{Resource}{Type}` | `InMemorySaveUserRepository` |
 | **Adapter (Prod)**| Shell | `{Tech/Vendor}{Action}{Resource}{Type}` | `JdbcSaveUserRepository` |
 | **Entry Point** | Shell | `{Action}{Resource}{Type}Shell` | `FindUserApiShell`, `FindUserKafkaConsumerShell` |
@@ -541,7 +541,7 @@ hermi-user (Parent)
 │   │   ├── SaveUserRepository.java                 (I/O Contract)
 │   │   └── UserNotificationMessenger.java          (I/O Contract)
 │   └── src/test/java/org/hermi/user/find/shell
-│       ├── FindUserUseCaseTestShell.java           (Test Shell)
+│       ├── FindUserTestShell.java                  (Test Shell)
 │       ├── LocalFindUserClient.java                (Test Adapter)
 │       ├── InMemorySaveUserRepository.java         (Test Adapter)
 │       └── ConsoleUserNotificationMessenger.java   (Test Adapter)

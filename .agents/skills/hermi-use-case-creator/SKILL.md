@@ -84,14 +84,14 @@ Create `Default{Action}{Resource}UseCase` extending the abstract Use Case.
 - Orchestrate the business logic inside the `doExecute(Input)` method.
 
 ### D. Verification (The Test Shell & Phase 1 Gate)
-Generate a JUnit test class named `{Action}UseCaseTestShell`. 
+Generate a JUnit test class named `{Action}TestShell`. 
 > **Strict Rule**: No Mocks allowed (e.g., Mockito). Mocking couples tests to implementation details.
 
 Generate local/in-memory test adapters for the contracts within the `/test/` folder so the user can verify logic rapidly:
 - `InMemory{Name}Repository`
 - `Local{Name}Client`
 - `Console{Name}Messenger`
-Generate the `{Action}UseCaseTestShell` class showing how to instantiate the `Default...UseCase` with these test adapters and assert behavior. Verify edge cases to pass the **Phase 1 Gate**.
+Generate the `{Action}TestShell` class showing how to instantiate the `Default...UseCase` with these test adapters and assert behavior. Verify edge cases to pass the **Phase 1 Gate**.
 
 **Ask the user to run the Test Shell and confirm the Phase 1 Gate is passed before proceeding.**
 
@@ -122,7 +122,7 @@ Before providing any code, silently verify your output against these strict nami
 | **Use Case** | Use Case (Phase 1) | `{Action}{Resource}UseCase` | `FindUserUseCase` |
 | **Implementation**| Use Case (Phase 1) | `Default{Action}{Resource}UseCase` | `DefaultFindUserUseCase` |
 | **I/O Contract** | Use Case (Phase 1) | `{Action}{Resource}{Type}` | `FindUserClient` |
-| **Test Shell** | Phase 1 Test | `{Action}UseCaseTestShell` | `FindUserUseCaseTestShell` |
+| **Test Shell** | Phase 1 Test | `{Action}TestShell` | `FindUserTestShell` |
 | **Adapter (Test)** | Phase 1 Test | `{Local/InMemory}{Action}{Resource}{Type}` | `InMemorySaveUserRepository` |
 | **Adapter (Prod)**| Shell (Phase 2) | `{Tech/Vendor}{Action}{Resource}{Type}` | `JdbcSaveUserRepository` |
 | **Entry Point** | Shell (Phase 2) | `{Action}{Resource}{Type}Shell` | `FindUserApiShell` |
