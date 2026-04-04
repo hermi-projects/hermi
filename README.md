@@ -82,6 +82,57 @@ The following tutorial demonstrates the implementation of a Use Case step-by-ste
 
 **Scenario**: We want to build a feature to retrieve a user by their SSN from a 3rd-party API, save them to a local database, and publish a notification.
 
+
+### Visualization: The Plug-and-Play Architecture
+
+```mermaid
+graph TD
+    %% Use Case Core (Central and Constant)
+    subgraph Core ["Use Case Core (The Brain) - CONSTANT"]
+        direction TB
+        UC[FindUserUseCase]
+        Impl[DefaultFindUserUseCase]
+        Contr["I/O Contracts (Client, Repo, Messenger)"]
+        
+        UC --- Impl
+        Impl --- Contr
+    end
+
+    %% Various Shells (Interchangeable)
+    subgraph Shell_REST ["Shell: Spring REST (Variable)"]
+        Controller --> UC
+    end
+
+    subgraph Shell_CLI ["Shell: CLI (Variable)"]
+        CLIRunner --> UC
+    end
+
+    subgraph Shell_MCP ["Shell: AI MCP (Variable)"]
+        McpHandler --> UC
+    end
+
+    %% Various Adapters (Interchangeable)
+    subgraph Adapters_Prod ["Prod Shell (DB, Kafka, APIs)"]
+        JDBC -- implements --> Contr
+        Kafka -- implements --> Contr
+        LexisNexis -- implements --> Contr
+    end
+
+    subgraph Adapters_Test ["Test Shell (In-Memory, Console)"]
+        InMemory -- implements --> Contr
+        Console -- implements --> Contr
+        Local -- implements --> Contr
+    end
+
+    %% Styling to emphasize Core vs Shell
+    style Core fill:#e1f5fe,stroke:#01579b,stroke-width:4px
+    style Shell_REST stroke-dasharray: 5 5
+    style Shell_CLI stroke-dasharray: 5 5
+    style Shell_MCP stroke-dasharray: 5 5
+    style Adapters_Prod stroke-dasharray: 5 5
+    style Adapters_Test stroke-dasharray: 5 5
+```
+
 ### Phase 1: Use Case (The Core)
 
 #### Step 1: Establish the Boundary
