@@ -20,7 +20,6 @@ By enforcing a strict boundary between execution intent and infrastructure deliv
 6. [Validation Rules](#6-validation-rules)
 7. [Project Structure](#7-project-structure)
 
----
 
 ## 1. Core Philosophy
 
