@@ -484,22 +484,44 @@ public class FindUserConsumerShell {
 
 ## 5. Naming Conventions
 
-Strict predictable boundaries are enforced entirely by stringent naming conventions. Adherence is non-negotiable.
+### The Core Logic: Functional Soul in an OOP Body
+Strictly adhering to these naming rules is not just about aesthetics; it is about preserving the Economic and Architectural integrity of the framework.
 
-| Component | Target Layer | Naming Pattern | Example |
-| :--- | :--- | :--- | :--- |
-| **Module** | Use Case | `{project}-{action}-{resource}-usecase` | `hermi-find-user-usecase` |
-| **Package** | Use Case | `{org}.{resource}.{action}.usecase` | `org.hermi.user.find.usecase` |
-| **Use Case** | Use Case | `{Action}{Resource}UseCase` | `FindUserUseCase` |
-| **Implementation** | Use Case | `Default{Action}{Resource}UseCase` | `DefaultFindUserUseCase` |
-| **I/O Contract** | Use Case | `{Action}{Resource}{Type}` | `FindUserClient`, `SaveUserRepository` |
-| **Test Shell** | Use Case | `{Action}TestShell` | `FindUserTestShell` |
-| **Adapter (Test)** | Use Case | `{Local/InMemory}{Action}{Resource}{Type}` | `InMemorySaveUserRepository` |
-| **Adapter (Prod)**| Shell | `{Tech/Vendor}{Action}{Resource}{Type}` | `JdbcSaveUserRepository` |
-| **Entry Point** | Shell | `{Action}{Resource}{Type}Shell` | `FindUserApiShell`, `FindUserConsumerShell` |
-| **Shell Module**| Shell | `{project}-{framework}-{type}-shell` | `hermi-spring-rest-shell` |
+- **Functional Soul**: Though implemented as Classes (to preserve type metadata for validation), every Client, Repository, and Messenger is a Function at heart. It has one input, one output, and exactly one business responsibility.
+- **Temporal Modeling**: We model the codebase after Time and Tense.
+  - Action (Future/Present): Client and Repository reflect an Intention (e.g., Find, Save).
+  - Fact (Past): Messenger reflects a Fact (e.g., UserFound).
+- **Just-In-Time (JIT) Discovery**: Contracts are never designed upfront based on "what the database can do." They are discovered exactly when the business logic reveals a specific need.
 
-*(Type refers to `Client`, `Repository`, or `Messenger`)*
+### 1. Phase 1: Use Case Layer (Core Logic)
+Pure Java, technology-neutral business logic.
+
+| Component | Naming Pattern | Example |
+| :--- | :--- | :--- |
+| **UseCase** | `{Action}{Resource}UseCase` | `FindUserUseCase` |
+| **I/O: Client** | `{Action}{Resource}Client` | `FindUserClient` (Initiating Action) |
+| **I/O: Repository** | `{Action}{Resource}Repository` | `SaveUserRepository` (Initiating Action) |
+| **I/O: Messenger** | `{Resource}{Action-ed}Messenger` | `UserFoundMessenger` (Reporting a Fact) |
+| **Inner Model** | `{Resource}` | `User` (Scoped specifically to the UseCase) |
+
+### 2. Phase 2: Shell Layer (Infrastructure)
+Technology-specific implementations (e.g., Spring, JDBC, Kafka).
+
+| Component | Naming Pattern | Example |
+| :--- | :--- | :--- |
+| **Prod Adapter** | `{Tech/Vendor}{ActualContractName}` | `JdbcSaveUserRepository`, `KafkaUserFoundMessenger`, `LexisNexisFindUserClient` |
+| **Entry Point** | `{Action}{Resource}{Type}Shell` | `FindUserApiShell`, `FindUserConsumerShell` |
+
+### 3. The Three Golden Rules
+
+#### Rule 1: The Tense Integrity
+Logic drives the tense. Use Verb-First for active side-effects (Find, Save) and Result-First for immutable broadcasting (UserFound).
+
+#### Rule 2: Prefix Isolation
+The Core is pure; the Shell is tech-heavy. Any class containing infrastructure (JDBC, Kafka, etc.) MUST have the technology name as its very first word. No prefix means Pure Java.
+
+#### Rule 3: Single Action Prophecy
+If you need a new action, you define a new class. Avoid "Utility" or "Service" classes that group multiple unrelated behaviors.
 
 ---
 
