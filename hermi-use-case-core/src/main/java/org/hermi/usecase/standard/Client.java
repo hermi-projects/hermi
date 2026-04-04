@@ -13,9 +13,9 @@ import org.hermi.usecase.commons.validation.Validatable;
  * @param <I> the type of the input
  * @param <O> the type of the output
  */
-public abstract class Client<I, O extends Validatable> extends Executor<I, O> {
+public abstract class Client<C, R extends Validatable> extends Executor<C, R> {
   /**
-   * Calls the external system with the client request and returns the response.
+   * Executes the external system calling with the client request and returns the response.
    *
    * <ul>
    *   <li><b>Use Case Layer (Phase 1)</b>: Defines the contract by extending this class and
@@ -30,9 +30,9 @@ public abstract class Client<I, O extends Validatable> extends Executor<I, O> {
    * <p>Example Use Case Layer (Phase 1):
    *
    * <pre>{@code
-   * public abstract class FindUserClient extends Client<FindUserClient.Input, FindUserClient.Output> {
-   *   public static record Input(String ssn) {}
-   *   public static record Output(String name, String email) implements Validatable {}
+   * public abstract class FindUserClient extends Client<FindUserClient.Context, FindUserClient.Result> {
+   *   public static record Context(String ssn) {}
+   *   public static record Result(String name, String email) implements Validatable {}
    * }
    * }</pre>
    *
@@ -46,8 +46,8 @@ public abstract class Client<I, O extends Validatable> extends Executor<I, O> {
    *   private final RestTemplate restTemplate;
    *
    *   @Override
-   *   protected Output doCall(Input input) {
-   *     ApiRequest apiRequest = convertInput(input);
+   *   protected Result doExecute(Context context) {
+   *     ApiRequest apiRequest = convertInput(context);
    *     ApiResponse apiResponse = process(apiRequest);
    *     return convertOutput(apiResponse);
    *   }
@@ -69,29 +69,20 @@ public abstract class Client<I, O extends Validatable> extends Executor<I, O> {
    * }
    * }</pre>
    *
-   * @param input the client request input
-   * @return the client response output
+   * @param context the client request context
+   * @return the client response result
    */
-  protected abstract O doCall(I input);
+  protected abstract R doExecute(C context);
 
-  public O call(I input) {
-    return run(input);
-  }
-
-  public O call(Convertible<I> convertibleInput) {
+  public R execute(Convertible<C> convertibleContext) {
     Objects.requireNonNull(
-        convertibleInput, getSimpleClassName() + ", convertible input cannot be null");
-    return call(convertibleInput.convert());
+        convertibleContext, getSimpleClassName() + ", convertible context cannot be null");
+    return execute(convertibleContext.convert());
   }
 
-  public <S> O call(S source, Converter<S, I> converter) {
+  public <S> R execute(S source, Converter<S, C> converter) {
     Objects.requireNonNull(source, getSimpleClassName() + ", source cannot be null");
     Objects.requireNonNull(converter, getSimpleClassName() + ", converter cannot be null");
-    return call(converter.convert(source));
-  }
-
-  @Override
-  protected O doRun(I input) {
-    return doCall(input);
+    return execute(converter.convert(source));
   }
 }

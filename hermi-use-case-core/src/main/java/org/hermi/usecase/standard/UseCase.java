@@ -12,7 +12,7 @@ import org.hermi.usecase.commons.validation.Validatable;
  * @param <I> the type of the input
  * @param <O> the type of the output
  */
-public abstract class UseCase<I extends Validatable, O> extends Executor<I, O> {
+public abstract class UseCase<C extends Validatable, R> extends Executor<C, R> {
 
   /**
    * Executes the business logic of the use case.
@@ -28,9 +28,9 @@ public abstract class UseCase<I extends Validatable, O> extends Executor<I, O> {
    * <p>Example FindUserUseCase Contract & Core Logic (Phase 1):
    *
    * <pre>{@code
-   * public abstract class FindUserUseCase extends UseCase<FindUserUseCase.Input, FindUserUseCase.Output> {
-   *   public static record Input(@NotNull @NotBlank String ssn) implements Validatable {}
-   *   public static record Output(String name, String email) {}
+   * public abstract class FindUserUseCase extends UseCase<FindUserUseCase.Context, FindUserUseCase.Result> {
+   *   public static record Context(@NotNull @NotBlank String ssn) implements Validatable {}
+   *   public static record Result(String name, String email) {}
    * }
    *
    * public record User(String ssn, String name, String email) {}
@@ -43,25 +43,25 @@ public abstract class UseCase<I extends Validatable, O> extends Executor<I, O> {
    *   public DefaultFindUserUseCase(
    *       FindUserClient findUserClient,
    *       SaveUserRepository saveUserRepository,
-   *       UserFoundMessenger messenger) {
+   *       NotifyUserFoundMessenger messenger) {
    *     this.findUserClient = findUserClient;
    *     this.saveUserRepository = saveUserRepository;
    *     this.messenger = messenger;
    *   }
    *
    *   @Override
-   *   protected Output doExecute(Input input) {
+   *   protected Result doExecute(Context context) {
    *     // 1. Fetch user data via the client contract
-   *     FindUserClient.Output apiResult = findUserClient.call(new FindUserClient.Input(input.ssn()));
-   *     User user = new User(input.ssn(), apiResult.name(), apiResult.email());
+   *     FindUserClient.Result apiResult = findUserClient.execute(new FindUserClient.Context(context.ssn()));
+   *     User user = new User(context.ssn(), apiResult.name(), apiResult.email());
    *
    *     // 2. Save the user via the repository contract
-   *     saveUserRepository.send(new SaveUserRepository.Input(user.name(), user.email()));
+   *     saveUserRepository.execute(new SaveUserRepository.Context(user.name(), user.email()));
    *
    *     // 3. Send notification
-   *     messenger.publish(new UserFoundMessenger.Input(user.email(), "User found: " + user.name()));
+   *     messenger.execute(new NotifyUserFoundMessenger.Context(user.email(), "User found: " + user.name()));
    *
-   *     return new Output(user.name(), user.email());
+   *     return new Result(user.name(), user.email());
    *   }
    * }
    * }</pre>
@@ -77,13 +77,13 @@ public abstract class UseCase<I extends Validatable, O> extends Executor<I, O> {
    *   @Autowired
    *   public FindUserService(LexisNexisFindUserClient client,
    *                          JdbcSaveUserRepository repo,
-   *                          KafkaUserFoundMessenger messenger) {
+   *                          KafkaNotifyUserFoundMessenger messenger) {
    *     // Instantiate the Use Case with production adapters
    *     this.findUserUseCase = new DefaultFindUserUseCase(client, repo, messenger);
    *   }
    *
-   *   public FindUserUseCase.Output findUser(FindUserUseCase.Input input) {
-   *     return findUserUseCase.execute(input);
+   *   public FindUserUseCase.Result findUser(FindUserUseCase.Context context) {
+   *     return findUserUseCase.execute(context);
    *   }
    * }
    *
@@ -98,8 +98,8 @@ public abstract class UseCase<I extends Validatable, O> extends Executor<I, O> {
    *   }
    *
    *   @GetMapping
-   *   public FindUserUseCase.Output findUser(@RequestBody FindUserUseCase.Input input) {
-   *     return findUserService.findUser(input);
+   *   public FindUserUseCase.Result findUser(@RequestBody FindUserUseCase.Context context) {
+   *     return findUserService.findUser(context);
    *   }
    * }
    * }</pre>
@@ -107,25 +107,16 @@ public abstract class UseCase<I extends Validatable, O> extends Executor<I, O> {
    * @param input the use case input
    * @return the use case output
    */
-  protected abstract O doExecute(I input);
+  protected abstract R doExecute(C context);
 
-  public O execute(I input) {
-    return run(input);
+  public R execute(Convertible<C> context) {
+    Objects.requireNonNull(context, getSimpleClassName() + ", convertible context cannot be null");
+    return execute(context.convert());
   }
 
-  public O execute(Convertible<I> input) {
-    Objects.requireNonNull(input, getSimpleClassName() + ", convertible input cannot be null");
-    return execute(input.convert());
-  }
-
-  public <S> O execute(S source, Converter<S, I> converter) {
+  public <S> R execute(S source, Converter<S, C> converter) {
     Objects.requireNonNull(source, getSimpleClassName() + ", source cannot be null");
     Objects.requireNonNull(converter, getSimpleClassName() + ", converter cannot be null");
     return execute(converter.convert(source));
-  }
-
-  @Override
-  protected O doRun(I input) {
-    return doExecute(input);
   }
 }

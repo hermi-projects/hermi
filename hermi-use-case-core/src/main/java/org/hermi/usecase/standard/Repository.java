@@ -13,7 +13,7 @@ import org.hermi.usecase.commons.validation.Validatable;
  * @param <I> the type of the input
  * @param <O> the type of the output
  */
-public abstract class Repository<I, O extends Validatable> extends Executor<I, O> {
+public abstract class Repository<C, R extends Validatable> extends Executor<C, R> {
 
   /**
    * Saves the repository request to an external data source and returns the response.
@@ -30,9 +30,9 @@ public abstract class Repository<I, O extends Validatable> extends Executor<I, O
    * <p>Example SaveUserRepository Contract in Use Case (Phase 1):
    *
    * <pre>{@code
-   * public abstract class SaveUserRepository extends Repository<SaveUserRepository.Input, SaveUserRepository.Output> {
-   *   public static record Input(String name, String email) {}
-   *   public static record Output(String id) implements Validatable {}
+   * public abstract class SaveUserRepository extends Repository<SaveUserRepository.Context, SaveUserRepository.Result> {
+   *   public static record Context(String name, String email) {}
+   *   public static record Result(String id) implements Validatable {}
    * }
    * }</pre>
    *
@@ -46,8 +46,8 @@ public abstract class Repository<I, O extends Validatable> extends Executor<I, O
    *   private final UserJpaRepository jpaRepository;
    *
    *   @Override
-   *   protected Output doSend(Input input) {
-   *     UserEntity entity = convertInput(input);
+   *   protected Result doExecute(Context context) {
+   *     UserEntity entity = convertInput(context);
    *     UserEntity savedEntity = process(entity);
    *     return convertOutput(savedEntity);
    *   }
@@ -69,29 +69,20 @@ public abstract class Repository<I, O extends Validatable> extends Executor<I, O
    * }
    * }</pre>
    *
-   * @param input the repository request input
-   * @return the repository response output
+   * @param context the repository request context
+   * @return the repository response result
    */
-  protected abstract O doSend(I input);
+  protected abstract R doExecute(C context);
 
-  public O send(I input) {
-    return run(input);
-  }
-
-  public O send(Convertible<I> convertibleInput) {
+  public R execute(Convertible<C> convertibleContext) {
     Objects.requireNonNull(
-        convertibleInput, getSimpleClassName() + ", convertible input cannot be null");
-    return send(convertibleInput.convert());
+        convertibleContext, getSimpleClassName() + ", convertible context cannot be null");
+    return execute(convertibleContext.convert());
   }
 
-  public <S> O send(S source, Converter<S, I> converter) {
+  public <S> R execute(S source, Converter<S, C> converter) {
     Objects.requireNonNull(source, getSimpleClassName() + ", source cannot be null");
     Objects.requireNonNull(converter, getSimpleClassName() + ", converter cannot be null");
-    return send(converter.convert(source));
-  }
-
-  @Override
-  protected O doRun(I input) {
-    return doSend(input);
+    return execute(converter.convert(source));
   }
 }

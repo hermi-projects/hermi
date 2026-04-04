@@ -12,7 +12,7 @@ import org.hermi.usecase.commons.validation.Validatable;
  * @param <I> the type of the input
  * @param <O> the type of the output
  */
-public abstract class Messenger<I, O extends Validatable> extends Executor<I, O> {
+public abstract class Messenger<C, R extends Validatable> extends Executor<C, R> {
 
   /**
    * Sends the message to an external system and returns the response.
@@ -26,30 +26,30 @@ public abstract class Messenger<I, O extends Validatable> extends Executor<I, O>
    *       org.hermi.usecase.commons.validation.Validatable Validatable}.
    *   <li><b>Shell Layer (Phase 2)</b>: Implements the real-world communication logic using
    *       specific technologies, prefixed with the technology name (e.g., {@code
-   *       KafkaUserFoundMessenger}).
+   *       KafkaNotifyUserFoundMessenger}).
    * </ul>
    *
-   * <p>Example UserFoundMessenger Contract in Use Case Layer (Phase 1):
+   * <p>Example NotifyUserFoundMessenger Contract in Use Case Layer (Phase 1):
    *
    * <pre>{@code
-   * public abstract class UserFoundMessenger extends Messenger<UserFoundMessenger.Input, UserFoundMessenger.Output> {
-   *   public static record Input(String userId, String message) {}
-   *   public static record Output(String messageId) implements Validatable {}
+   * public abstract class NotifyUserFoundMessenger extends Messenger<NotifyUserFoundMessenger.Context, NotifyUserFoundMessenger.Result> {
+   *   public static record Context(String userId, String message) {}
+   *   public static record Result(String messageId) implements Validatable {}
    * }
    * }</pre>
    *
-   * <p>Example KafkaUserFoundMessenger Implementation in Shell Layer (Phase 2):
+   * <p>Example KafkaNotifyUserFoundMessenger Implementation in Shell Layer (Phase 2):
    *
    * <pre>{@code
    * @Component
-   * public class KafkaUserFoundMessenger extends UserFoundMessenger
-   *     implements MessengerAdapter<ProducerRecord<String, String>, RecordMetadata, UserFoundMessenger.Input, UserFoundMessenger.Output> {
+   * public class KafkaNotifyUserFoundMessenger extends NotifyUserFoundMessenger
+   *     implements MessengerAdapter<ProducerRecord<String, String>, RecordMetadata, NotifyUserFoundMessenger.Input, NotifyUserFoundMessenger.Output> {
    *
    *   private final KafkaTemplate<String, String> kafkaTemplate;
    *
    *   @Override
-   *   protected Output doPublish(Input input) {
-   *     ProducerRecord<String, String> record = convertInput(input);
+   *   protected Result doExecute(Context context) {
+   *     ProducerRecord<String, String> record = convertInput(context);
    *     RecordMetadata metadata = process(record);
    *     return convertOutput(metadata);
    *   }
@@ -75,29 +75,20 @@ public abstract class Messenger<I, O extends Validatable> extends Executor<I, O>
    * }
    * }</pre>
    *
-   * @param input the message request input
-   * @return the message response output
+   * @param context the message request context
+   * @return the message response result
    */
-  protected abstract O doPublish(I input);
+  protected abstract R doExecute(C context);
 
-  public O publish(I input) {
-    return run(input);
-  }
-
-  public O publish(Convertible<I> convertibleInput) {
+  public R execute(Convertible<C> convertibleContext) {
     Objects.requireNonNull(
-        convertibleInput, getSimpleClassName() + ", convertible input cannot be null");
-    return publish(convertibleInput.convert());
+        convertibleContext, getSimpleClassName() + ", convertible context cannot be null");
+    return execute(convertibleContext.convert());
   }
 
-  public <S> O publish(S source, Converter<S, I> converter) {
+  public <S> R execute(S source, Converter<S, C> converter) {
     Objects.requireNonNull(source, getSimpleClassName() + ", source cannot be null");
     Objects.requireNonNull(converter, getSimpleClassName() + ", converter cannot be null");
-    return publish(converter.convert(source));
-  }
-
-  @Override
-  protected O doRun(I input) {
-    return doPublish(input);
+    return execute(converter.convert(source));
   }
 }

@@ -57,7 +57,7 @@ This is not a stylistic preference. It is a disciplined response to a well-known
 
 ### Phase 1: The Core Logic Lifecycle (The Brain)
 Phase 1 is about Discovery and Verification. It answers _"What"_ the system does — all business rules, workflow orchestration, and domain models — proven correct using exclusively pure Java:
-1. **Establish the Boundary**: Define your `UseCase` contract (`Input` and `Output`).
+1. **Establish the Boundary**: Define your `UseCase` contract (`Context` and `Result`).
 2. **Initialize Core Implementation**: Create a skeletal `DefaultUseCase` class.
 3. **The Test Shell**: Build a minimal test execution shell as a "Play Button" for continuous, instant execution and debugging during development.
 4. **JIT I/O Discovery**: Write logic; define I/O contracts the moment you need a specific behavior, categorizing them strictly by architectural intent:
@@ -70,7 +70,7 @@ Phase 1 is about Discovery and Verification. It answers _"What"_ the system does
 ### Phase 2: Shell (Infrastructure)
 Phase 2 is about Implementation and Wiring. It answers _"How"_ the system does it — translating each I/O contract into a technology-specific adapter and wiring it into the chosen Shell.
 
-7. **Implement Production Adapters**: For each I/O contract discovered in Phase 1, build the technology-specific or vendor-specific adapter class (e.g., `JdbcSaveUserRepository`, `LexisNexisFindUserClient`, `KafkaUserFoundMessenger`).
+7. **Implement Production Adapters**: For each I/O contract discovered in Phase 1, build the technology-specific or vendor-specific adapter class (e.g., `JdbcSaveUserRepository`, `LexisNexisFindUserClient`, `KafkaNotifyUserFoundMessenger`).
 
 8. **Expose via Entry Points**: Wire the production adapters into the appropriate entry point for the chosen Shell — e.g., a REST controller, a message consumer, a CLI runner, or an AI MCP tool handler. If cross-cutting infrastructure concerns (such as transaction management or AOP) are required, introduce an intermediate service layer between the adapters and the entry point.
 
@@ -85,18 +85,18 @@ The following tutorial demonstrates the implementation of a Use Case step-by-ste
 ### Phase 1: Use Case (The Core)
 
 #### Step 1: Establish the Boundary
-Everything starts with defining the exact input (`Input`) and output (`Output`) representing the Use Case.
+Everything starts with defining the exact context (`Context`) and result (`Result`) representing the Use Case.
 
 > [!WARNING]
 > Data entering the Use Case boundary **MUST** implement the `Validatable` interface.
 
 > [!NOTE]
-> `Validatable` is not just a marker. The framework's base `execute()` method automatically invokes validation on any `Validatable` input before ever delegating to your `doExecute()` core logic. Your business logic is guaranteed to receive safe data.
+> `Validatable` is not just a marker. The framework's base `execute()` method automatically invokes validation on any `Validatable` context before ever delegating to your `doExecute()` core logic. Your business logic is guaranteed to receive safe data.
 
 ```java
-public abstract class FindUserUseCase extends UseCase<FindUserUseCase.Input, FindUserUseCase.Output> {
-    public static record Input(@NotNull @NotBlank String ssn) implements Validatable {}
-    public static record Output(String name, String email) {}
+public abstract class FindUserUseCase extends UseCase<FindUserUseCase.Context, FindUserUseCase.Result> {
+    public static record Context(@NotNull @NotBlank String ssn) implements Validatable {}
+    public static record Result(String name, String email) {}
 }
 ```
 
@@ -109,9 +109,9 @@ public record User(String ssn, String name, String email) {}
 
 public class DefaultFindUserUseCase extends FindUserUseCase {
     @Override
-    protected Output doExecute(Input input) {
+    protected Result doExecute(Context context) {
         // Business logic goes here
-        return new Output(null, null);
+        return new Result(null, null);
     }
 }
 ```
@@ -127,7 +127,7 @@ class FindUserTestShell {
         var useCase = new DefaultFindUserUseCase();
         
         // Execute this test iteratively to verify the logic
-        var output = useCase.execute(new FindUserUseCase.Input("123-456-789"));
+        var result = useCase.execute(new FindUserUseCase.Context("123-456-789"));
     }
 }
 ```
@@ -137,9 +137,9 @@ When the core logic requires external data retrieval, do not implement a protoco
 
 ```java
 // Define the required client contract:
-public abstract class FindUserClient extends Client<FindUserClient.Input, FindUserClient.Output> {
-    public record Input(String ssn) {}
-    public record Output(String name, String email) implements Validatable {}
+public abstract class FindUserClient extends Client<FindUserClient.Context, FindUserClient.Result> {
+    public record Context(String ssn) {}
+    public record Result(String name, String email) implements Validatable {}
 }
 ```
 
@@ -154,12 +154,12 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
     }
 
     @Override
-    protected Output doExecute(Input input) {
+    protected Result doExecute(Context context) {
         // 1. Fetch user data via the client contract
-        var apiOutput = findUserClient.call(new FindUserClient.Input(input.ssn()));
-        var user = new User(input.ssn(), apiOutput.name(), apiOutput.email());
+        var apiResult = findUserClient.execute(new FindUserClient.Context(context.ssn()));
+        var user = new User(context.ssn(), apiResult.name(), apiResult.email());
         
-        return new Output(user.name(), user.email());
+        return new Result(user.name(), user.email());
     }
 }
 ```
@@ -169,9 +169,9 @@ When the logic requires data persistence, define a repository contract.
 
 ```java
 // Define the required repository contract:
-public abstract class SaveUserRepository extends Repository<SaveUserRepository.Input, SaveUserRepository.Output> {
-    public record Input(String name, String email) {}
-    public record Output(String id) implements Validatable {}
+public abstract class SaveUserRepository extends Repository<SaveUserRepository.Context, SaveUserRepository.Result> {
+    public record Context(String name, String email) {}
+    public record Result(String id) implements Validatable {}
 }
 ```
 
@@ -188,14 +188,14 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
     }
 
     @Override
-    protected Output doExecute(Input input) {
-        var apiOutput = findUserClient.call(new FindUserClient.Input(input.ssn()));
-        var user = new User(input.ssn(), apiOutput.name(), apiOutput.email());
+    protected Result doExecute(Context context) {
+        var apiResult = findUserClient.execute(new FindUserClient.Context(context.ssn()));
+        var user = new User(context.ssn(), apiResult.name(), apiResult.email());
         
         // 2. Save the user via the repository contract
-        saveUserRepository.send(new SaveUserRepository.Input(user.name(), user.email()));
+        saveUserRepository.execute(new SaveUserRepository.Context(user.name(), user.email()));
         
-        return new Output(user.name(), user.email());
+        return new Result(user.name(), user.email());
     }
 }
 ```
@@ -205,9 +205,9 @@ If an outbound event is required upon completion, define a messenger contract an
 
 ```java
 // Define the required messenger contract:
-public abstract class UserFoundMessenger extends Messenger<UserFoundMessenger.Input, UserFoundMessenger.Output> {
-    public record Input(String email, String message) {}
-    public record Output(String messageId) implements Validatable {}
+public abstract class NotifyUserFoundMessenger extends Messenger<NotifyUserFoundMessenger.Context, NotifyUserFoundMessenger.Result> {
+    public record Context(String email, String message) {}
+    public record Result(String messageId) implements Validatable {}
 }
 ```
 
@@ -217,30 +217,30 @@ Our Phase 1 Use Case logic is finalized:
 public class DefaultFindUserUseCase extends FindUserUseCase {
     private final FindUserClient findUserClient;
     private final SaveUserRepository saveUserRepository;
-    private final UserFoundMessenger messenger;
+    private final NotifyUserFoundMessenger messenger;
 
     public DefaultFindUserUseCase(FindUserClient findUserClient, 
                                   SaveUserRepository saveUserRepository, 
-                                  UserFoundMessenger messenger) {
+                                  NotifyUserFoundMessenger messenger) {
         this.findUserClient = findUserClient;
         this.saveUserRepository = saveUserRepository;
         this.messenger = messenger;
     }
 
     @Override
-    protected Output doExecute(Input input) {
+    protected Result doExecute(Context context) {
         // 1. Fetch user data
-        var apiOutput = findUserClient.call(new FindUserClient.Input(input.ssn()));
-        var user = new User(input.ssn(), apiOutput.name(), apiOutput.email());
+        var apiResult = findUserClient.execute(new FindUserClient.Context(context.ssn()));
+        var user = new User(context.ssn(), apiResult.name(), apiResult.email());
         
         // 2. Save user
-        saveUserRepository.send(new SaveUserRepository.Input(user.name(), user.email()));
+        saveUserRepository.execute(new SaveUserRepository.Context(user.name(), user.email()));
         
         // 3. Send notification
-        var notificationInput = new UserFoundMessenger.Input(user.email(), "User found: " + user.name());
-        messenger.publish(notificationInput);
+        var notificationContext = new NotifyUserFoundMessenger.Context(user.email(), "User found: " + user.name());
+        messenger.execute(notificationContext);
         
-        return new Output(user.name(), user.email());
+        return new Result(user.name(), user.email());
     }
 }
 ```
@@ -257,30 +257,30 @@ class InMemorySaveUserRepository extends SaveUserRepository {
     public final Map<String, String> db = new HashMap<>(); // Standard Java Map for state
 
     @Override
-    protected Output doSend(Input input) {
-        db.put(input.email(), input.name());
-        return new Output("id-001");
+    protected Result doExecute(Context context) {
+        db.put(context.email(), context.name());
+        return new Result("id-001");
     }
 }
  
 // 2. A simple console-logging messenger
-class ConsoleUserFoundMessenger extends UserFoundMessenger {
+class ConsoleNotifyUserFoundMessenger extends NotifyUserFoundMessenger {
     @Override
-    protected Output doPublish(Input input) {
-        System.out.println("[Notification] To: " + input.email() + ", Msg: " + input.message());
-        return new Output("msg-123");
+    protected Result doExecute(Context context) {
+        System.out.println("[Notification] To: " + context.email() + ", Msg: " + context.message());
+        return new Result("msg-123");
     }
 }
  
 // 3. A programmable local client
 class LocalFindUserClient extends FindUserClient {
-    private Output output = new Output("John Doe", "john@example.com");
+    private Result result = new Result("John Doe", "john@example.com");
 
-    public void setOutput(Output output) { this.output = output; }
+    public void setResult(Result result) { this.result = result; }
 
     @Override
-    protected Output doCall(Input input) {
-        return output;
+    protected Result doExecute(Context context) {
+        return result;
     }
 }
 ```
@@ -291,9 +291,9 @@ class FindUserTestShell {
     void main() {
         var client = new LocalFindUserClient(); 
         var repo = new InMemorySaveUserRepository();
-        var messenger = new ConsoleUserFoundMessenger();
+        var messenger = new ConsoleNotifyUserFoundMessenger();
         var useCase = new DefaultFindUserUseCase(client, repo, messenger);
-        var result = useCase.execute(new FindUserUseCase.Input("123-45-6789"));
+        var result = useCase.execute(new FindUserUseCase.Context("123-45-6789"));
         assertTrue(result != null);
     }
 
@@ -303,12 +303,12 @@ class FindUserTestShell {
         // Setup local stubs/state simulators
         var client = new LocalFindUserClient(); 
         var repo = new InMemorySaveUserRepository();
-        var messenger = new ConsoleUserFoundMessenger();
+        var messenger = new ConsoleNotifyUserFoundMessenger();
     
         var useCase = new DefaultFindUserUseCase(client, repo, messenger);
         
         // Assert logic holds up on error states
-        assertThrows(UserNotFoundException.class, () -> useCase.execute(new FindUserUseCase.Input("999-00-9999")));
+        assertThrows(UserNotFoundException.class, () -> useCase.execute(new FindUserUseCase.Context("999-00-9999")));
     }
 }
 ```
@@ -382,12 +382,12 @@ public class JdbcSaveUserRepository extends SaveUserRepository
 }
 
 @Component
-public class KafkaUserFoundMessenger extends UserFoundMessenger
-    implements MessengerAdapter<ProducerRecord<String, String>, RecordMetadata, UserFoundMessenger.Input, UserFoundMessenger.Output> {
+public class KafkaNotifyUserFoundMessenger extends NotifyUserFoundMessenger
+    implements MessengerAdapter<ProducerRecord<String, String>, RecordMetadata, NotifyUserFoundMessenger.Input, NotifyUserFoundMessenger.Output> {
 
   private final KafkaTemplate<String, String> kafkaTemplate;
 
-  public KafkaUserFoundMessenger(KafkaTemplate<String, String> kafkaTemplate) {
+  public KafkaNotifyUserFoundMessenger(KafkaTemplate<String, String> kafkaTemplate) {
     this.kafkaTemplate = kafkaTemplate;
   }
 
@@ -431,7 +431,7 @@ public class FindUserService {
     @Autowired
     public FindUserService(LexisNexisFindUserClient client, 
                            JdbcSaveUserRepository repo, 
-                           KafkaUserFoundMessenger messenger) {
+                           KafkaNotifyUserFoundMessenger messenger) {
         // Instantiate the Use Case with production adapters
         this.findUserUseCase = new DefaultFindUserUseCase(client, repo, messenger);
     }
@@ -487,10 +487,9 @@ public class FindUserConsumerShell {
 ### The Core Logic: Functional Soul in an OOP Body
 Strictly adhering to these naming rules is not just about aesthetics; it is about preserving the Economic and Architectural integrity of the framework.
 
-- **Functional Soul**: Though implemented as Classes (to preserve type metadata for validation), every Client, Repository, and Messenger is a Function at heart. It has one input, one output, and exactly one business responsibility.
+- **Functional Soul**: Though implemented as Classes (to preserve type metadata for validation), every Client, Repository, and Messenger is a Function at heart. Every component is an **Executor** with a single `execute()` entry point.
 - **Temporal Modeling**: We model the codebase after Time and Tense.
-  - Action (Future/Present): Client and Repository reflect an Intention (e.g., Find, Save).
-  - Fact (Past): Messenger reflects a Fact (e.g., UserFound).
+  - Action (Future/Present): Client, Repository, and Messenger reflect an Intention (e.g., Find, Save, Notify).
 - **Just-In-Time (JIT) Discovery**: Contracts are never designed upfront based on "what the database can do." They are discovered exactly when the business logic reveals a specific need.
 
 ### 1. Phase 1: Use Case Layer (Core Logic)
@@ -501,7 +500,7 @@ Pure Java, technology-neutral business logic.
 | **UseCase** | `{Action}{Resource}UseCase` | `FindUserUseCase` |
 | **I/O: Client** | `{Action}{Resource}Client` | `FindUserClient` (Initiating Action) |
 | **I/O: Repository** | `{Action}{Resource}Repository` | `SaveUserRepository` (Initiating Action) |
-| **I/O: Messenger** | `{Resource}{Action-ed}Messenger` | `UserFoundMessenger` (Reporting a Fact) |
+| **I/O: Messenger** | **`{Notify}{Fact}Messenger`** | `NotifyUserFoundMessenger` (Initiating Action) |
 | **Inner Model** | `{Resource}` | `User` (Scoped specifically to the UseCase) |
 
 ### 2. Phase 2: Shell Layer (Infrastructure)
@@ -509,19 +508,19 @@ Technology-specific implementations (e.g., Spring, JDBC, Kafka).
 
 | Component | Naming Pattern | Example |
 | :--- | :--- | :--- |
-| **Prod Adapter** | `{Tech/Vendor}{ActualContractName}` | `JdbcSaveUserRepository`, `KafkaUserFoundMessenger`, `LexisNexisFindUserClient` |
+| **Prod Adapter** | `{Tech/Vendor}{ActualContractName}` | `JdbcSaveUserRepository`, `KafkaNotifyUserFoundMessenger`, `LexisNexisFindUserClient` |
 | **Entry Point** | `{Action}{Resource}{Type}Shell` | `FindUserApiShell`, `FindUserConsumerShell` |
 
 ### 3. The Three Golden Rules
 
 #### Rule 1: The Tense Integrity
-Logic drives the tense. Use Verb-First for active side-effects (Find, Save) and Result-First for immutable broadcasting (UserFound).
+Logic drives the tense. All I/O components are Actions and MUST start with a Verb (Find, Save, Notify). Universal execution is performed via the `.execute()` method.
 
 #### Rule 2: Prefix Isolation
 The Core is pure; the Shell is tech-heavy. Any class containing infrastructure (JDBC, Kafka, etc.) MUST have the technology name as its very first word. No prefix means Pure Java.
 
 #### Rule 3: Single Action Prophecy
-If you need a new action, you define a new class. Avoid "Utility" or "Service" classes that group multiple unrelated behaviors.
+If you need a new action, you define a new class. Avoid "Utility", "Manager", or "Service" classes that group multiple unrelated behaviors.
 
 ---
 
@@ -561,12 +560,12 @@ hermi-user (Parent)
 │   │   ├── User.java                               (Scoped Domain Model)
 │   │   ├── FindUserClient.java                     (I/O Contract)
 │   │   ├── SaveUserRepository.java                 (I/O Contract)
-│   │   └── UserFoundMessenger.java          (I/O Contract)
+│   │   └── NotifyUserFoundMessenger.java    (I/O Contract)
 │   └── src/test/java/org/hermi/user/find/shell
 │       ├── FindUserTestShell.java                  (Test Shell)
 │       ├── LocalFindUserClient.java                (Test Adapter)
 │       ├── InMemorySaveUserRepository.java         (Test Adapter)
-│       └── ConsoleUserFoundMessenger.java   (Test Adapter)
+│       └── ConsoleNotifyUserFoundMessenger.java (Test Adapter)
 │
 └── hermi-spring-api-shell (Phase 2 Layer: Framework)
     ├── pom.xml
@@ -576,7 +575,7 @@ hermi-user (Parent)
         ├── FindUserService.java                    (Spring Service)
         ├── LexisNexisFindUserClient.java           (Production Adapter)
         ├── JdbcSaveUserRepository.java             (Production Adapter)
-        └── KafkaUserFoundMessenger.java     (Production Adapter)
+        └── KafkaNotifyUserFoundMessenger.java   (Production Adapter)
 ```
 ```mermaid
 graph TD
@@ -592,17 +591,17 @@ graph TD
     %% Use Case -> Contracts
     U -->|requests external data| D[FindUserClient]
     U -->|requests persistence| E[SaveUserRepository]
-    U -->|requests notification| F[UserFoundMessenger]
+    U -->|requests notification| F[NotifyUserFoundMessenger]
 
     %% Test Implementations
     D -->|test implementation| G[LocalFindUserClient]
     E -->|test implementation| H[InMemorySaveUserRepository]
-    F -->|test implementation| I[ConsoleUserFoundMessenger]
+    F -->|test implementation| I[ConsoleNotifyUserFoundMessenger]
 
     %% Production Implementations
     D -->|production implementation| J[LexisNexisFindUserClient]
     E -->|production implementation| K[JdbcSaveUserRepository]
-    F -->|production implementation| L[KafkaUserFoundMessenger]
+    F -->|production implementation| L[KafkaNotifyUserFoundMessenger]
 
     %% Darker backgrounds + stronger contrast
     classDef test fill:#922B21,color:#FFFFFF,stroke:#641E16,stroke-width:1.5px

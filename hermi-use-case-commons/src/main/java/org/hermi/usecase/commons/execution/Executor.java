@@ -10,47 +10,48 @@ import org.hermi.usecase.commons.validation.InputValidationException;
 import org.hermi.usecase.commons.validation.Validatable;
 import org.hermi.usecase.commons.validation.Validator;
 
-public abstract class Executor<I, O> {
-  protected abstract O doRun(I input);
+public abstract class Executor<C, R> {
+  protected abstract R doExecute(C context);
 
-  protected O run(I input) {
-    validateInput(input);
-    O output = doRun(input);
-    validateOutput(output);
-    return output;
+  public R execute(C context) {
+    validateContext(context);
+    R result = doExecute(context);
+    validateResult(result);
+    return result;
   }
 
-  protected void validateInput(I input) {
+  protected void validateContext(C context) {
     Objects.requireNonNull(
-        input, getSimpleClassName() + ": Input, " + getInputTypeName() + ", cannot be null");
-    if (!(input instanceof Validatable)) {
+        context, getSimpleClassName() + ": Context, " + getContextTypeName() + ", cannot be null");
+    if (!(context instanceof Validatable)) {
       return;
     }
-    Set<ConstraintViolation<I>> violations = Validator.validate(input);
+    Set<ConstraintViolation<C>> violations = Validator.validate(context);
     if (!violations.isEmpty()) {
       throw new InputValidationException(
-          getSimpleClassName() + ": Input, " + getInputTypeName() + ", is not valid", violations);
+          getSimpleClassName() + ": Context, " + getContextTypeName() + ", is not valid",
+          violations);
     }
   }
 
-  protected void validateOutput(O output) {
+  protected void validateResult(R result) {
     Objects.requireNonNull(
-        output, getSimpleClassName() + ": Output, " + getOutputTypeName() + ", cannot be null");
-    if (!(output instanceof Validatable)) {
+        result, getSimpleClassName() + ": Result, " + getResultTypeName() + ", cannot be null");
+    if (!(result instanceof Validatable)) {
       return;
     }
-    Set<ConstraintViolation<O>> violations = Validator.validate(output);
+    Set<ConstraintViolation<R>> violations = Validator.validate(result);
     if (!violations.isEmpty()) {
       throw new InputValidationException(
-          getSimpleClassName() + ": Output, " + getOutputTypeName() + ", is not valid", violations);
+          getSimpleClassName() + ": Result, " + getResultTypeName() + ", is not valid", violations);
     }
   }
 
-  protected String getInputTypeName() {
+  protected String getContextTypeName() {
     return getGenericTypeName(0);
   }
 
-  protected String getOutputTypeName() {
+  protected String getResultTypeName() {
     return getGenericTypeName(1);
   }
 
