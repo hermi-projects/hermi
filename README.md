@@ -3,7 +3,7 @@
 Hermi is a lightweight, opinionated framework for building Java applications where business intent is protected from infrastructure complexity. It transforms the way we build systems by shifting the focus from data-processing to **Intent-Driven Execution**.
 
 > [!NOTE]
-> **The Hermi Manifesto**: In Hermi, you are not just processing data streams. You are driving an **Action** within a specific **Context** to achieve a definitive **Result**. This semantic focus on **Intent-Driven Architecture** is our cornerstone: we protect the **Intent**, we ignore the Delivery.
+> **The Hermi Manifesto**: In Hermi, you are driving an **Action** within a specific **Context** to achieve a definitive **Result**. This semantic focus on **Intent-Driven Architecture** is our cornerstone: we protect the **Intent**, we ignore the Delivery.
 
 By enforcing a strict boundary between execution intent and infrastructure delivery, Hermi ensures your system remains:
 - **Independent of Delivery Layers**: Swap a Web API for a CLI, a Kafka Consumer, or an AI MCP server without touching a single line of business logic.
