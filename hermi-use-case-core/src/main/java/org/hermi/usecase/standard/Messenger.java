@@ -1,16 +1,13 @@
 package org.hermi.usecase.standard;
 
-import java.util.Objects;
-import org.hermi.usecase.commons.conversion.Converter;
-import org.hermi.usecase.commons.conversion.Convertible;
 import org.hermi.usecase.commons.execution.Executor;
 import org.hermi.usecase.commons.validation.Validatable;
 
 /**
  * An abstract class representing a messenger for message sending, including email, SMS, Kafka, etc.
  *
- * @param <I> the type of the input
- * @param <O> the type of the output
+ * @param <C> the type of the context
+ * @param <R> the type of the result
  */
 public abstract class Messenger<C, R extends Validatable> extends Executor<C, R> {
 
@@ -79,16 +76,4 @@ public abstract class Messenger<C, R extends Validatable> extends Executor<C, R>
    * @return the message response result
    */
   protected abstract R doExecute(C context);
-
-  public R execute(Convertible<C> convertibleContext) {
-    Objects.requireNonNull(
-        convertibleContext, getSimpleClassName() + ", convertible context cannot be null");
-    return execute(convertibleContext.convert());
-  }
-
-  public <S> R execute(S source, Converter<S, C> converter) {
-    Objects.requireNonNull(source, getSimpleClassName() + ", source cannot be null");
-    Objects.requireNonNull(converter, getSimpleClassName() + ", converter cannot be null");
-    return execute(converter.convert(source));
-  }
 }

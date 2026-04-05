@@ -1,16 +1,13 @@
 package org.hermi.usecase.standard;
 
-import java.util.Objects;
-import org.hermi.usecase.commons.conversion.Converter;
-import org.hermi.usecase.commons.conversion.Convertible;
 import org.hermi.usecase.commons.execution.Executor;
 import org.hermi.usecase.commons.validation.Validatable;
 
 /**
  * An abstract class representing a business use case.
  *
- * @param <I> the type of the input
- * @param <O> the type of the output
+ * @param <C> the type of the context
+ * @param <R> the type of the result
  */
 public abstract class UseCase<C extends Validatable, R> extends Executor<C, R> {
 
@@ -108,15 +105,4 @@ public abstract class UseCase<C extends Validatable, R> extends Executor<C, R> {
    * @return the use case output
    */
   protected abstract R doExecute(C context);
-
-  public R execute(Convertible<C> context) {
-    Objects.requireNonNull(context, getSimpleClassName() + ", convertible context cannot be null");
-    return execute(context.convert());
-  }
-
-  public <S> R execute(S source, Converter<S, C> converter) {
-    Objects.requireNonNull(source, getSimpleClassName() + ", source cannot be null");
-    Objects.requireNonNull(converter, getSimpleClassName() + ", converter cannot be null");
-    return execute(converter.convert(source));
-  }
 }

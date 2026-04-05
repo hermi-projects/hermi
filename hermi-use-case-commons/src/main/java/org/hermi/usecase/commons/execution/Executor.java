@@ -6,6 +6,8 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Objects;
 import java.util.Set;
+import org.hermi.usecase.commons.conversion.Converter;
+import org.hermi.usecase.commons.conversion.Convertible;
 import org.hermi.usecase.commons.validation.InputValidationException;
 import org.hermi.usecase.commons.validation.Validatable;
 import org.hermi.usecase.commons.validation.Validator;
@@ -18,6 +20,18 @@ public abstract class Executor<C, R> {
     R result = doExecute(context);
     validateResult(result);
     return result;
+  }
+
+  public R execute(Convertible<C> convertibleContext) {
+    Objects.requireNonNull(
+        convertibleContext, getSimpleClassName() + ", convertible context cannot be null");
+    return execute(convertibleContext.convert());
+  }
+
+  public <S> R execute(S source, Converter<S, C> converter) {
+    Objects.requireNonNull(source, getSimpleClassName() + ", source cannot be null");
+    Objects.requireNonNull(converter, getSimpleClassName() + ", converter cannot be null");
+    return execute(converter.convert(source));
   }
 
   protected void validateContext(C context) {

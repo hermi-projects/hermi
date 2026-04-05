@@ -5,31 +5,31 @@ import java.util.List;
 import org.hermi.usecase.commons.validation.Validatable;
 import org.hermi.usecase.standard.UseCase;
 
-public abstract class DispatcherUseCase<I extends Validatable, O> extends UseCase<I, O> {
-  private final List<Handler<I, O>> handlers;
+public abstract class DispatcherUseCase<C extends Validatable, R> extends UseCase<C, R> {
+  private final List<Handler<C, R>> handlers;
 
   @SuppressWarnings("unchecked")
-  public DispatcherUseCase(Handler<I, O>... handlers) {
+  public DispatcherUseCase(Handler<C, R>... handlers) {
     this(List.of(handlers));
   }
 
-  public DispatcherUseCase(List<Handler<I, O>> handlers) {
+  public DispatcherUseCase(List<Handler<C, R>> handlers) {
     this.handlers = new ArrayList<>();
     this.handlers.addAll(handlers);
   }
 
-  public void register(Handler<I, O> handler) {
+  public void register(Handler<C, R> handler) {
     this.handlers.add(handler);
   }
 
   @Override
-  public O doExecute(I input) {
-    for (Handler<I, O> handler : handlers) {
-      if (handler.support(input)) {
-        return handler.execute(input);
+  protected R doExecute(C context) {
+    for (Handler<C, R> handler : handlers) {
+      if (handler.support(context)) {
+        return handler.execute(context);
       }
     }
     throw new HandlerNotFoundException(
-        getSimpleClassName() + ": No handler found for input: " + input);
+        getSimpleClassName() + ": No handler found for context: " + context);
   }
 }
