@@ -47,13 +47,13 @@ The framework divides your application into two distinct, non-overlapping domain
 
 In Hermi, we avoid speculative design. We follow a **Discovery Lifecycle** where the business logic *reveals* its needs, and the infrastructure simply fulfills that revelation.
 
-### Traversal Strategy: Top-Down, Breadth-First
+### Blueprint-First Orchestration
 
-Phase 1 follows a **top-down, breadth-first traversal**. Instead of drilling into implementation details, you focus on completing the **holistic orchestration** of the business intent first.
+Phase 1 follows a **Blueprint-First Orchestration** (Top-Down, Breadth-First traversal). Instead of drilling into implementation details, you focus on completing the **holistic orchestration** of the business intent first.
 
-The engineer begins by defining the **Context** and the **Result** of the action. From this boundary, the orchestration logic is written as a complete narrative, treating collaborators as if they already exist. External dependencies — for retrieval, persistence, or notification — are only formalized at the exact moment the business logic reveals a need for them.
+This **Narrative-First Discovery** approach ensures that the business intent remains the source of truth. The engineer begins by defining the **Context** and the **Result** of the action. From this boundary, the orchestration logic is written as a complete narrative, treating collaborators as if they already exist. External dependencies — for retrieval, persistence, or notification — are only formalized at the exact moment the business logic reveals a need for them.
 
-In Hermi, **we build the 'whole' before the 'details'**: the business logic drives the discovery of its dependencies, ensuring the architecture remains a pure reflection of the intent.
+In Hermi, **we build the 'whole' (The Blueprint) before the 'details' (The Implementation)**: the business logic drives the discovery of its dependencies, ensuring the architecture remains a pure reflection of intent.
 
 ### Phase 1: Discovery & Verification (The Core)
 
@@ -555,7 +555,7 @@ hermi-user (Parent)
 │   │   ├── User.java                               (Scoped Domain Model)
 │   │   ├── FindUserClient.java                     (I/O Contract)
 │   │   ├── SaveUserRepository.java                 (I/O Contract)
-│   │   └── NotifyUserFoundMessenger.java    (I/O Contract)
+│   │   └── NotifyUserFoundMessenger.java           (I/O Contract)
 │   └── src/test/java/org/hermi/user/find/shell
 │       ├── FindUserTestShell.java                  (Test Shell)
 │       ├── LocalFindUserClient.java                (Test Adapter)
