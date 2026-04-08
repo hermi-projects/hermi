@@ -583,6 +583,9 @@ graph TD
     %% Consumer Shell
     C[FindUserConsumerShell] -->|handles event| U
 
+    %% AI Shell (New Entry Point)
+    D_AI[FindUserAiShell] -->|interprets intent| U
+
     %% Use Case -> Contracts
     U -->|requests external data| D[FindUserClient]
     U -->|requests persistence| E[SaveUserRepository]
@@ -598,17 +601,17 @@ graph TD
     E -->|production implementation| K[JdbcSaveUserRepository]
     F -->|production implementation| L[KafkaNotifyUserFoundMessenger]
 
-    %% Darker backgrounds + stronger contrast
+    %% Styling
     classDef test fill:#922B21,color:#FFFFFF,stroke:#641E16,stroke-width:1.5px
     classDef api fill:#4E8F2F,color:#FFFFFF,stroke:#2F5A1C,stroke-width:1.5px
     classDef consumer fill:#2E6A24,color:#FFFFFF,stroke:#1B3F15,stroke-width:1.5px
-
-    %% Core stays clean
+    classDef ai fill:#34495E,color:#FFFFFF,stroke:#2C3E50,stroke-width:1.5px
     classDef core fill:#FFFFFF,color:#000000,stroke:#000000,stroke-width:1px
 
     %% Assign classes
     class A,G,H,I test
     class B,J,K,L api
     class C consumer
+    class D_AI ai
     class U,D,E,F core
 ```
