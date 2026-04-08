@@ -560,7 +560,7 @@ hermi-user (Parent)
 │       ├── FindUserTestShell.java                  (Test Shell)
 │       ├── LocalFindUserClient.java                (Test Adapter)
 │       ├── InMemorySaveUserRepository.java         (Test Adapter)
-│       └── ConsoleNotifyUserFoundMessenger.java (Test Adapter)
+│       └── ConsoleNotifyUserFoundMessenger.java    (Test Adapter)
 │
 └── hermi-spring-api-shell (Phase 2 Layer: Framework)
     ├── pom.xml
@@ -570,7 +570,7 @@ hermi-user (Parent)
         ├── FindUserService.java                    (Spring Service)
         ├── LexisNexisFindUserClient.java           (Production Adapter)
         ├── JdbcSaveUserRepository.java             (Production Adapter)
-        └── KafkaNotifyUserFoundMessenger.java   (Production Adapter)
+        └── KafkaNotifyUserFoundMessenger.java      (Production Adapter)
 ```
 ```mermaid
 graph TD
