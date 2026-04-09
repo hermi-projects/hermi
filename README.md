@@ -562,7 +562,7 @@ hermi-user (Parent)
 │       ├── InMemorySaveUserRepository.java         (Test Adapter)
 │       └── ConsoleNotifyUserFoundMessenger.java    (Test Adapter)
 │
-└── hermi-spring-api-shell (Phase 2 Layer: Framework)
+└── hermi-spring-shell (Phase 2 Layer: Framework)
     ├── pom.xml
     └── src/main/java/org/hermi/user/find/shell
         ├── FindUserApiShell.java                   (Spring RestController)
