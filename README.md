@@ -577,10 +577,10 @@ graph TD
     U -->|requests persistence| E[SaveUserRepository]
     U -->|requests notification| F[NotifyUserFoundMessenger]
 
-    %% Test Implementations
-    D -->|test implementation| G[LocalFindUserClient]
-    E -->|test implementation| H[InMemorySaveUserRepository]
-    F -->|test implementation| I[ConsoleNotifyUserFoundMessenger]
+    %% Local Implementations
+    D -->|local implementation| G[LocalFindUserClient]
+    E -->|local implementation| H[InMemorySaveUserRepository]
+    F -->|local implementation| I[ConsoleNotifyUserFoundMessenger]
 
     %% Production Implementations
     D -->|production implementation| J[LexisNexisFindUserClient]
@@ -588,14 +588,14 @@ graph TD
     F -->|production implementation| L[KafkaNotifyUserFoundMessenger]
 
     %% Styling
-    classDef test fill:#922B21,color:#FFFFFF,stroke:#641E16,stroke-width:1.5px
+    classDef local fill:#922B21,color:#FFFFFF,stroke:#641E16,stroke-width:1.5px
     classDef api fill:#4E8F2F,color:#FFFFFF,stroke:#2F5A1C,stroke-width:1.5px
     classDef consumer fill:#2E6A24,color:#FFFFFF,stroke:#1B3F15,stroke-width:1.5px
     classDef ai fill:#34495E,color:#FFFFFF,stroke:#2C3E50,stroke-width:1.5px
     classDef core fill:#FFFFFF,color:#000000,stroke:#000000,stroke-width:1px
 
     %% Assign classes
-    class A,G,H,I test
+    class A,G,H,I local
     class B,J,K,L api
     class C consumer
     class D_AI ai
