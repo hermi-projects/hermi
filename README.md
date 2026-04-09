@@ -572,6 +572,9 @@ graph TD
     %% AI Shell (New Entry Point)
     D_AI[FindUserAiShell] -->|interprets intent| U
 
+    %% JUnit Shell
+    E_JUnit[FindUserTestShell] -->|verifies logic| U
+    
     %% Use Case -> Contracts
     U -->|requests external data| D[FindUserClient]
     U -->|requests persistence| E[SaveUserRepository]
@@ -592,6 +595,7 @@ graph TD
     classDef api fill:#4E8F2F,color:#FFFFFF,stroke:#2F5A1C,stroke-width:1.5px
     classDef consumer fill:#2E6A24,color:#FFFFFF,stroke:#1B3F15,stroke-width:1.5px
     classDef ai fill:#34495E,color:#FFFFFF,stroke:#2C3E50,stroke-width:1.5px
+    classDef test fill:#B02E26,color:#FFFFFF,stroke:#8B0000,stroke-width:1.5px
     classDef core fill:#FFFFFF,color:#000000,stroke:#000000,stroke-width:1px
 
     %% Assign classes
@@ -599,5 +603,6 @@ graph TD
     class B,J,K,L api
     class C consumer
     class D_AI ai
+    class E_JUnit test
     class U,D,E,F core
 ```
