@@ -588,7 +588,7 @@ graph TD
     F -->|production implementation| L[KafkaNotifyUserFoundMessenger]
 
     %% Styling
-    classDef local fill:#922B21,color:#FFFFFF,stroke:#641E16,stroke-width:1.5px
+    classDef local fill:#FFFFFF,color:#000000,stroke:#000000,stroke-width:1px
     classDef api fill:#4E8F2F,color:#FFFFFF,stroke:#2F5A1C,stroke-width:1.5px
     classDef consumer fill:#2E6A24,color:#FFFFFF,stroke:#1B3F15,stroke-width:1.5px
     classDef ai fill:#34495E,color:#FFFFFF,stroke:#2C3E50,stroke-width:1.5px
