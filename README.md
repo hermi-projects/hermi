@@ -561,34 +561,34 @@ hermi-user (Parent)
 ```mermaid
 graph TD
     %% Main Shell
-    A[FindUserMainShell] -->|executes| U[FindUserUseCase]
+    S_Main[FindUserMainShell] -->|executes| U_UseCase[FindUserUseCase]
 
     %% API Shell
-    B[FindUserApiShell] -->|handles request| U
+    S_Api[FindUserApiShell] -->|handles request| U_UseCase
 
     %% Consumer Shell
-    C[FindUserConsumerShell] -->|handles event| U
+    S_Consumer[FindUserConsumerShell] -->|handles event| U_UseCase
 
     %% AI Shell (New Entry Point)
-    D_AI[FindUserAiShell] -->|interprets intent| U
+    S_Ai[FindUserAiShell] -->|interprets intent| U_UseCase
 
     %% JUnit Shell
-    E_JUnit[FindUserTestShell] -->|verifies logic| U
+    S_JUnit[FindUserTestShell] -->|verifies logic| U_UseCase
     
     %% Use Case -> Contracts
-    U -->|requests external data| D[FindUserClient]
-    U -->|requests persistence| E[SaveUserRepository]
-    U -->|requests notification| F[NotifyUserFoundMessenger]
+    U_UseCase -->|requests external data| U_Client[FindUserClient]
+    U_UseCase -->|requests persistence| U_Repo[SaveUserRepository]
+    U_UseCase -->|requests notification| U_Messenger[NotifyUserFoundMessenger]
 
     %% Local Implementations
-    D -->|local implementation| G[LocalFindUserClient]
-    E -->|local implementation| H[InMemorySaveUserRepository]
-    F -->|local implementation| I[ConsoleNotifyUserFoundMessenger]
+    U_Client -->|local implementation| A_LocalClient[LocalFindUserClient]
+    U_Repo -->|local implementation| A_LocalRepo[InMemorySaveUserRepository]
+    U_Messenger -->|local implementation| A_LocalMessenger[ConsoleNotifyUserFoundMessenger]
 
     %% Production Implementations
-    D -->|production implementation| J[LexisNexisFindUserClient]
-    E -->|production implementation| K[JdbcSaveUserRepository]
-    F -->|production implementation| L[KafkaNotifyUserFoundMessenger]
+    U_Client -->|production implementation| A_ProdClient[LexisNexisFindUserClient]
+    U_Repo -->|production implementation| A_ProdRepo[JdbcSaveUserRepository]
+    U_Messenger -->|production implementation| A_ProdMessenger[KafkaNotifyUserFoundMessenger]
 
     %% Styling
     classDef local fill:#FFFFFF,color:#000000,stroke:#000000,stroke-width:1px
@@ -599,10 +599,10 @@ graph TD
     classDef core fill:#FFFFFF,color:#000000,stroke:#000000,stroke-width:1px
 
     %% Assign classes
-    class A,G,H,I local
-    class B,J,K,L api
-    class C consumer
-    class D_AI ai
-    class E_JUnit test
-    class U,D,E,F core
+    class S_Main,A_LocalClient,A_LocalRepo,A_LocalMessenger local
+    class S_Api,A_ProdClient,A_ProdRepo,A_ProdMessenger api
+    class S_Consumer consumer
+    class S_Ai ai
+    class S_JUnit test
+    class U_UseCase,U_Client,U_Repo,U_Messenger core
 ```
