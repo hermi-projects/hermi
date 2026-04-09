@@ -31,7 +31,7 @@ The framework is built on a single, uncompromising principle: **The Use Case is 
 
 **Key Tenets:**
 - **Intent-Driven Discovery**: Contracts are defined *exactly* when business logic reveals a need — never before.
-- **Empirical Proof (No Mocks)**: Verification uses stateful, technology-agnostic **Test Shells**, proving logic against real-world state transitions rather than fragile mocks.
+- **Empirical Proof (No Mocks)**: Verification uses stateful, technology-agnostic **Main Shells**, proving logic against real-world state transitions rather than fragile mocks.
 
 ## 2. Architectural Responsibilities
 
@@ -61,10 +61,10 @@ Phase 1 is about revealing and proving the system's behavior. We answer _"What"_
 
 1. **Establish the Boundary**: Define your `UseCase` contract (`Context` and `Result`).
 2. **Initialize Core Implementation**: Create a skeletal `DefaultUseCase` class.
-3. **The Test Shell**: Build a minimal test execution environment as a "Play Button" for continuous validation.
+3. **The Main Shell**: Build a minimal Java `main` execution environment as a "Play Button" for continuous validation.
 4. **JIT I/O Discovery**: Write logic; define I/O contracts the moment a specific behavior is revealed, categorizing them by architectural intent (Client, Repository, or Messenger).
 5. **Holistic Orchestration**: Finalize the narrative flow between the discovered I/O contracts.
-6. **The Phase 1 Gate**: Verify the logic against real-world state transitions in the Test Shell. Phase 1 is complete when all intents are proven.
+6. **The Phase 1 Gate**: Verify the logic against real-world state transitions in the Main Shell. Phase 1 is complete when all intents are proven.
 
 ### Phase 2: Realization & Delivery (The Shell)
 
@@ -113,18 +113,17 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
 }
 ```
 
-#### Step 3: The Test Harness: JUnit Component Test
-Establish the execution harness to enable continuous execution and debugging during development.
+#### Step 3: The Execution Harness: Pure Java Main Shell
+Establish the execution harness to enable continuous execution and debugging during development. By using a standard `public static void main` method, we completely avoid external framework dependencies (like JUnit) in Phase 1, keeping the core purely Java.
 
 ```java
-@DisplayName("Find User Use Case: Test Shell")
-class FindUserTestShell {
-    @Test
-    void main() {
+public class FindUserMainShell {
+    public static void main(String[] args) {
         var useCase = new DefaultFindUserUseCase();
         
-        // Execute this test iteratively to verify the logic
+        // Execute this locally to verify the logic
         var result = useCase.execute(new FindUserUseCase.Context("123-456-789"));
+        System.out.println("Result: " + result);
     }
 }
 ```
@@ -244,10 +243,10 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
 ```
 
 #### Step 8: The Phase 1 Gate (Verification)
-With the orchestration complete, verify all boundary and edge cases within the test suite. Unlike mocking frameworks which couple tests to implementation details, state-backed test adapters prove your logic handles real-world state transitions.
+With the orchestration complete, verify all boundary and edge cases. Unlike mocking frameworks which couple tests to implementation details, state-backed local adapters prove your logic handles real-world state transitions.
 
 > [!TIP]
-> Maintaining local abstractions (e.g., in-memory repositories) for every use case can feel heavy. The `hermi-shell` project provides pre-built, reusable test adapters and utilities to significantly reduce this boilerplate.
+> Maintaining local abstractions (e.g., in-memory repositories) for every use case can feel heavy. The `hermi-shell` project provides pre-built, reusable local adapters and utilities to significantly reduce this boilerplate.
 
 ```java
 // 1. A stateful in-memory repository (Simple Implementation)
@@ -283,30 +282,17 @@ class LocalFindUserClient extends FindUserClient {
 }
 ```
 ```java
-@DisplayName("Find User Use Case Test Shell")
-class FindUserTestShell {
-    @Test
-    void main() {
-        var client = new LocalFindUserClient(); 
+public class FindUserMainShell {
+    public static void main(String[] args) {
+         var client = new LocalFindUserClient(); 
         var repo = new InMemorySaveUserRepository();
         var messenger = new ConsoleNotifyUserFoundMessenger();
+        
         var useCase = new DefaultFindUserUseCase(client, repo, messenger);
         var result = useCase.execute(new FindUserUseCase.Context("123-45-6789"));
-        assertTrue(result != null);
-    }
-
-    @Test
-    @DisplayName("Phase 1 Gate: Edge Case Verification - User Not Found")
-    void shouldHandleUserNotFound() {
-        // Setup local stubs/state simulators
-        var client = new LocalFindUserClient(); 
-        var repo = new InMemorySaveUserRepository();
-        var messenger = new ConsoleNotifyUserFoundMessenger();
-    
-        var useCase = new DefaultFindUserUseCase(client, repo, messenger);
         
-        // Assert logic holds up on error states
-        assertThrows(UserNotFoundException.class, () -> useCase.execute(new FindUserUseCase.Context("999-00-9999")));
+        if (result == null) throw new AssertionError("Result cannot be null");
+        System.out.println("✅ Happy Path Verified: " + result.name());
     }
 }
 ```
@@ -557,10 +543,10 @@ hermi-user (Parent)
 │   │   ├── SaveUserRepository.java                 (I/O Contract)
 │   │   └── NotifyUserFoundMessenger.java           (I/O Contract)
 │   └── src/test/java/org/hermi/user/find/shell
-│       ├── FindUserTestShell.java                  (Test Shell)
-│       ├── LocalFindUserClient.java                (Test Adapter)
-│       ├── InMemorySaveUserRepository.java         (Test Adapter)
-│       └── ConsoleNotifyUserFoundMessenger.java    (Test Adapter)
+│       ├── FindUserMainShell.java                  (Main Shell Runner)
+│       ├── LocalFindUserClient.java                (Local Adapter)
+│       ├── InMemorySaveUserRepository.java         (Local Adapter)
+│       └── ConsoleNotifyUserFoundMessenger.java    (Local Adapter)
 │
 └── hermi-spring-shell (Phase 2 Layer: Framework)
     ├── pom.xml
@@ -574,8 +560,8 @@ hermi-user (Parent)
 ```
 ```mermaid
 graph TD
-    %% Test Shell
-    A[FindUserUseCaseTestShell] -->|executes| U[FindUserUseCase]
+    %% Main Shell
+    A[FindUserMainShell] -->|executes| U[FindUserUseCase]
 
     %% API Shell
     B[FindUserApiShell] -->|handles request| U
