@@ -63,6 +63,24 @@ public abstract class UseCase<C extends Validatable, R> extends Executor<C, R> {
    * }
    * }</pre>
    *
+   * <p>Example FindUserMainShell for Phase 1 Verification:
+   *
+   * <pre>{@code
+   * public class FindUserMainShell {
+   *   public static void main(String[] args) {
+   *     var client = new LocalFindUserClient();
+   *     var repo = new InMemorySaveUserRepository();
+   *     var messenger = new ConsoleNotifyUserFoundMessenger();
+   *
+   *     var useCase = new DefaultFindUserUseCase(client, repo, messenger);
+   *     var result = useCase.execute(new FindUserUseCase.Context("123-45-6789"));
+   *
+   *     if (result == null) throw new AssertionError("Result cannot be null");
+   *     System.out.println("✅ Happy Path Verified: " + result.name());
+   *   }
+   * }
+   * }</pre>
+   *
    * <p>Example FindUserService Orchestration in Shell Layer (Phase 2):
    *
    * <pre>{@code
