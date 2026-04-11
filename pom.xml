@@ -11,7 +11,7 @@
   <packaging>pom</packaging>
   <name>hermi-parent</name>
   <description>Building applications with Clean Architecture</description>
-  <url>https://github.com/hermi/hermi-use-case</url>
+  <url>https://github.com/hermi-projects/hermi</url>
 
   <licenses>
     <license>
@@ -36,15 +36,15 @@
   </modules>
 
   <scm>
-    <connection>scm:git:https://github.com/hermi/hermi-use-case.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com/hermi/hermi-use-case.git</developerConnection>
-    <url>https://github.com/hermi/hermi-use-case</url>
+    <connection>scm:git:https://github.com/hermi-projects/hermi.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/hermi-projects/hermi.git</developerConnection>
+    <url>https://github.com/hermi-projects/hermi</url>
   </scm>
   <distributionManagement>
     <repository>
       <id>github</id>
       <name>GitHub Packages</name>
-      <url>https://maven.pkg.github.com/hermi-projects/hermi-use-case</url>
+      <url>https://maven.pkg.github.com/hermi-projects/hermi</url>
     </repository>
   </distributionManagement>
 
