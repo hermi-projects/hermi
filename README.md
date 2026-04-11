@@ -305,7 +305,7 @@ With Phase 1 complete and the core logic verified, build a technology-specific a
 ```java
 @Component
 public class LexisNexisFindUserClient extends FindUserClient
-    implements ClientAdapter<ApiRequest, ApiResponse, FindUserClient.Context, FindUserClient.Result> {
+    implements Adapter<ApiRequest, ApiResponse, FindUserClient.Context, FindUserClient.Result> {
 
   private RestTemplate restTemplate;
 
@@ -334,7 +334,7 @@ public class LexisNexisFindUserClient extends FindUserClient
 
 @Component
 public class JdbcSaveUserRepository extends SaveUserRepository
-    implements RepositoryAdapter<UserEntity, UserEntity, SaveUserRepository.Context, SaveUserRepository.Result> {
+    implements Adapter<UserEntity, UserEntity, SaveUserRepository.Context, SaveUserRepository.Result> {
 
   private final UserJpaRepository jpaRepository;
 
@@ -367,7 +367,7 @@ public class JdbcSaveUserRepository extends SaveUserRepository
 
 @Component
 public class KafkaNotifyUserFoundMessenger extends NotifyUserFoundMessenger
-    implements MessengerAdapter<ProducerRecord<String, String>, RecordMetadata, NotifyUserFoundMessenger.Context, NotifyUserFoundMessenger.Result> {
+    implements Adapter<ProducerRecord<String, String>, RecordMetadata, NotifyUserFoundMessenger.Context, NotifyUserFoundMessenger.Result> {
 
   private final KafkaTemplate<String, String> kafkaTemplate;
 

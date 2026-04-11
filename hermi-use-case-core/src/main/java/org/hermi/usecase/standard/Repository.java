@@ -38,7 +38,7 @@ public abstract class Repository<C, R extends Validatable> extends Executor<C, R
    * <pre>{@code
    * @Component
    * public class JpaSaveUserRepository extends SaveUserRepository
-   *     implements RepositoryAdapter<UserEntity, UserEntity, SaveUserRepository.Input, SaveUserRepository.Output> {
+   *     implements Adapter<UserEntity, UserEntity, SaveUserRepository.Input, SaveUserRepository.Output> {
    *
    *   private final UserJpaRepository jpaRepository;
    *

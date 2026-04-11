@@ -40,7 +40,7 @@ public abstract class Messenger<C, R extends Validatable> extends Executor<C, R>
    * <pre>{@code
    * @Component
    * public class KafkaNotifyUserFoundMessenger extends NotifyUserFoundMessenger
-   *     implements MessengerAdapter<ProducerRecord<String, String>, RecordMetadata, NotifyUserFoundMessenger.Input, NotifyUserFoundMessenger.Output> {
+   *     implements Adapter<ProducerRecord<String, String>, RecordMetadata, NotifyUserFoundMessenger.Input, NotifyUserFoundMessenger.Output> {
    *
    *   private final KafkaTemplate<String, String> kafkaTemplate;
    *
