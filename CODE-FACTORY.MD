@@ -98,3 +98,78 @@ $$
 4.  **MainShell** 验证了运行的准确性。
 
 **最终产出**：不仅是代码，而是一套**与文档 100% 同步、通过物理验证、且不依赖特定技术框架的纯净业务资产。**
+
+```mermaid
+graph TD
+    %% 强制全局直角连线
+
+    %% 1. 内廷决策层：皇帝与中书省（定旨）
+    subgraph Inner_Palace [内廷: 决策与定旨]
+        User((皇帝/用户)) -- "1.原始意图" --> Intake[中书省: Intake Agent]
+    end
+
+    %% 2. 监察层：门下省（审核与验封）
+    subgraph Menxia_Audit [门下省: 独立监察/质检]
+        Rules_Audit{准入审核/Rules}
+        MainShell[物理验封/MainShell]
+        Final{判定}
+    end
+
+    %% 3. 中枢调度层：尚书省与任务池（管理）
+    subgraph Central_Hub [中枢: 调度与任务池]
+        Works[尚书省: 调度总管]
+        Pool[(任务池: Task Pool)]
+    end
+
+    %% 4. 外朝执行层：六部一体（生产）
+    subgraph Six_Ministries [外朝: 六部生产线]
+        direction TB
+        Minister_Core[吏部: UseCase/逻辑立法]
+        Repo[户部: Repository/存储]
+        Client[礼部: Client/外部接口]
+        Msg[工部: Messenger/通讯基建]
+        Other[刑/兵部: Security/Error]
+    end
+
+    %% --- 核心公文流转逻辑 ---
+
+    %% 决策流向监察
+    Intake -- "2.起草README" --> Rules_Audit
+    Rules_Audit -- "封驳" --> Intake
+
+    %% 监察过审流向中枢
+    Rules_Audit -- "3.盖章下发" --> Works
+    Works -- "4.登记并入库" --> Pool
+
+    %% 中枢分发任务至外朝
+    Pool -. "5.派发UseCase任务" .-> Minister_Core
+    Minister_Core -- "6.签发能力契约" --> Works
+
+    %% 中枢二次调度
+    Works -- "7.生成零件工单" --> Pool
+    Pool -. "8.派发实现任务" .-> Repo
+    Pool -. "8.派发实现任务" .-> Client
+    Pool -. "8.派发实现任务" .-> Msg
+
+    %% 外朝复命流向监察验封
+    Six_Ministries -- "9.各部提交实现" --> Works
+    Minister_Core -- "10.提交核心逻辑" --> MainShell
+    Works -- "11.装配零件" --> MainShell
+
+    %% 最终判定
+    MainShell -- "12.运行断言" --> Final
+    Final -- "通过" --> Delivery[正式发布/交付]
+    Final -- "封驳" --> Works
+
+    %% 样式美化
+    style Inner_Palace fill:none,stroke:#333,stroke-width:2px
+    style Menxia_Audit fill:none,stroke:#cf1322,stroke-width:2px,stroke-dasharray: 5 5
+    style Central_Hub fill:none,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5
+    style Six_Ministries fill:none,stroke:#333,stroke-width:2px
+
+    style User fill:#fff,stroke:#333,stroke-width:2px
+    style Rules_Audit fill:#fff,stroke:#333,stroke-width:2px
+    style MainShell fill:#fff,stroke:#333,stroke-width:2px
+    style Works fill:#fff,stroke:#333,stroke-width:2px
+    style Minister_Core fill:#f9f9f9,stroke:#333,stroke-width:2px
+```
