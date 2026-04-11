@@ -10,7 +10,7 @@ This file provides the canonical code implementation pattern for the Hermi Disco
 ```java
 package org.hermi.user.find.usecase;
 
-import org.hermi.usecase.commons.validation.Validatable;
+import validation.commons.Validatable;
 import org.hermi.usecase.standard.UseCase;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

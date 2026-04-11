@@ -7,9 +7,9 @@
     <version>1.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>hermi-use-case-parent</artifactId>
+  <artifactId>hermi-parent</artifactId>
   <packaging>pom</packaging>
-  <name>hermi-use-case-parent</name>
+  <name>hermi-parent</name>
   <description>Building applications with Clean Architecture</description>
   <url>https://github.com/hermi/hermi-use-case</url>
 
@@ -29,9 +29,10 @@
   </developers>
 
   <modules>
-    <module>hermi-use-case-core</module>
-    <module>hermi-use-case-commons</module>
+    <module>hermi-commons</module>
     <module>hermi-use-case</module>
+    <module>hermi-shell</module>
+    <module>hermi-starter</module>
   </modules>
 
   <scm>
@@ -46,21 +47,23 @@
       <url>https://maven.pkg.github.com/hermi-projects/hermi-use-case</url>
     </repository>
   </distributionManagement>
-  <properties>
-    <hermi-use-case-commons.version>${project.version}</hermi-use-case-commons.version>
-    <hermi-use-case-core.version>${project.version}</hermi-use-case-core.version>
-  </properties>
+
   <dependencyManagement>
     <dependencies>
       <dependency>
         <groupId>org.hermi</groupId>
-        <artifactId>hermi-use-case-commons</artifactId>
-        <version>${hermi-use-case-commons.version}</version>
+        <artifactId>hermi-commons</artifactId>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.hermi</groupId>
-        <artifactId>hermi-use-case-core</artifactId>
-        <version>${hermi-use-case-core.version}</version>
+        <artifactId>hermi-shell</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.hermi</groupId>
+        <artifactId>hermi-use-case</artifactId>
+        <version>${project.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
