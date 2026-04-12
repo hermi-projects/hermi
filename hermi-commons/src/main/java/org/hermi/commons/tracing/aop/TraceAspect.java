@@ -56,15 +56,30 @@ public class TraceAspect {
     }
 
     try {
-      logStart(log, fullName, simpleName, methodName, args);
+      logStart(log, trace.severity(), fullName, simpleName, methodName, args, trace.excludeArgs());
 
       Object result = joinPoint.proceed();
       logSuccess(
-          log, fullName, simpleName, methodName, result, System.currentTimeMillis() - startTime);
+          log,
+          trace.severity(),
+          fullName,
+          simpleName,
+          methodName,
+          result,
+          System.currentTimeMillis() - startTime,
+          trace.excludeResult(),
+          trace.slowThresholdMs());
       return result;
     } catch (Throwable ex) {
       logFailure(
-          log, fullName, simpleName, methodName, args, ex, System.currentTimeMillis() - startTime);
+          log,
+          fullName,
+          simpleName,
+          methodName,
+          args,
+          ex,
+          System.currentTimeMillis() - startTime,
+          trace.excludeArgs());
       throw ex;
     } finally {
       if (eventOverride) {
@@ -78,41 +93,56 @@ public class TraceAspect {
   }
 
   private void logStart(
-      Logger log, String fullName, String simpleName, String methodName, Object[] args) {
+      Logger log,
+      String severity,
+      String fullName,
+      String simpleName,
+      String methodName,
+      Object[] args,
+      boolean excludeArgs) {
     Map<String, Object> payload = new LinkedHashMap<>();
     String currentEvent = MDC.get("event");
     if (currentEvent != null) {
       payload.put("event", currentEvent);
     }
-    payload.put("severity", "INFO");
+    payload.put("severity", severity);
     payload.put("logger", fullName);
     payload.put("method", methodName);
     payload.put("message", String.format(START_MESSAGE, simpleName, methodName));
-    payload.put("args", summarize(args, 100, false));
+    payload.put("args", excludeArgs ? "[MASKED]" : summarize(args, 100, false));
 
-    logInfoSilently(log, payload);
+    logSilently(log, severity, payload);
   }
 
   private void logSuccess(
       Logger log,
+      String baseSeverity,
       String fullName,
       String simpleName,
       String methodName,
       Object result,
-      long duration) {
+      long duration,
+      boolean excludeResult,
+      long slowThresholdMs) {
+    String severity = baseSeverity;
+    if (slowThresholdMs > 0 && duration >= slowThresholdMs) {
+      severity = "WARN";
+    }
+
     Map<String, Object> payload = new LinkedHashMap<>();
     String currentEvent = MDC.get("event");
     if (currentEvent != null) {
       payload.put("event", currentEvent);
     }
-    payload.put("severity", "INFO");
+    payload.put("severity", severity);
     payload.put("logger", fullName);
     payload.put("method", methodName);
     payload.put("message", String.format(SUCCESS_MESSAGE, simpleName, methodName, duration));
-    payload.put("result", result != null ? result.toString() : "null");
+    payload.put(
+        "result", excludeResult ? "[MASKED]" : (result != null ? result.toString() : "null"));
     payload.put("duration_ms", duration);
 
-    logInfoSilently(log, payload);
+    logSilently(log, severity, payload);
   }
 
   private void logFailure(
@@ -122,7 +152,8 @@ public class TraceAspect {
       String methodName,
       Object[] args,
       Throwable ex,
-      long duration) {
+      long duration,
+      boolean excludeArgs) {
     Map<String, Object> payload = new LinkedHashMap<>();
     String currentEvent = MDC.get("event");
     if (currentEvent != null) {
@@ -132,33 +163,40 @@ public class TraceAspect {
     payload.put("logger", fullName);
     payload.put("method", methodName);
     payload.put("message", String.format(FAILURE_MESSAGE, simpleName, methodName, duration));
-    payload.put("args", summarize(args, Integer.MAX_VALUE, true));
+    payload.put("args", excludeArgs ? "[MASKED]" : summarize(args, Integer.MAX_VALUE, true));
     payload.put("exception", ex.getClass().getSimpleName());
     payload.put("exception_message", ex.getMessage());
     payload.put("duration_ms", duration);
 
-    logErrorSilently(log, payload);
+    logSilently(log, "ERROR", payload);
   }
 
   /**
-   * Serializes the payload to JSON and logs it as INFO. Ensures that logging failures never impact
-   * the main business logic.
+   * Serializes the payload to JSON and logs it with the specified severity. Ensures that logging
+   * failures never impact the main business logic.
    */
-  private void logInfoSilently(Logger log, Map<String, Object> payload) {
+  private void logSilently(Logger log, String severity, Map<String, Object> payload) {
     try {
-      log.info(MAPPER.writeValueAsString(payload));
-    } catch (Exception e) {
-      // Internal logging failure should never impact business logic
-    }
-  }
-
-  /**
-   * Serializes the payload to JSON and logs it as ERROR. Ensures that logging failures never impact
-   * the main business logic.
-   */
-  private void logErrorSilently(Logger log, Map<String, Object> payload) {
-    try {
-      log.error(MAPPER.writeValueAsString(payload));
+      String json = MAPPER.writeValueAsString(payload);
+      switch (severity.toUpperCase()) {
+        case "ERROR":
+          log.error(json);
+          break;
+        case "WARN":
+          log.warn(json);
+          break;
+        case "INFO":
+          log.info(json);
+          break;
+        case "DEBUG":
+          log.debug(json);
+          break;
+        case "TRACE":
+          log.trace(json);
+          break;
+        default:
+          log.info(json);
+      }
     } catch (Exception e) {
       // Internal logging failure should never impact business logic
     }

@@ -21,4 +21,19 @@ public @interface Trace {
    * calls.
    */
   String event() default "";
+
+  /** The default log level for this trace. Default is "INFO". */
+  String severity() default "INFO";
+
+  /** If true, the method arguments will not be logged. Default is false. */
+  boolean excludeArgs() default false;
+
+  /** If true, the method return value will not be logged. Default is false. */
+  boolean excludeResult() default false;
+
+  /**
+   * The threshold in milliseconds for a "slow" execution. If exceeded, the log severity can be
+   * upgraded. Default is -1 (disabled).
+   */
+  long slowThresholdMs() default -1;
 }
