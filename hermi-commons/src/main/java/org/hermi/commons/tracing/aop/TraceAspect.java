@@ -5,7 +5,6 @@ import java.util.Map;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.reflect.MethodSignature;
 import org.hermi.commons.tracing.Trace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,8 +18,8 @@ import tools.jackson.databind.ObjectMapper;
  * <ul>
  *   <li><b>JSON Structured Format</b>: Direct serialization to JSON objects for seamless machine
  *       ingestion and processing.
- *   <li><b>Google SRE Alignment</b>: Adheres to standard fields (severity, message, jsonPayload)
- *       for compatibility with Google Cloud Logging and modern observability stacks.
+ *   <li><b>Google SRE Alignment</b>: Adheres to standard fields (severity, message) for
+ *       compatibility with Google Cloud Logging and modern observability stacks.
  *   <li><b>Analytics Optimized</b>: Enables complex queries and metric extraction (e.g., p99
  *       latency via duration_ms) without regex overhead.
  * </ul>
@@ -32,73 +31,113 @@ public class TraceAspect {
 
   @Around("@annotation(trace) || @within(trace)")
   public Object traceExecution(ProceedingJoinPoint joinPoint, Trace trace) throws Throwable {
-    MethodSignature signature = (MethodSignature) joinPoint.getSignature();
-    Class<?> targetClass = joinPoint.getTarget().getClass();
-    String methodName = signature.getName();
-    Object[] args = joinPoint.getArgs();
-
-    Logger log = LoggerFactory.getLogger(targetClass);
     long startTime = System.currentTimeMillis();
 
-    try {
-      // START LOG
-      Map<String, Object> startPayload = new LinkedHashMap<>();
-      startPayload.put("severity", "INFO");
-      startPayload.put("logger", targetClass.getName());
-      startPayload.put("method", methodName);
-      startPayload.put(
-          "message",
-          String.format("Execution of %s.%s() started", targetClass.getSimpleName(), methodName));
-      startPayload.put("args", summarize(args, 100, false));
-      log.info(MAPPER.writeValueAsString(startPayload));
+    logStart(joinPoint);
 
+    try {
       Object result = joinPoint.proceed();
       long duration = System.currentTimeMillis() - startTime;
-
-      // SUCCESS LOG
-      Map<String, Object> successPayload = new LinkedHashMap<>();
-      successPayload.put("severity", "INFO");
-      successPayload.put("logger", targetClass.getName());
-      successPayload.put("method", methodName);
-      successPayload.put(
-          "message",
-          String.format(
-              "Execution of %s.%s() finished in %dms",
-              targetClass.getSimpleName(), methodName, duration));
-      successPayload.put("result", result != null ? result.toString() : "null");
-      successPayload.put("duration_ms", duration);
-      log.info(MAPPER.writeValueAsString(successPayload));
-
+      logSuccess(joinPoint, result, duration);
       return result;
     } catch (Throwable ex) {
       long duration = System.currentTimeMillis() - startTime;
-
-      // FAILURE LOG
-      Map<String, Object> failurePayload = new LinkedHashMap<>();
-      failurePayload.put("severity", "ERROR");
-      failurePayload.put("logger", targetClass.getName());
-      failurePayload.put("method", methodName);
-      failurePayload.put(
-          "message",
-          String.format(
-              "Execution of %s.%s() failed in %dms",
-              targetClass.getSimpleName(), methodName, duration));
-      failurePayload.put("args", summarize(args, Integer.MAX_VALUE, true));
-      failurePayload.put("exception", ex.getClass().getSimpleName());
-      failurePayload.put("exception_message", ex.getMessage());
-      failurePayload.put("duration_ms", duration);
-      log.error(MAPPER.writeValueAsString(failurePayload));
-
+      logFailure(joinPoint, ex, duration);
       throw ex;
     }
   }
 
+  private void logStart(ProceedingJoinPoint joinPoint) {
+    Class<?> targetClass = joinPoint.getTarget().getClass();
+    String methodName = joinPoint.getSignature().getName();
+    Object[] args = joinPoint.getArgs();
+    Logger log = LoggerFactory.getLogger(targetClass);
+
+    Map<String, Object> payload = new LinkedHashMap<>();
+    payload.put("severity", "INFO");
+    payload.put("logger", targetClass.getName());
+    payload.put("method", methodName);
+    payload.put(
+        "message",
+        String.format("Execution of %s.%s() started", targetClass.getSimpleName(), methodName));
+    payload.put("args", summarize(args, 100, false));
+
+    logSilently(log, payload);
+  }
+
+  private void logSuccess(ProceedingJoinPoint joinPoint, Object result, long duration) {
+    Class<?> targetClass = joinPoint.getTarget().getClass();
+    String methodName = joinPoint.getSignature().getName();
+    Logger log = LoggerFactory.getLogger(targetClass);
+
+    Map<String, Object> payload = new LinkedHashMap<>();
+    payload.put("severity", "INFO");
+    payload.put("logger", targetClass.getName());
+    payload.put("method", methodName);
+    payload.put(
+        "message",
+        String.format(
+            "Execution of %s.%s() finished in %dms",
+            targetClass.getSimpleName(), methodName, duration));
+    payload.put("result", result != null ? result.toString() : "null");
+    payload.put("duration_ms", duration);
+
+    logSilently(log, payload);
+  }
+
+  private void logFailure(ProceedingJoinPoint joinPoint, Throwable ex, long duration) {
+    Class<?> targetClass = joinPoint.getTarget().getClass();
+    String methodName = joinPoint.getSignature().getName();
+    Object[] args = joinPoint.getArgs();
+    Logger log = LoggerFactory.getLogger(targetClass);
+
+    Map<String, Object> payload = new LinkedHashMap<>();
+    payload.put("severity", "ERROR");
+    payload.put("logger", targetClass.getName());
+    payload.put("method", methodName);
+    payload.put(
+        "message",
+        String.format(
+            "Execution of %s.%s() failed in %dms",
+            targetClass.getSimpleName(), methodName, duration));
+    payload.put("args", summarize(args, Integer.MAX_VALUE, true));
+    payload.put("exception", ex.getClass().getSimpleName());
+    payload.put("exception_message", ex.getMessage());
+    payload.put("duration_ms", duration);
+
+    logErrorSilently(log, payload);
+  }
+
   /**
-   * Summarizes arguments with custom constraints.
+   * Serializes the payload to JSON and logs it as INFO. Ensures that logging failures never impact
+   * the main business logic.
+   */
+  private void logSilently(Logger log, Map<String, Object> payload) {
+    try {
+      log.info(MAPPER.writeValueAsString(payload));
+    } catch (Exception e) {
+      // Internal logging failure should never impact business logic
+    }
+  }
+
+  /**
+   * Serializes the payload to JSON and logs it as ERROR. Ensures that logging failures never impact
+   * the main business logic.
+   */
+  private void logErrorSilently(Logger log, Map<String, Object> payload) {
+    try {
+      log.error(MAPPER.writeValueAsString(payload));
+    } catch (Exception e) {
+      // Internal logging failure should never impact business logic
+    }
+  }
+
+  /**
+   * Summarizes arguments with custom constraints to prevent log bloat.
    *
    * @param args The method arguments.
    * @param maxLength Maximum characters before truncation.
-   * @param useFullName If true, use full qualified class names; otherwise simple names.
+   * @param useFullName If true, use fully qualified class names; otherwise simple names.
    */
   private String summarize(Object[] args, int maxLength, boolean useFullName) {
     if (args == null || args.length == 0) {
