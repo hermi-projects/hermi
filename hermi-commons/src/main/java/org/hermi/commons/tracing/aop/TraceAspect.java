@@ -37,12 +37,10 @@ public class TraceAspect {
 
     try {
       Object result = joinPoint.proceed();
-      long duration = System.currentTimeMillis() - startTime;
-      logSuccess(joinPoint, result, duration);
+      logSuccess(joinPoint, result, System.currentTimeMillis() - startTime);
       return result;
     } catch (Throwable ex) {
-      long duration = System.currentTimeMillis() - startTime;
-      logFailure(joinPoint, ex, duration);
+      logFailure(joinPoint, ex, System.currentTimeMillis() - startTime);
       throw ex;
     }
   }
