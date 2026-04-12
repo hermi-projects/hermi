@@ -47,9 +47,22 @@
       <url>https://maven.pkg.github.com/hermi-projects/hermi</url>
     </repository>
   </distributionManagement>
-
+  <properties>
+    <aspectj.version>1.9.25.1</aspectj.version>
+  </properties>
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <groupId>org.aspectj</groupId>
+        <artifactId>aspectjweaver</artifactId>
+        <version>${aspectj.version}</version>
+        <scope>runtime</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.aspectj</groupId>
+        <artifactId>aspectjrt</artifactId>
+        <version>${aspectj.version}</version>
+      </dependency>
       <dependency>
         <groupId>org.hermi</groupId>
         <artifactId>hermi-commons</artifactId>
