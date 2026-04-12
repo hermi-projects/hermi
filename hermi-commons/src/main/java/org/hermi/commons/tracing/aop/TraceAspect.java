@@ -1,6 +1,5 @@
 package org.hermi.commons.tracing.aop;
 
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -18,11 +17,12 @@ import tools.jackson.databind.ObjectMapper;
  * <p>Adheres to three core observability standards:
  *
  * <ul>
- *   <li><b>Human-Readable</b>: Uses clear delimiters (|) for rapid manual inspection and grep.
- *   <li><b>AI-Parseable</b>: Consistent, low-ambiguity patterns optimized for automated diagnostic
- *       agents.
- *   <li><b>Log-Analytics Ready (e.g., ELK)</b>: Uses Key-Value Pairs (KVP) to enable automatic
- *       field extraction and performance metric calculations (e.g., duration_ms).
+ *   <li><b>JSON Structured Format</b>: Direct serialization to JSON objects for seamless machine
+ *       ingestion and processing.
+ *   <li><b>Google SRE Alignment</b>: Adheres to standard fields (severity, message, jsonPayload)
+ *       for compatibility with Google Cloud Logging and modern observability stacks.
+ *   <li><b>Analytics Optimized</b>: Enables complex queries and metric extraction (e.g., p99
+ *       latency via duration_ms) without regex overhead.
  * </ul>
  */
 @Aspect
@@ -41,12 +41,13 @@ public class TraceAspect {
     long startTime = System.currentTimeMillis();
 
     try {
-      // START LOG
+      // START LOG: Brief summary with Simple Types
       Map<String, Object> startPayload = new LinkedHashMap<>();
       startPayload.put("severity", "INFO");
+      startPayload.put("logger", targetClass.getName());
       startPayload.put("message", "START");
       startPayload.put("method", methodName);
-      startPayload.put("args", Arrays.toString(args));
+      startPayload.put("args", summarize(args, 100, false));
       if (trace != null && !trace.value().isEmpty()) {
         startPayload.put("intent", trace.value());
       }
@@ -58,6 +59,7 @@ public class TraceAspect {
       // SUCCESS LOG
       Map<String, Object> successPayload = new LinkedHashMap<>();
       successPayload.put("severity", "INFO");
+      successPayload.put("logger", targetClass.getName());
       successPayload.put("message", "SUCCESS");
       successPayload.put("method", methodName);
       successPayload.put("result", result != null ? result.toString() : "null");
@@ -68,11 +70,13 @@ public class TraceAspect {
     } catch (Throwable ex) {
       long duration = System.currentTimeMillis() - startTime;
 
-      // FAILURE LOG
+      // FAILURE LOG: Full detail with Full Type Names
       Map<String, Object> failurePayload = new LinkedHashMap<>();
       failurePayload.put("severity", "ERROR");
+      failurePayload.put("logger", targetClass.getName());
       failurePayload.put("message", "FAILURE");
       failurePayload.put("method", methodName);
+      failurePayload.put("args", summarize(args, Integer.MAX_VALUE, true));
       failurePayload.put("exception", ex.getClass().getSimpleName());
       failurePayload.put("exception_message", ex.getMessage());
       failurePayload.put("duration_ms", duration);
@@ -80,5 +84,40 @@ public class TraceAspect {
 
       throw ex;
     }
+  }
+
+  /**
+   * Summarizes arguments with custom constraints.
+   *
+   * @param args The method arguments.
+   * @param maxLength Maximum characters before truncation.
+   * @param useFullName If true, use full qualified class names; otherwise simple names.
+   */
+  private String summarize(Object[] args, int maxLength, boolean useFullName) {
+    if (args == null || args.length == 0) {
+      return "[]";
+    }
+
+    StringBuilder sb = new StringBuilder("[");
+    for (int i = 0; i < args.length; i++) {
+      Object arg = args[i];
+      if (arg == null) {
+        sb.append("null");
+      } else {
+        String type = useFullName ? arg.getClass().getName() : arg.getClass().getSimpleName();
+        sb.append(type).append(":").append(arg);
+      }
+      if (i < args.length - 1) {
+        sb.append(", ");
+      }
+    }
+    sb.append("]");
+
+    String full = sb.toString();
+    int actualMax = Math.max(maxLength, 100);
+    if (full.length() > actualMax) {
+      return full.substring(0, actualMax) + "...(truncated)";
+    }
+    return full;
   }
 }
