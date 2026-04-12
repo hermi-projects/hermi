@@ -30,74 +30,78 @@ import tools.jackson.databind.ObjectMapper;
 public class TraceAspect {
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final String START_MESSAGE = "Execution of %s.%s() started";
+  private static final String SUCCESS_MESSAGE = "Execution of %s.%s() finished in %dms";
+  private static final String FAILURE_MESSAGE = "Execution of %s.%s() failed in %dms";
 
   @Around("@annotation(trace) || @within(trace)")
   public Object trace(ProceedingJoinPoint joinPoint, Trace trace) throws Throwable {
-    long startTime = System.currentTimeMillis();
-    logStart(joinPoint);
-    try {
-      Object result = joinPoint.proceed();
-      logSuccess(joinPoint, result, System.currentTimeMillis() - startTime);
-      return result;
-    } catch (Throwable ex) {
-      logFailure(joinPoint, ex, System.currentTimeMillis() - startTime);
-      throw ex;
-    }
-  }
-
-  private void logStart(ProceedingJoinPoint joinPoint) {
     Class<?> targetClass = joinPoint.getTarget().getClass();
+    String simpleName = targetClass.getSimpleName();
+    String fullName = targetClass.getName();
     String methodName = joinPoint.getSignature().getName();
     Object[] args = joinPoint.getArgs();
     Logger log = LoggerFactory.getLogger(targetClass);
 
+    long startTime = System.currentTimeMillis();
+
+    logStart(log, fullName, simpleName, methodName, args);
+
+    try {
+      Object result = joinPoint.proceed();
+      logSuccess(
+          log, fullName, simpleName, methodName, result, System.currentTimeMillis() - startTime);
+      return result;
+    } catch (Throwable ex) {
+      logFailure(
+          log, fullName, simpleName, methodName, args, ex, System.currentTimeMillis() - startTime);
+      throw ex;
+    }
+  }
+
+  private void logStart(
+      Logger log, String fullName, String simpleName, String methodName, Object[] args) {
     Map<String, Object> payload = new LinkedHashMap<>();
     payload.put("severity", "INFO");
-    payload.put("logger", targetClass.getName());
+    payload.put("logger", fullName);
     payload.put("method", methodName);
-    payload.put(
-        "message",
-        String.format("Execution of %s.%s() started", targetClass.getSimpleName(), methodName));
+    payload.put("message", String.format(START_MESSAGE, simpleName, methodName));
     payload.put("args", summarize(args, 100, false));
 
     logInfoSilently(log, payload);
   }
 
-  private void logSuccess(ProceedingJoinPoint joinPoint, Object result, long duration) {
-    Class<?> targetClass = joinPoint.getTarget().getClass();
-    String methodName = joinPoint.getSignature().getName();
-    Logger log = LoggerFactory.getLogger(targetClass);
-
+  private void logSuccess(
+      Logger log,
+      String fullName,
+      String simpleName,
+      String methodName,
+      Object result,
+      long duration) {
     Map<String, Object> payload = new LinkedHashMap<>();
     payload.put("severity", "INFO");
-    payload.put("logger", targetClass.getName());
+    payload.put("logger", fullName);
     payload.put("method", methodName);
-    payload.put(
-        "message",
-        String.format(
-            "Execution of %s.%s() finished in %dms",
-            targetClass.getSimpleName(), methodName, duration));
+    payload.put("message", String.format(SUCCESS_MESSAGE, simpleName, methodName, duration));
     payload.put("result", result != null ? result.toString() : "null");
     payload.put("duration_ms", duration);
 
     logInfoSilently(log, payload);
   }
 
-  private void logFailure(ProceedingJoinPoint joinPoint, Throwable ex, long duration) {
-    Class<?> targetClass = joinPoint.getTarget().getClass();
-    String methodName = joinPoint.getSignature().getName();
-    Object[] args = joinPoint.getArgs();
-    Logger log = LoggerFactory.getLogger(targetClass);
-
+  private void logFailure(
+      Logger log,
+      String fullName,
+      String simpleName,
+      String methodName,
+      Object[] args,
+      Throwable ex,
+      long duration) {
     Map<String, Object> payload = new LinkedHashMap<>();
     payload.put("severity", "ERROR");
-    payload.put("logger", targetClass.getName());
+    payload.put("logger", fullName);
     payload.put("method", methodName);
-    payload.put(
-        "message",
-        String.format(
-            "Execution of %s.%s() failed in %dms",
-            targetClass.getSimpleName(), methodName, duration));
+    payload.put("message", String.format(FAILURE_MESSAGE, simpleName, methodName, duration));
     payload.put("args", summarize(args, Integer.MAX_VALUE, true));
     payload.put("exception", ex.getClass().getSimpleName());
     payload.put("exception_message", ex.getMessage());
