@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.Set;
 import org.hermi.commons.conversion.Converter;
 import org.hermi.commons.conversion.Convertible;
+import org.hermi.commons.tracing.Trace;
 import org.hermi.commons.validation.InputValidationException;
 import org.hermi.commons.validation.Validatable;
 import org.hermi.commons.validation.Validator;
@@ -27,6 +28,7 @@ import org.hermi.commons.validation.Validator;
  * @param <C> the type of the execution context
  * @param <R> the type of the execution result
  */
+@Trace
 public abstract class Executor<C, R> {
   /**
    * Implements the core execution logic.
