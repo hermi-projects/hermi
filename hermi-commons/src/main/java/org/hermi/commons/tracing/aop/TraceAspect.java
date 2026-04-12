@@ -13,15 +13,17 @@ import tools.jackson.databind.ObjectMapper;
 /**
  * Aspect for structured execution tracing of Hermi components.
  *
- * <p>Adheres to three core observability standards:
+ * <p>Adheres to core observability standards:
  *
  * <ul>
- *   <li><b>JSON Structured Format</b>: Direct serialization to JSON objects for seamless machine
- *       ingestion and processing.
- *   <li><b>Google SRE Alignment</b>: Adheres to standard fields (severity, message) for
- *       compatibility with Google Cloud Logging and modern observability stacks.
- *   <li><b>Analytics Optimized</b>: Enables complex queries and metric extraction (e.g., p99
- *       latency via duration_ms) without regex overhead.
+ *   <li><b>AI Friendly</b>: Uses structured JSON to ensure precision parsing for machines and AI
+ *       agents.
+ *   <li><b>Human Friendly</b>: Implements natural language messaging for enhanced intuitive
+ *       experiences during manual reviews.
+ *   <li><b>Analytical Depth</b>: Provides independent numeric and categorical fields (e.g.,
+ *       duration_ms) to enable complex metric extraction and multi-dimensional queries.
+ *   <li><b>Industry Standard</b>: Aligns with <b>Google SRE</b> and <b>Google Cloud Logging</b>
+ *       structured logging definitions (using severity and service-context fields).
  * </ul>
  */
 @Aspect
@@ -30,11 +32,9 @@ public class TraceAspect {
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   @Around("@annotation(trace) || @within(trace)")
-  public Object traceExecution(ProceedingJoinPoint joinPoint, Trace trace) throws Throwable {
+  public Object trace(ProceedingJoinPoint joinPoint, Trace trace) throws Throwable {
     long startTime = System.currentTimeMillis();
-
     logStart(joinPoint);
-
     try {
       Object result = joinPoint.proceed();
       logSuccess(joinPoint, result, System.currentTimeMillis() - startTime);
@@ -60,7 +60,7 @@ public class TraceAspect {
         String.format("Execution of %s.%s() started", targetClass.getSimpleName(), methodName));
     payload.put("args", summarize(args, 100, false));
 
-    logSilently(log, payload);
+    logInfoSilently(log, payload);
   }
 
   private void logSuccess(ProceedingJoinPoint joinPoint, Object result, long duration) {
@@ -80,7 +80,7 @@ public class TraceAspect {
     payload.put("result", result != null ? result.toString() : "null");
     payload.put("duration_ms", duration);
 
-    logSilently(log, payload);
+    logInfoSilently(log, payload);
   }
 
   private void logFailure(ProceedingJoinPoint joinPoint, Throwable ex, long duration) {
@@ -110,7 +110,7 @@ public class TraceAspect {
    * Serializes the payload to JSON and logs it as INFO. Ensures that logging failures never impact
    * the main business logic.
    */
-  private void logSilently(Logger log, Map<String, Object> payload) {
+  private void logInfoSilently(Logger log, Map<String, Object> payload) {
     try {
       log.info(MAPPER.writeValueAsString(payload));
     } catch (Exception e) {
