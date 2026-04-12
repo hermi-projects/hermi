@@ -41,16 +41,15 @@ public class TraceAspect {
     long startTime = System.currentTimeMillis();
 
     try {
-      // START LOG: Brief summary with Simple Types
+      // START LOG
       Map<String, Object> startPayload = new LinkedHashMap<>();
       startPayload.put("severity", "INFO");
       startPayload.put("logger", targetClass.getName());
-      startPayload.put("message", "START");
       startPayload.put("method", methodName);
+      startPayload.put(
+          "message",
+          String.format("Execution of %s.%s() started", targetClass.getSimpleName(), methodName));
       startPayload.put("args", summarize(args, 100, false));
-      if (trace != null && !trace.value().isEmpty()) {
-        startPayload.put("intent", trace.value());
-      }
       log.info(MAPPER.writeValueAsString(startPayload));
 
       Object result = joinPoint.proceed();
@@ -60,8 +59,12 @@ public class TraceAspect {
       Map<String, Object> successPayload = new LinkedHashMap<>();
       successPayload.put("severity", "INFO");
       successPayload.put("logger", targetClass.getName());
-      successPayload.put("message", "SUCCESS");
       successPayload.put("method", methodName);
+      successPayload.put(
+          "message",
+          String.format(
+              "Execution of %s.%s() finished in %dms",
+              targetClass.getSimpleName(), methodName, duration));
       successPayload.put("result", result != null ? result.toString() : "null");
       successPayload.put("duration_ms", duration);
       log.info(MAPPER.writeValueAsString(successPayload));
@@ -70,12 +73,16 @@ public class TraceAspect {
     } catch (Throwable ex) {
       long duration = System.currentTimeMillis() - startTime;
 
-      // FAILURE LOG: Full detail with Full Type Names
+      // FAILURE LOG
       Map<String, Object> failurePayload = new LinkedHashMap<>();
       failurePayload.put("severity", "ERROR");
       failurePayload.put("logger", targetClass.getName());
-      failurePayload.put("message", "FAILURE");
       failurePayload.put("method", methodName);
+      failurePayload.put(
+          "message",
+          String.format(
+              "Execution of %s.%s() failed in %dms",
+              targetClass.getSimpleName(), methodName, duration));
       failurePayload.put("args", summarize(args, Integer.MAX_VALUE, true));
       failurePayload.put("exception", ex.getClass().getSimpleName());
       failurePayload.put("exception_message", ex.getMessage());

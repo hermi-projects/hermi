@@ -15,11 +15,4 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
-public @interface Trace {
-  /**
-   * Optional description of the intent to be included in the logs.
-   *
-   * @return the intent description
-   */
-  String value() default "";
-}
+public @interface Trace {}
