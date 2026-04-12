@@ -561,7 +561,7 @@ hermi-user (Parent)
 ```mermaid
 graph TD
     %% Main Shell
-    S_Main[FindUserMainShell] -->|executes| U_UseCase[FindUserUseCase]
+    S_Main[FindUserMainShell] -->|executes| U_UseCase
 
     %% API Shell
     S_Api[FindUserApiShell] -->|handles request| U_UseCase
@@ -575,10 +575,13 @@ graph TD
     %% JUnit Shell
     S_JUnit[FindUserTestShell] -->|verifies logic| U_UseCase
     
-    %% Use Case -> Contracts
-    U_UseCase -->|requests external data| U_Client[FindUserClient]
-    U_UseCase -->|requests persistence| U_Repo[SaveUserRepository]
-    U_UseCase -->|requests notification| U_Messenger[NotifyUserFoundMessenger]
+    %% Use Case Interface -> Default Implementation
+    U_UseCase[FindUserUseCase] -->|implemented by| U_Default[DefaultFindUserUseCase]
+    
+    %% Default Implementation -> Contracts
+    U_Default -->|requests external data| U_Client[FindUserClient]
+    U_Default -->|requests persistence| U_Repo[SaveUserRepository]
+    U_Default -->|requests notification| U_Messenger[NotifyUserFoundMessenger]
 
     %% Local Implementations
     U_Client -->|local implementation| A_LocalClient[LocalFindUserClient]
@@ -604,5 +607,5 @@ graph TD
     class S_Consumer consumer
     class S_Ai ai
     class S_JUnit test
-    class U_UseCase,U_Client,U_Repo,U_Messenger core
+    class U_UseCase,U_Default,U_Client,U_Repo,U_Messenger core
 ```
