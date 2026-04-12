@@ -37,14 +37,14 @@ public class TraceAspect {
     String intentStr =
         (trace != null && !trace.value().isEmpty()) ? " intent=\"" + trace.value() + "\"" : "";
 
-    log.debug("START | method={} args=\"{}\"{}", methodName, Arrays.toString(args), intentStr);
+    log.info("START | method={} args=\"{}\"{}", methodName, Arrays.toString(args), intentStr);
 
     long startTime = System.currentTimeMillis();
     try {
       Object result = joinPoint.proceed();
       long duration = System.currentTimeMillis() - startTime;
 
-      log.debug("SUCCESS | method={} result=\"{}\" duration_ms={}", methodName, result, duration);
+      log.info("SUCCESS | method={} result=\"{}\" duration_ms={}", methodName, result, duration);
       return result;
     } catch (Throwable ex) {
       long duration = System.currentTimeMillis() - startTime;
