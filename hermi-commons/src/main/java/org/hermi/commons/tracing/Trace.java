@@ -15,4 +15,10 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
-public @interface Trace {}
+public @interface Trace {
+  /**
+   * The business event name (e.g., "SaveUser"). If set, it will propagate to all nested traced
+   * calls.
+   */
+  String event() default "";
+}

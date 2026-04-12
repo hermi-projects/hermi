@@ -8,6 +8,7 @@ import org.aspectj.lang.annotation.Aspect;
 import org.hermi.commons.tracing.Trace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -45,9 +46,18 @@ public class TraceAspect {
 
     long startTime = System.currentTimeMillis();
 
-    logStart(log, fullName, simpleName, methodName, args);
+    // Event Propagation Logic: Directly using the bound trace parameter
+    String event = trace.event();
+    String previousEvent = MDC.get("event");
+    boolean eventOverride = event != null && !event.isEmpty();
+
+    if (eventOverride) {
+      MDC.put("event", event);
+    }
 
     try {
+      logStart(log, fullName, simpleName, methodName, args);
+
       Object result = joinPoint.proceed();
       logSuccess(
           log, fullName, simpleName, methodName, result, System.currentTimeMillis() - startTime);
@@ -56,12 +66,24 @@ public class TraceAspect {
       logFailure(
           log, fullName, simpleName, methodName, args, ex, System.currentTimeMillis() - startTime);
       throw ex;
+    } finally {
+      if (eventOverride) {
+        if (previousEvent != null) {
+          MDC.put("event", previousEvent);
+        } else {
+          MDC.remove("event");
+        }
+      }
     }
   }
 
   private void logStart(
       Logger log, String fullName, String simpleName, String methodName, Object[] args) {
     Map<String, Object> payload = new LinkedHashMap<>();
+    String currentEvent = MDC.get("event");
+    if (currentEvent != null) {
+      payload.put("event", currentEvent);
+    }
     payload.put("severity", "INFO");
     payload.put("logger", fullName);
     payload.put("method", methodName);
@@ -79,6 +101,10 @@ public class TraceAspect {
       Object result,
       long duration) {
     Map<String, Object> payload = new LinkedHashMap<>();
+    String currentEvent = MDC.get("event");
+    if (currentEvent != null) {
+      payload.put("event", currentEvent);
+    }
     payload.put("severity", "INFO");
     payload.put("logger", fullName);
     payload.put("method", methodName);
@@ -98,6 +124,10 @@ public class TraceAspect {
       Throwable ex,
       long duration) {
     Map<String, Object> payload = new LinkedHashMap<>();
+    String currentEvent = MDC.get("event");
+    if (currentEvent != null) {
+      payload.put("event", currentEvent);
+    }
     payload.put("severity", "ERROR");
     payload.put("logger", fullName);
     payload.put("method", methodName);
