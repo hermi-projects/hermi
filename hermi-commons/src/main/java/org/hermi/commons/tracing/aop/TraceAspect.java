@@ -35,8 +35,19 @@ public class TraceAspect {
   private static final String SUCCESS_MESSAGE = "Execution of %s.%s() finished in %dms";
   private static final String FAILURE_MESSAGE = "Execution of %s.%s() failed in %dms";
 
-  @Around("@annotation(trace) || @within(trace)")
-  public Object trace(ProceedingJoinPoint joinPoint, Trace trace) throws Throwable {
+  @Around("execution(* *(..)) && @annotation(trace)")
+  public Object traceMethod(ProceedingJoinPoint joinPoint, Trace trace) throws Throwable {
+    return proceed(joinPoint, trace);
+  }
+
+  @Around(
+      "execution(* *(..)) && @within(org.hermi.commons.tracing.Trace) && !@annotation(org.hermi.commons.tracing.Trace)")
+  public Object traceClass(ProceedingJoinPoint joinPoint) throws Throwable {
+    Trace trace = joinPoint.getTarget().getClass().getAnnotation(Trace.class);
+    return proceed(joinPoint, trace);
+  }
+
+  private Object proceed(ProceedingJoinPoint joinPoint, Trace trace) throws Throwable {
     Class<?> targetClass = joinPoint.getTarget().getClass();
     String simpleName = targetClass.getSimpleName();
     String fullName = targetClass.getName();
