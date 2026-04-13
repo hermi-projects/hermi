@@ -142,6 +142,43 @@ class TraceAspectUnitTest {
         .isTrue();
   }
 
+  /**
+   * Tests custom object summarization via the {@link Traceable} interface. Verifies that the aspect
+   * prioritizes {@code toTraceMessage()} over {@code toString()} for both arguments and results.
+   */
+  @Test
+  void testTraceable() {
+    CustomArg arg = new CustomArg("secret", "public-info");
+    service.methodWithTraceable(arg);
+
+    List<ILoggingEvent> events = mockAppender.getEvents();
+    // Verify arguments use custom trace message (no type prefix as per new TraceAspect logic).
+    assertThat(events.get(0).getMessage()).contains("\"args\":\"[public-info]\"");
+    // Verify result also uses trace message.
+    assertThat(events.get(1).getMessage()).contains("\"result\":\"public-info\"");
+  }
+
+  /**
+   * Tests that the {@link Traceable} interface is IGNORED during failure logging. Failure logs must
+   * contain full, untruncated, and unmasked information to assist in debugging.
+   */
+  @Test
+  void testTraceableOnFailure() {
+    CustomArg arg = new CustomArg("secret", "public-info");
+    try {
+      service.failingMethod(arg);
+    } catch (Exception ignored) {
+    }
+
+    List<ILoggingEvent> events = mockAppender.getEvents();
+    // On failure, summarizeArgs is called with supportTraceable=false and useFullName=true.
+    // Verify it contains the "secret" part from toString() and the full class name.
+    String failureLog = events.get(1).getMessage();
+    assertThat(failureLog).contains("\"severity\":\"ERROR\"");
+    assertThat(failureLog).contains("org.hermi.commons.tracing.TraceAspectUnitTest$CustomArg");
+    assertThat(failureLog).contains("secret");
+  }
+
   /** Helper Service trimmed with @Trace. */
   @Trace
   public static class TracedService {
@@ -167,6 +204,37 @@ class TraceAspectUnitTest {
 
     @Trace
     public void nestedMethod() {}
+
+    @Trace(maxArgLength = 50, maxResultLength = 50)
+    public CustomArg methodWithTraceable(CustomArg input) {
+      return input;
+    }
+
+    @Trace
+    public void failingMethod(CustomArg input) {
+      throw new RuntimeException("Expected failure");
+    }
+  }
+
+  /** A custom argument implementing Traceable. */
+  public static class CustomArg implements Traceable {
+    private final String secret;
+    private final String info;
+
+    public CustomArg(String secret, String info) {
+      this.secret = secret;
+      this.info = info;
+    }
+
+    @Override
+    public String toTraceString() {
+      return info;
+    }
+
+    @Override
+    public String toString() {
+      return "CustomArg{secret='" + secret + "', info='" + info + "'}";
+    }
   }
 
   /** Logback appender to capture logs in memory. */

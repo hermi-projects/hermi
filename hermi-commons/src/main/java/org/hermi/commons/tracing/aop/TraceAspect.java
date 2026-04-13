@@ -6,6 +6,7 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.hermi.commons.tracing.Trace;
+import org.hermi.commons.tracing.Traceable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -112,7 +113,8 @@ public class TraceAspect {
     payload.put("logger", fullName);
     payload.put("method", methodName);
     payload.put("message", String.format(START_MESSAGE, simpleName, methodName));
-    payload.put("args", (maxArgLength < 0) ? "[MASKED]" : summarizeArgs(args, maxArgLength, false));
+    payload.put(
+        "args", (maxArgLength < 0) ? "[MASKED]" : summarizeArgs(args, maxArgLength, false, true));
 
     logSilently(log, severity, payload);
   }
@@ -142,7 +144,8 @@ public class TraceAspect {
     payload.put("method", methodName);
     payload.put("message", String.format(SUCCESS_MESSAGE, simpleName, methodName, duration));
     payload.put(
-        "result", (maxResultLength < 0) ? "[MASKED]" : summarizeResult(result, maxResultLength));
+        "result",
+        (maxResultLength < 0) ? "[MASKED]" : summarizeResult(result, maxResultLength, true));
     payload.put("duration_ms", duration);
 
     logSilently(log, severity, payload);
@@ -164,7 +167,7 @@ public class TraceAspect {
     payload.put("logger", fullName);
     payload.put("method", methodName);
     payload.put("message", String.format(FAILURE_MESSAGE, simpleName, methodName));
-    payload.put("args", summarizeArgs(args, Integer.MAX_VALUE, true));
+    payload.put("args", summarizeArgs(args, Integer.MAX_VALUE, true, false));
     payload.put("exception", ex.getClass().getSimpleName());
     payload.put("exception_message", ex.getMessage());
 
@@ -208,32 +211,37 @@ public class TraceAspect {
    * @param args The method arguments.
    * @param maxArgLength Maximum characters before truncation.
    * @param useFullName If true, use fully qualified class names; otherwise simple names.
+   * @param supportTraceable If true, allow custom summaries via Traceable interface.
    */
-  private String summarizeArgs(Object[] args, int maxArgLength, boolean useFullName) {
+  private String summarizeArgs(
+      Object[] args, int maxArgLength, boolean useFullName, boolean supportTraceable) {
     if (args == null || args.length == 0) {
       return "[]";
     }
 
-    StringBuilder sb = new StringBuilder("[");
+    StringBuilder sb = new StringBuilder("");
     for (int i = 0; i < args.length; i++) {
       Object arg = args[i];
       if (arg == null) {
         sb.append("null");
       } else {
         String type = useFullName ? arg.getClass().getName() : arg.getClass().getSimpleName();
-        sb.append(type).append(":").append(arg);
+        String value =
+            (supportTraceable && arg instanceof Traceable traceable)
+                ? traceable.toTraceString()
+                : type + ":" + String.valueOf(arg);
+        sb.append(value);
       }
       if (i < args.length - 1) {
         sb.append(", ");
       }
     }
-    sb.append("]");
 
     String full = sb.toString();
     if (full.length() > maxArgLength) {
       return full.substring(0, maxArgLength) + "...(truncated)";
     }
-    return full;
+    return "[" + full + "]";
   }
 
   /**
@@ -241,12 +249,19 @@ public class TraceAspect {
    *
    * @param result The method return value.
    * @param maxResultLength Maximum characters before truncation.
+   * @param supportTraceable If true, allow custom summaries via Traceable interface.
    */
-  private String summarizeResult(Object result, int maxResultLength) {
+  private String summarizeResult(Object result, int maxResultLength, boolean supportTraceable) {
     if (result == null) {
       return "null";
     }
-    String full = result.toString();
+    String full =
+        (supportTraceable && result instanceof Traceable traceable)
+            ? traceable.toTraceString()
+            : result.toString();
+    if (full == null) {
+      full = "null";
+    }
     if (full.length() > maxResultLength) {
       return full.substring(0, maxResultLength) + "...(truncated)";
     }
