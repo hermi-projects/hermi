@@ -33,7 +33,7 @@ public class TraceAspect {
   private static final ObjectMapper MAPPER = new ObjectMapper();
   private static final String START_MESSAGE = "Execution of %s.%s() started";
   private static final String SUCCESS_MESSAGE = "Execution of %s.%s() finished in %dms";
-  private static final String FAILURE_MESSAGE = "Execution of %s.%s() failed in %dms";
+  private static final String FAILURE_MESSAGE = "Execution of %s.%s() failed";
 
   @Around("execution(* *(..)) && @annotation(trace)")
   public Object traceMethod(ProceedingJoinPoint joinPoint, Trace trace) throws Throwable {
@@ -67,7 +67,7 @@ public class TraceAspect {
     }
 
     try {
-      logStart(log, trace.severity(), fullName, simpleName, methodName, args, trace.excludeArgs());
+      logStart(log, trace.severity(), fullName, simpleName, methodName, args, trace.maxArgLength());
 
       Object result = joinPoint.proceed();
       logSuccess(
@@ -78,19 +78,11 @@ public class TraceAspect {
           methodName,
           result,
           System.currentTimeMillis() - startTime,
-          trace.excludeResult(),
+          trace.maxResultLength(),
           trace.slowThresholdMs());
       return result;
     } catch (Throwable ex) {
-      logFailure(
-          log,
-          fullName,
-          simpleName,
-          methodName,
-          args,
-          ex,
-          System.currentTimeMillis() - startTime,
-          trace.excludeArgs());
+      logFailure(log, fullName, simpleName, methodName, args, ex);
       throw ex;
     } finally {
       if (eventOverride) {
@@ -110,7 +102,7 @@ public class TraceAspect {
       String simpleName,
       String methodName,
       Object[] args,
-      boolean excludeArgs) {
+      int maxArgLength) {
     Map<String, Object> payload = new LinkedHashMap<>();
     String currentEvent = MDC.get("event");
     if (currentEvent != null) {
@@ -120,7 +112,7 @@ public class TraceAspect {
     payload.put("logger", fullName);
     payload.put("method", methodName);
     payload.put("message", String.format(START_MESSAGE, simpleName, methodName));
-    payload.put("args", excludeArgs ? "[MASKED]" : summarize(args, 100, false));
+    payload.put("args", (maxArgLength < 0) ? "[MASKED]" : summarizeArgs(args, maxArgLength, false));
 
     logSilently(log, severity, payload);
   }
@@ -133,7 +125,7 @@ public class TraceAspect {
       String methodName,
       Object result,
       long duration,
-      boolean excludeResult,
+      int maxResultLength,
       long slowThresholdMs) {
     String severity = baseSeverity;
     if (slowThresholdMs > 0 && duration >= slowThresholdMs) {
@@ -150,7 +142,7 @@ public class TraceAspect {
     payload.put("method", methodName);
     payload.put("message", String.format(SUCCESS_MESSAGE, simpleName, methodName, duration));
     payload.put(
-        "result", excludeResult ? "[MASKED]" : (result != null ? result.toString() : "null"));
+        "result", (maxResultLength < 0) ? "[MASKED]" : summarizeResult(result, maxResultLength));
     payload.put("duration_ms", duration);
 
     logSilently(log, severity, payload);
@@ -162,9 +154,7 @@ public class TraceAspect {
       String simpleName,
       String methodName,
       Object[] args,
-      Throwable ex,
-      long duration,
-      boolean excludeArgs) {
+      Throwable ex) {
     Map<String, Object> payload = new LinkedHashMap<>();
     String currentEvent = MDC.get("event");
     if (currentEvent != null) {
@@ -173,11 +163,10 @@ public class TraceAspect {
     payload.put("severity", "ERROR");
     payload.put("logger", fullName);
     payload.put("method", methodName);
-    payload.put("message", String.format(FAILURE_MESSAGE, simpleName, methodName, duration));
-    payload.put("args", excludeArgs ? "[MASKED]" : summarize(args, Integer.MAX_VALUE, true));
+    payload.put("message", String.format(FAILURE_MESSAGE, simpleName, methodName));
+    payload.put("args", summarizeArgs(args, Integer.MAX_VALUE, true));
     payload.put("exception", ex.getClass().getSimpleName());
     payload.put("exception_message", ex.getMessage());
-    payload.put("duration_ms", duration);
 
     logSilently(log, "ERROR", payload);
   }
@@ -217,10 +206,10 @@ public class TraceAspect {
    * Summarizes arguments with custom constraints to prevent log bloat.
    *
    * @param args The method arguments.
-   * @param maxLength Maximum characters before truncation.
+   * @param maxArgLength Maximum characters before truncation.
    * @param useFullName If true, use fully qualified class names; otherwise simple names.
    */
-  private String summarize(Object[] args, int maxLength, boolean useFullName) {
+  private String summarizeArgs(Object[] args, int maxArgLength, boolean useFullName) {
     if (args == null || args.length == 0) {
       return "[]";
     }
@@ -241,9 +230,25 @@ public class TraceAspect {
     sb.append("]");
 
     String full = sb.toString();
-    int actualMax = Math.max(maxLength, 100);
-    if (full.length() > actualMax) {
-      return full.substring(0, actualMax) + "...(truncated)";
+    if (full.length() > maxArgLength) {
+      return full.substring(0, maxArgLength) + "...(truncated)";
+    }
+    return full;
+  }
+
+  /**
+   * Summarizes the result to prevent log bloat.
+   *
+   * @param result The method return value.
+   * @param maxResultLength Maximum characters before truncation.
+   */
+  private String summarizeResult(Object result, int maxResultLength) {
+    if (result == null) {
+      return "null";
+    }
+    String full = result.toString();
+    if (full.length() > maxResultLength) {
+      return full.substring(0, maxResultLength) + "...(truncated)";
     }
     return full;
   }

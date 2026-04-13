@@ -25,15 +25,15 @@ public @interface Trace {
   /** The default log level for this trace. Default is "INFO". */
   String severity() default "INFO";
 
-  /** If true, the method arguments will not be logged. Default is false. */
-  boolean excludeArgs() default false;
-
-  /** If true, the method return value will not be logged. Default is false. */
-  boolean excludeResult() default false;
+  /** The maximum length of the result to log. Use < 0 to exclude the result. Default is 20. */
+  int maxResultLength() default 20;
 
   /**
    * The threshold in milliseconds for a "slow" execution. If exceeded, the log severity can be
    * upgraded. Default is -1 (disabled).
    */
   long slowThresholdMs() default -1;
+
+  /** The maximum length of arguments to log. Use < 0 to exclude arguments. Default is 20. */
+  int maxArgLength() default 20;
 }

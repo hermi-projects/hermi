@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 /** Unit test for {@link TraceAspect} and {@link Trace} annotation. */
-class TraceAspectTest {
+class TraceAspectUnitTest {
 
   private MockAppender mockAppender;
   private TracedService service;
@@ -70,8 +70,8 @@ class TraceAspectTest {
   }
 
   /**
-   * Tests privacy masking functionality. Verifies that when @Trace is configured with excludeArgs
-   * or excludeResult set to true, sensitive data is replaced by "[MASKED]" in the logs.
+   * Tests privacy masking functionality. Verifies that when @Trace is configured with maxArgLength
+   * = -1 or maxResultLength = -1, sensitive data is replaced by "[MASKED]" in the logs.
    */
   @Test
   void testMasking() {
@@ -150,7 +150,7 @@ class TraceAspectTest {
       // Normal tracing
     }
 
-    @Trace(excludeArgs = true, excludeResult = true)
+    @Trace(maxArgLength = -1, maxResultLength = -1)
     public String sensitiveMethod(String password) {
       return "done";
     }
