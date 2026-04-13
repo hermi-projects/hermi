@@ -239,7 +239,7 @@ public class TraceAspect {
 
     String full = sb.toString();
     if (full.length() > maxArgLength) {
-      return full.substring(0, maxArgLength) + "...(truncated)";
+      return "[" + full.substring(0, maxArgLength) + "...(truncated)" + "]";
     }
     return "[" + full + "]";
   }
