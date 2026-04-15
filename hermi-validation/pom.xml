@@ -7,17 +7,20 @@
     <version>1.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>hermi-use-case</artifactId>
-  <packaging>jar</packaging>
+  <artifactId>hermi-validation</artifactId>
 
   <dependencies>
     <dependency>
-      <groupId>org.hermi</groupId>
-      <artifactId>hermi-validation</artifactId>
+      <groupId>jakarta.validation</groupId>
+      <artifactId>jakarta.validation-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.hibernate.validator</groupId>
+      <artifactId>hibernate-validator</artifactId>
     </dependency>
     <dependency>
       <groupId>org.hermi</groupId>
-      <artifactId>hermi-logging</artifactId>
+      <artifactId>hermi-annotations</artifactId>
     </dependency>
   </dependencies>
 </project>

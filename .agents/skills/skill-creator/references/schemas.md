@@ -404,7 +404,7 @@ Output from post-hoc analyzer. Located at `<grading-dir>/analysis.json`.
   "instruction_following": {
     "winner": {
       "score": 9,
-      "issues": ["Minor: skipped optional logging step"]
+      "issues": ["Minor: skipped optional tracing step"]
     },
     "loser": {
       "score": 6,

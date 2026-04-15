@@ -114,7 +114,7 @@ Write a JSON file with this structure:
     "winner": {
       "score": 9,
       "issues": [
-        "Minor: skipped optional logging step"
+        "Minor: skipped optional tracing step"
       ]
     },
     "loser": {

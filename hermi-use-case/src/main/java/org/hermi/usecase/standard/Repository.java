@@ -1,7 +1,7 @@
 package org.hermi.usecase.standard;
 
-import org.hermi.commons.execution.Executor;
-import org.hermi.commons.validation.Validatable;
+import org.hermi.usecase.util.Executor;
+import org.hermi.validation.Validatable;
 
 /**
  * An abstract class representing a repository for data access, including database, file system,

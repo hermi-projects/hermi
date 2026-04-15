@@ -260,7 +260,7 @@ class InMemorySaveUserRepository extends SaveUserRepository {
     }
 }
  
-// 2. A simple console-logging messenger
+// 2. A simple console-tracing messenger
 class ConsoleNotifyUserFoundMessenger extends NotifyUserFoundMessenger {
     @Override
     protected Result doExecute(Context context) {
