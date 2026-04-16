@@ -33,6 +33,10 @@
       <groupId>org.hermi</groupId>
       <artifactId>hermi-annotations</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.hermi</groupId>
+      <artifactId>hermi-commons</artifactId>
+    </dependency>
     <!-- Testing -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>

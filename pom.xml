@@ -30,12 +30,12 @@
 
   <modules>
     <module>hermi-commons</module>
-    <module>hermi-annotations</module>
     <module>hermi-logging</module>
     <module>hermi-validation</module>
     <module>hermi-use-case</module>
     <module>hermi-shell</module>
     <module>hermi-starter</module>
+    <module>hermi-annotations</module>
   </modules>
 
   <scm>
@@ -74,11 +74,6 @@
       </dependency>
       <dependency>
         <groupId>org.hermi</groupId>
-        <artifactId>hermi-commons</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.hermi</groupId>
         <artifactId>hermi-annotations</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -89,7 +84,7 @@
       </dependency>
       <dependency>
         <groupId>org.hermi</groupId>
-        <artifactId>hermi-logging</artifactId>
+        <artifactId>hermi-commons</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -100,6 +95,11 @@
       <dependency>
         <groupId>org.hermi</groupId>
         <artifactId>hermi-use-case</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.hermi</groupId>
+        <artifactId>hermi-logging</artifactId>
         <version>${project.version}</version>
       </dependency>
     </dependencies>

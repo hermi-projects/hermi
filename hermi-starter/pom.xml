@@ -18,5 +18,9 @@
       <groupId>org.hermi</groupId>
       <artifactId>hermi-shell</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.hermi</groupId>
+      <artifactId>hermi-logging</artifactId>
+    </dependency>
   </dependencies>
 </project>
