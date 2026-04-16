@@ -1,6 +1,6 @@
 package org.hermi.usecase.standard;
 
-import org.hermi.usecase.util.Executor;
+import org.hermi.commons.Executor;
 import org.hermi.validation.Validatable;
 
 /**
