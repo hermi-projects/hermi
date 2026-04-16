@@ -1,4 +1,4 @@
-package org.hermi.usecase.util.conversion;
+package org.hermi.commons.conversion;
 
 /**
  * Interface for objects that can be converted to another type.

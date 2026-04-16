@@ -8,5 +8,10 @@
   </parent>
 
   <artifactId>hermi-shell</artifactId>
-
+  <dependencies>
+    <dependency>
+      <groupId>org.hermi</groupId>
+      <artifactId>hermi-commons</artifactId>
+    </dependency>
+  </dependencies>
 </project>

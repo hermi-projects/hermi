@@ -1,4 +1,4 @@
-package org.hermi.shell;
+package org.hermi.shell.util;
 
 import java.util.Collections;
 import java.util.Map;

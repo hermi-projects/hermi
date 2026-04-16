@@ -1,4 +1,4 @@
-package org.hermi.usecase.util.conversion;
+package org.hermi.commons.conversion;
 
 /**
  * Simple converter interface.
