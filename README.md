@@ -558,6 +558,7 @@ hermi-user (Parent)
         ├── JdbcSaveUserRepository.java             (Production Adapter)
         └── KafkaNotifyUserFoundMessenger.java      (Production Adapter)
 ```
+Basic
 ```mermaid
 graph TD
     %% Main Shell
@@ -608,4 +609,63 @@ graph TD
     class S_Ai ai
     class S_JUnit test
     class U_UseCase,U_Default,U_Client,U_Repo,U_Messenger core
+```
+Advanced
+```mermaid
+graph TD
+    %% Main Shell
+    S_Main[FindUserMainShell] -->|executes| U_UseCase
+
+    %% API Shell
+    S_Api[FindUserApiShell] -->|handles request| U_UseCase
+
+    %% Consumer Shell
+    S_Consumer[FindUserConsumerShell] -->|handles event| U_UseCase
+
+    %% AI Shell (New Entry Point)
+    S_Ai[FindUserAiShell] -->|interprets intent| U_UseCase
+
+    %% JUnit Shell
+    S_JUnit[FindUserTestShell] -->|verifies logic| U_UseCase
+    
+    %% Use Case Interface -> Default Implementation
+    U_UseCase[FindUserUseCase] -->|implemented by| U_Default[DefaultFindUserUseCase]
+    
+    %% Default Implementation -> Contracts
+    U_Default -->|requests external data| U_Client[FindUserClient]
+    U_Default -->|requests persistence| U_Repo[SaveUserRepository]
+    U_Default -->|requests notification| U_Messenger[NotifyUserFoundMessenger]
+
+    %% Local Implementations
+    U_Client -->|local implementation| A_LocalClient[LocalFindUserClient]
+    U_Repo -->|local implementation| A_LocalRepo[InMemorySaveUserRepository]
+    U_Messenger -->|local implementation| A_LocalMessenger[ConsoleNotifyUserFoundMessenger]
+
+    %% Production Implementations (Updated)
+    U_Client -->|production implementation| A_ProdClient[DefaultFindUserClient]
+    A_ProdClient -->|uses| A_ProdClientImpl[LexisNexisClient]
+
+    U_Repo -->|production implementation| A_ProdRepo[DefaultSaveUserRepository]
+    A_ProdRepo -->|uses| A_ProdRepoImpl[JdbcUserRepository]
+
+    U_Messenger -->|production implementation| A_ProdMessenger[DefaultNotifyUserFoundMessenger]
+    A_ProdMessenger -->|uses| A_ProdMessengerImpl[KafkaNotifyMessenger]
+
+    %% Styling
+    classDef local fill:#FFFFFF,color:#000000,stroke:#000000,stroke-width:1px
+    classDef api fill:#4E8F2F,color:#FFFFFF,stroke:#2F5A1C,stroke-width:1.5px
+    classDef consumer fill:#2E6A24,color:#FFFFFF,stroke:#1B3F15,stroke-width:1.5px
+    classDef ai fill:#34495E,color:#FFFFFF,stroke:#2C3E50,stroke-width:1.5px
+    classDef test fill:#B02E26,color:#FFFFFF,stroke:#8B0000,stroke-width:1.5px
+    classDef core fill:#FFFFFF,color:#000000,stroke:#000000,stroke-width:1px
+
+    %% Assign classes
+    class S_Main,A_LocalClient,A_LocalRepo,A_LocalMessenger local
+    class S_Api api
+    class S_Consumer consumer
+    class S_Ai ai
+    class S_JUnit test
+    class U_UseCase,U_Default,U_Client,U_Repo,U_Messenger core
+    class A_ProdClient,A_ProdRepo,A_ProdMessenger api
+    class A_ProdClientImpl,A_ProdRepoImpl,A_ProdMessengerImpl core
 ```
