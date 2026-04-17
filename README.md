@@ -554,9 +554,15 @@ hermi-user (Parent)
         ├── FindUserApiShell.java                   (Spring RestController)
         ├── FindUserConsumerShell.java              (Spring KafkaConsumer)
         ├── FindUserService.java                    (Spring Service)
-        ├── LexisNexisFindUserClient.java           (Production Adapter)
-        ├── JdbcSaveUserRepository.java             (Production Adapter)
-        └── KafkaNotifyUserFoundMessenger.java      (Production Adapter)
+        ├── client
+        │    ├── DefaultFindUserClient.java          (Production Adapter)
+        │    └── LexisNexisClient.java               (Vendor Client)
+        ├── repository
+        │    ├── DefaultSaveUserRepository.java      (Production Adapter)
+        │    └── JdbcUserRepository.java             (Vendor Repository)
+        └── messenger
+            ├── DefaultNotifyUserFoundMessenger.java (Production Adapter)
+            └── KafkaUserMessenger.java              (Vendor Messenger)
 ```
 Class Diagram
 ```mermaid
