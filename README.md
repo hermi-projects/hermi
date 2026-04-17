@@ -649,7 +649,7 @@ graph TD
     A_ProdRepo -->|uses| A_ProdRepoImpl[JdbcUserRepository]
 
     U_Messenger -->|production implementation| A_ProdMessenger[DefaultNotifyUserFoundMessenger]
-    A_ProdMessenger -->|uses| A_ProdMessengerImpl[KafkaNotifyMessenger]
+    A_ProdMessenger -->|uses| A_ProdMessengerImpl[KafkaUserMessenger]
 
     %% Styling
     classDef local fill:#FFFFFF,color:#000000,stroke:#000000,stroke-width:1px
