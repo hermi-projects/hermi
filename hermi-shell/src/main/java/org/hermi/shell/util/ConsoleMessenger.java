@@ -3,21 +3,30 @@ package org.hermi.shell.util;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.hermi.shell.Messenger;
 
-public class ConsoleMessenger<M, R> {
+public class ConsoleMessenger<M, R> extends Messenger<M, R> {
   private final Map<M, R> store;
 
   public ConsoleMessenger() {
     this.store = new ConcurrentHashMap<>();
   }
 
-  public R publish(M message) {
+  @Override
+  protected void beforePublish(M message) {
     System.out.printf(
         "[%s] INFO: Publishing message -> %s%n", this.getClass().getSimpleName(), message);
-    R result = store.get(message);
+  }
+
+  @Override
+  protected R doPublish(M message) {
+    return store.get(message);
+  }
+
+  @Override
+  protected void afterPublish(M message, R result) {
     System.out.printf(
         "[%s] INFO: Publish completed  -> %s%n", this.getClass().getSimpleName(), result);
-    return result;
   }
 
   public ConsoleMessenger<M, R> put(M message, R result) {

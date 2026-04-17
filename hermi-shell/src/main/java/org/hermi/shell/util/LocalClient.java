@@ -3,21 +3,30 @@ package org.hermi.shell.util;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.hermi.shell.Client;
 
-public class LocalClient<I, O> {
+public class LocalClient<I, O> extends Client<I, O> {
   private final Map<I, O> store;
 
   public LocalClient() {
     this.store = new ConcurrentHashMap<>();
   }
 
-  public O exchange(I input) {
+  @Override
+  protected void beforeExchange(I request) {
     System.out.printf(
-        "[%s] INFO: Exchanging input -> %s%n", this.getClass().getSimpleName(), input);
-    O result = store.get(input);
+        "[%s] INFO: Exchanging input -> %s%n", this.getClass().getSimpleName(), request);
+  }
+
+  @Override
+  protected O doExchange(I resuest) {
+    return store.get(resuest);
+  }
+
+  @Override
+  protected void afterExchange(I request, O response) {
     System.out.printf(
-        "[%s] INFO: Exchange completed -> %s%n", this.getClass().getSimpleName(), result);
-    return result;
+        "[%s] INFO: Exchange completed -> %s%n", this.getClass().getSimpleName(), response);
   }
 
   public LocalClient<I, O> put(I input, O output) {
