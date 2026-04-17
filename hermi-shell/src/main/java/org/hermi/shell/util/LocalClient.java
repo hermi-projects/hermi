@@ -13,7 +13,7 @@ public class LocalClient<I, O> extends Client<I, O> {
   }
 
   @Override
-  protected void beforeExchange(I request) {
+  protected void saveRequest(I request) {
     System.out.printf(
         "[%s] INFO: Exchanging input -> %s%n", this.getClass().getSimpleName(), request);
   }
@@ -24,7 +24,7 @@ public class LocalClient<I, O> extends Client<I, O> {
   }
 
   @Override
-  protected void afterExchange(I request, O response) {
+  protected void saveResult(I request, O response) {
     System.out.printf(
         "[%s] INFO: Exchange completed -> %s%n", this.getClass().getSimpleName(), response);
   }

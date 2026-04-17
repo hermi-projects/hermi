@@ -13,7 +13,7 @@ public class ConsoleMessenger<M, R> extends Messenger<M, R> {
   }
 
   @Override
-  protected void beforePublish(M message) {
+  protected void saveMessage(M message) {
     System.out.printf(
         "[%s] INFO: Publishing message -> %s%n", this.getClass().getSimpleName(), message);
   }
@@ -24,7 +24,7 @@ public class ConsoleMessenger<M, R> extends Messenger<M, R> {
   }
 
   @Override
-  protected void afterPublish(M message, R result) {
+  protected void saveResult(M message, R result) {
     System.out.printf(
         "[%s] INFO: Publish completed  -> %s%n", this.getClass().getSimpleName(), result);
   }

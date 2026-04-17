@@ -4,16 +4,16 @@ import org.hermi.commons.Executor;
 
 public abstract class Client<Req, Res> extends Executor<Req, Res> {
 
-  protected abstract void beforeExchange(Req request);
+  protected abstract void saveRequest(Req request);
 
   protected abstract Res doExchange(Req resuest);
 
-  protected abstract void afterExchange(Req request, Res response);
+  protected abstract void saveResult(Req request, Res response);
 
   public Res exchange(Req request) {
-    beforeExchange(request);
+    saveRequest(request);
     Res response = this.execute(request);
-    afterExchange(request, response);
+    saveResult(request, response);
     return response;
   }
 

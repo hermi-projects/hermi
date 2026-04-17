@@ -302,12 +302,73 @@ public class FindUserMainShell {
 #### Step 9: Realizing the Shell (Production Adapters)
 With Phase 1 complete and the core logic verified, build a technology-specific adapter class for each I/O contract discovered in Phase 1.
 
+Vendor Implementation, can be implemented as soon as we know the vendor
 ```java
 @Component
-public class LexisNexisFindUserClient extends FindUserClient
-    implements Adapter<ApiRequest, ApiResponse, FindUserClient.Context, FindUserClient.Result> {
+public class LexisNexisClient extends Client<ApiRequest, ApiResponse> {
 
   private RestTemplate restTemplate;
+
+  @Autowired
+  public LexisNexisClient(RestTemplate restTemplate) {
+    this.restTemplate = restTemplate;
+  }
+
+  @Override
+  protected void saveRequest(ApiRequest request) {
+    // Save request to audit table
+  }
+  @Override
+  public ApiResponse doExchange(ApiRequest request) {
+    return restTemplate.postForObject("/api/users", request, ApiResponse.class);
+  }
+
+  @Override
+  protected void saveResponse(ApiRequest request, ApiResponse response) {
+    // Save response to audit table
+  }
+}
+
+@Component
+public class KafkaUserMessenger extends Messenger<ProducerRecord<String, String>, RecordMetadata> {
+
+  private final KafkaTemplate<String, String> kafkaTemplate;
+
+  @Autowired
+  public KafkaUserMessenger(KafkaTemplate<String, String> kafkaTemplate) {
+    this.kafkaTemplate = kafkaTemplate;
+  }
+
+  @Override
+  protected void saveMessage(ProducerRecord<String, String> message) {
+    // Save message to audit table
+  }
+
+  @Override
+  public RecordMetadata doPublish(ProducerRecord<String, String> message) {
+    return kafkaTemplate.send(message).get().getRecordMetadata();
+  }
+
+  @Override
+  protected void saveResult(ProducerRecord<String, String> message, RecordMetadata result) {
+    // Save result to audit table
+  }
+}
+
+```
+
+Production Adapter
+```java
+@Component
+public class DefaultFindUserClient extends FindUserClient
+    implements Adapter<ApiRequest, ApiResponse, FindUserClient.Context, FindUserClient.Result> {
+
+  private LexisNexisClient lexisNexisClient;
+
+  @Autowired
+  public DefaultFindUserClient(LexisNexisClient lexisNexisClient) {
+    this.lexisNexisClient = lexisNexisClient;
+  }
 
   @Override
   protected Result doExecute(Context context) {
@@ -323,7 +384,7 @@ public class LexisNexisFindUserClient extends FindUserClient
 
   @Override
   public ApiResponse process(ApiRequest input) {
-    return restTemplate.postForObject("/api/users", input, ApiResponse.class);
+    return lexisNexisClient.exchange(input);
   }
 
   @Override
@@ -338,6 +399,7 @@ public class JdbcSaveUserRepository extends SaveUserRepository
 
   private final UserJpaRepository jpaRepository;
 
+  @Autowired
   public JdbcSaveUserRepository(UserJpaRepository jpaRepository) {
     this.jpaRepository = jpaRepository;
   }
@@ -369,10 +431,11 @@ public class JdbcSaveUserRepository extends SaveUserRepository
 public class KafkaNotifyUserFoundMessenger extends NotifyUserFoundMessenger
     implements Adapter<ProducerRecord<String, String>, RecordMetadata, NotifyUserFoundMessenger.Context, NotifyUserFoundMessenger.Result> {
 
-  private final KafkaTemplate<String, String> kafkaTemplate;
+  private final KafkaUserMessenger<String, String> kafkaUserMessenger;
 
-  public KafkaNotifyUserFoundMessenger(KafkaTemplate<String, String> kafkaTemplate) {
-    this.kafkaTemplate = kafkaTemplate;
+  @Autowired
+  public KafkaNotifyUserFoundMessenger(KafkaUserMessenger<String, String> kafkaUserMessenger) {
+    this.kafkaUserMessenger = kafkaUserMessenger;
   }
 
   @Override
@@ -389,11 +452,7 @@ public class KafkaNotifyUserFoundMessenger extends NotifyUserFoundMessenger
 
   @Override
   public RecordMetadata process(ProducerRecord<String, String> record) {
-    try {
-      return kafkaTemplate.send(record).get().getRecordMetadata();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
+    return kafkaUserMessenger.publish(record);
   }
 
   @Override
