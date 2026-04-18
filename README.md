@@ -635,8 +635,11 @@ graph TD
     %% Consumer Shell
     S_Consumer[FindUserConsumerShell] -->|handles event| U_UseCase
 
-    %% AI Shell (New Entry Point)
-    S_Ai[FindUserAiShell] -->|interprets intent| U_UseCase
+    %% AI Shell
+    S_Ai[FindUserAiShell] -->|handles AI request| U_UseCase
+
+    %% CLI Shell
+    S_Cli[FindUserCliShell] -->|handles command| U_UseCase
 
     %% JUnit Shell
     S_JUnit[FindUserTestShell] -->|verifies logic| U_UseCase
@@ -675,7 +678,7 @@ graph TD
     %% Assign classes
     class S_Main,A_LocalClient,A_LocalRepo,A_LocalMessenger local
     class S_Api api
-    class S_Consumer consumer
+    class S_Consumer,S_Cli consumer
     class S_Ai ai
     class S_JUnit test
     class U_UseCase,U_Default,U_Client,U_Repo,U_Messenger core
