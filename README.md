@@ -680,5 +680,6 @@ graph TD
     class S_JUnit test
     class U_UseCase,U_Default,U_Client,U_Repo,U_Messenger core
     class A_ProdClient,A_ProdRepo,A_ProdMessenger api
-    class A_ProdClientImpl,A_ProdRepoImpl,A_ProdMessengerImpl core
+    class A_ProdClientImpl,A_ProdMessengerImpl core
+    class A_ProdRepoImpl api
 ```
