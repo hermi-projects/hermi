@@ -629,6 +629,9 @@ graph TD
     %% Main Shell
     S_Main[FindUserMainShell] -->|executes| U_UseCase
 
+    %% JUnit Shell
+    S_JUnit[FindUserTestShell] -->|verifies logic| U_UseCase
+    
     %% API Shell
     S_Api[FindUserApiShell] -->|handles request| U_UseCase
 
@@ -641,9 +644,6 @@ graph TD
     %% CLI Shell
     S_Cli[FindUserCliShell] -->|handles command| U_UseCase
 
-    %% JUnit Shell
-    S_JUnit[FindUserTestShell] -->|verifies logic| U_UseCase
-    
     %% Use Case Interface -> Default Implementation
     U_UseCase[FindUserUseCase] -->|implemented by| U_Default[DefaultFindUserUseCase]
     
