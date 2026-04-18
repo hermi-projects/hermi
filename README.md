@@ -668,21 +668,18 @@ graph TD
     A_ProdMessenger -->|uses| A_ProdMessengerImpl[KafkaUserMessenger]
 
     %% Styling
-    classDef local fill:#FFFFFF,color:#000000,stroke:#000000,stroke-width:1px
-    classDef api fill:#4E8F2F,color:#FFFFFF,stroke:#2F5A1C,stroke-width:1.5px
-    classDef consumer fill:#2E6A24,color:#FFFFFF,stroke:#1B3F15,stroke-width:1.5px
-    classDef ai fill:#34495E,color:#FFFFFF,stroke:#2C3E50,stroke-width:1.5px
-    classDef test fill:#B02E26,color:#FFFFFF,stroke:#8B0000,stroke-width:1.5px
+    classDef s_local fill:#FFFFFF,color:#000000,stroke:#000000,stroke-width:1px
+    classDef s_api fill:#4E8F2F,color:#FFFFFF,stroke:#2F5A1C,stroke-width:1.5px
+    classDef s_other fill:#2E6A24,color:#FFFFFF,stroke:#1B3F15,stroke-width:1.5px
     classDef core fill:#FFFFFF,color:#000000,stroke:#000000,stroke-width:1px
 
     %% Assign classes
-    class S_Main,A_LocalClient,A_LocalRepo,A_LocalMessenger local
-    class S_Api api
-    class S_Consumer,S_Cli consumer
-    class S_Ai ai
-    class S_JUnit test
+    class S_Main,A_LocalClient,A_LocalRepo,A_LocalMessenger s_local
+    class S_Api s_api
+    class S_Consumer,S_Ai,S_Cli s_other
+    class S_JUnit core
     class U_UseCase,U_Default,U_Client,U_Repo,U_Messenger core
-    class A_ProdClient,A_ProdRepo,A_ProdMessenger api
+    class A_ProdClient,A_ProdRepo,A_ProdMessenger s_api
     class A_ProdClientImpl,A_ProdMessengerImpl core
-    class A_ProdRepoImpl api
+    class A_ProdRepoImpl s_api
 ```
