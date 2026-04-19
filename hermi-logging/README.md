@@ -173,3 +173,50 @@ FAILED: full args
   "trace": ""
 }
 ```
+
+---
+
+## 📝 8. 领域特定叙事 (Domain-Specific Narratives)
+
+Hermi Logging 支持使用 **Java 表达式语言 (Java EL)** 将入参动态绑定到日志中，帮助开发者输出“人类与 AI 均友好”的上下文叙事（Narratives），且完全零依赖于 Spring。
+
+### ✔ 8.1 如何使用
+
+通过 `@HermiLogging` 的 `message` 属性，你可以使用 EL 表达式获取方法的运行参数。支持按照参数名或参数索引（`arg0`, `arg1` 等）进行取值：
+
+```java
+@HermiLogging(message = "Processing payment of ${amount} for user ${user.id}")
+public Payment processPayment(User user, BigDecimal amount) { 
+    // ...业务代码
+}
+```
+
+### ✔ 8.2 输出效果
+
+当应用上述注解后，日志框架会自动计算 EL 表达式。在输出的 JSON 中，`message` 字段将被替换（或者追加辅助状态词）：
+- `Started: Processing payment of 50.00 for user 123`
+- `Succeeded: Processing payment of 50.00 for user 123`
+- `Failed: Processing payment of 50.00 for user 123`
+
+### ✔ 8.3 安全性与降级
+
+如果在表达式中引用了不存在的属性或导致计算失败，框架会进行 **优雅降级**：直接输出原始的模板字符串并在系统执行过程中规避抛出任何异常。这保障了您的业务代码稳定性。
+
+---
+
+## 🤖 9. 调试友好设计 (Debugging-Friendly Design)
+
+Hermi Logging 框架专门针对“人类排查”和“AI 自动分析”进行了双向结构化设计。
+
+### ✔ 9.1 AI 友好性 (AI-Friendly Data Context)
+大语言模型和日志分析引擎（如 ELK, Datadog）更擅长解析具备高熵值与上下文关联的结构化字段：
+- **一致的关联追踪 (Correlation ID)：** 通过 `MDC.get("event")` 传播全局 `event`，实现全链路追踪。
+- **序列化的原始状态 (Input State)：** 以 JSON 数组格式（而不是拼接字符串）保存抛出异常时的 `args` 快照。
+- **精确的代码位置 (Traceability)：** `logger`（完整类名）和 `method` 作为独立字段剥离。
+- **核心异常栈 (Root Cause Analysis)：** 直接抽离出 `exception` 类型与 `exception_message`，加速故障定界。
+
+### ✔ 9.2 人类友好性 (Human-Friendly Readability)
+研发工程师排查问题时，关注的是易读性、业务意图和故障焦点：
+- **领域特定叙事 (Domain Narrative)：** 拒绝冰冷的 "Execution of UserService.process() failed"，通过提取 EL 变量将其转换为语义连贯的："Failed: Processing payment of 50.00 for user 123"。
+- **耗时感知 (Performance Alerting)：** 当耗时超阈值时，除将 Severity 动态提升至 `WARN` 外，`message` 中还能体现出时间维度感知。
+- **高信噪比 (High Signal-to-Noise Ratio)：** 利用灵活的 `@HermiLogging(maxArgLength = x, maxResultLength = y)` 对巨量冗余返回和超长日志参数进行折叠或摒弃。

@@ -22,9 +22,6 @@ public @interface HermiLogging {
    */
   String event() default "";
 
-  /** The default log level for this trace. Default is "INFO". */
-  String severity() default "INFO";
-
   /** The maximum length of the result to log. Use < 0 to exclude the result. Default is 20. */
   int maxResultLength() default 20;
 
@@ -36,4 +33,11 @@ public @interface HermiLogging {
 
   /** The maximum length of arguments to log. Use < 0 to exclude arguments. Default is 20. */
   int maxArgLength() default 20;
+
+  /**
+   * Domain-specific narrative message, evaluated using Java Expression Language (EL).
+   *
+   * <p>Example: {@code @HermiLogging(title = "Processing payment for ${arg0.userId}")}
+   */
+  String title() default "";
 }

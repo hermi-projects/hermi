@@ -1,4 +1,4 @@
-package org.hermi.logging.api;
+package org.hermi.logging.usecase.api;
 
 /**
  * Interface for objects that provide a customized summary for tracing purposes.

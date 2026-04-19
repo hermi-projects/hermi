@@ -1,4 +1,4 @@
-package org.hermi.validation.validators;
+package org.hermi.annotations.validators;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 import org.hermi.annotations.SSN;
 
 /** Validator for {@link SSN} constraint. */
-public final class SSNValidator implements ConstraintValidator<SSN, CharSequence> {
+public final class SSNValidator implements ConstraintValidator<SSN, String> {
 
   /** Compiled regex pattern. */
   private Pattern pattern;
@@ -22,8 +22,8 @@ public final class SSNValidator implements ConstraintValidator<SSN, CharSequence
   }
 
   @Override
-  public boolean isValid(final CharSequence value, final ConstraintValidatorContext context) {
-    if (value == null || value.isEmpty() || value.toString().isBlank()) {
+  public boolean isValid(final String value, final ConstraintValidatorContext context) {
+    if (value == null || value.isBlank()) {
       return true;
     }
     return this.pattern.matcher(value).matches();
