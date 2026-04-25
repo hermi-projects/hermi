@@ -39,20 +39,20 @@ public abstract class Messenger<C, R extends Validatable> extends Executor<C, R>
    * <pre>{@code
    * @Component
    * public class KafkaNotifyUserFoundMessenger extends NotifyUserFoundMessenger
-   *     implements Adapter<ProducerRecord<String, String>, RecordMetadata, NotifyUserFoundMessenger.Input, NotifyUserFoundMessenger.Output> {
+   *     implements Adapter<NotifyUserFoundMessenger.Context, NotifyUserFoundMessenger.Result, ProducerRecord<String, String>, RecordMetadata> {
    *
    *   private final KafkaTemplate<String, String> kafkaTemplate;
    *
    *   @Override
    *   protected Result doExecute(Context context) {
-   *     ProducerRecord<String, String> record = convertInput(context);
+   *     ProducerRecord<String, String> record = convertContext(context);
    *     RecordMetadata metadata = process(record);
-   *     return convertOutput(metadata);
+   *     return convertResult(metadata);
    *   }
    *
    *   @Override
-   *   public ProducerRecord<String, String> convertInput(Input input) {
-   *     return new ProducerRecord<>("user.notifications", input.message());
+   *   public ProducerRecord<String, String> convertContext(Context context) {
+   *     return new ProducerRecord<>("user.notifications", context.message());
    *   }
    *
    *   @Override
@@ -65,8 +65,8 @@ public abstract class Messenger<C, R extends Validatable> extends Executor<C, R>
    *   }
    *
    *   @Override
-   *   public Output convertOutput(RecordMetadata metadata) {
-   *     return new Output(metadata.toString());
+   *   public Result convertResult(RecordMetadata metadata) {
+   *     return new Result(metadata.toString());
    *   }
    * }
    * }</pre>

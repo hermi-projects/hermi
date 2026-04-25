@@ -360,13 +360,13 @@ public class KafkaUserMessenger extends Messenger<ProducerRecord<String, String>
 Production Adapter
 ```java
 @Component
-public class DefaultFindUserClient extends FindUserClient
-    implements Adapter<ApiRequest, ApiResponse, FindUserClient.Context, FindUserClient.Result> {
+public class LexisNexisFindUserClient extends FindUserClient
+    implements Adapter<FindUserClient.Context, FindUserClient.Result, ApiRequest, ApiResponse> {
 
   private LexisNexisClient lexisNexisClient;
 
   @Autowired
-  public DefaultFindUserClient(LexisNexisClient lexisNexisClient) {
+  public LexisNexisFindUserClient(LexisNexisClient lexisNexisClient) {
     this.lexisNexisClient = lexisNexisClient;
   }
 
@@ -395,7 +395,7 @@ public class DefaultFindUserClient extends FindUserClient
 
 @Component
 public class JdbcSaveUserRepository extends SaveUserRepository
-    implements Adapter<UserEntity, UserEntity, SaveUserRepository.Context, SaveUserRepository.Result> {
+    implements Adapter<SaveUserRepository.Context, SaveUserRepository.Result, UserEntity, UserEntity> {
 
   private final UserJpaRepository jpaRepository;
 
@@ -429,7 +429,7 @@ public class JdbcSaveUserRepository extends SaveUserRepository
 
 @Component
 public class KafkaNotifyUserFoundMessenger extends NotifyUserFoundMessenger
-    implements Adapter<ProducerRecord<String, String>, RecordMetadata, NotifyUserFoundMessenger.Context, NotifyUserFoundMessenger.Result> {
+    implements Adapter<NotifyUserFoundMessenger.Context, NotifyUserFoundMessenger.Result, ProducerRecord<String, String>, RecordMetadata> {
 
   private final KafkaUserMessenger<String, String> kafkaUserMessenger;
 
@@ -614,7 +614,7 @@ hermi-user (Parent)
         ├── FindUserConsumerShell.java              (Spring KafkaConsumer)
         ├── FindUserService.java                    (Spring Service)
         ├── client
-        │    ├── DefaultFindUserClient.java          (Production Adapter)
+        │    ├── LexisNexisFindUserClient.java       (Production Adapter)
         │    └── LexisNexisClient.java               (Vendor Client)
         ├── repository
         │    ├── DefaultSaveUserRepository.java      (Production Adapter)
@@ -658,7 +658,7 @@ graph TD
     U_Messenger -->|local implementation| A_LocalMessenger[ConsoleNotifyUserFoundMessenger]
 
     %% Production Implementations (Updated)
-    U_Client -->|production implementation| A_ProdClient[DefaultFindUserClient]
+    U_Client -->|production implementation| A_ProdClient[LexisNexisFindUserClient]
     A_ProdClient -->|uses| A_ProdClientImpl[LexisNexisClient]
 
     U_Repo -->|production implementation| A_ProdRepo[DefaultSaveUserRepository]

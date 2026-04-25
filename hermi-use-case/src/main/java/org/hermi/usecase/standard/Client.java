@@ -37,20 +37,20 @@ public abstract class Client<C, R extends Validatable> extends Executor<C, R> {
    * <pre>{@code
    * @Component
    * public class LexisNexisFindUserClient extends FindUserClient
-   *     implements Adapter<ApiRequest, ApiResponse, FindUserClient.Input, FindUserClient.Output> {
+   *     implements Adapter<FindUserClient.Context, FindUserClient.Result, ApiRequest, ApiResponse> {
    *
    *   private final RestTemplate restTemplate;
    *
    *   @Override
    *   protected Result doExecute(Context context) {
-   *     ApiRequest apiRequest = convertInput(context);
+   *     ApiRequest apiRequest = convertContext(context);
    *     ApiResponse apiResponse = process(apiRequest);
-   *     return convertOutput(apiResponse);
+   *     return convertResult(apiResponse);
    *   }
    *
    *   @Override
-   *   public ApiRequest convertInput(Input input) {
-   *     return new ApiRequest(input.ssn());
+   *   public ApiRequest convertContext(Context context) {
+   *     return new ApiRequest(context.ssn());
    *   }
    *
    *   @Override
@@ -59,8 +59,8 @@ public abstract class Client<C, R extends Validatable> extends Executor<C, R> {
    *   }
    *
    *   @Override
-   *   public Output convertOutput(ApiResponse output) {
-   *     return new Output(output.getName(), output.getEmail());
+   *   public Result convertResult(ApiResponse output) {
+   *     return new Result(output.getName(), output.getEmail());
    *   }
    * }
    * }</pre>

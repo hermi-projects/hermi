@@ -37,20 +37,20 @@ public abstract class Repository<C, R extends Validatable> extends Executor<C, R
    * <pre>{@code
    * @Component
    * public class JpaSaveUserRepository extends SaveUserRepository
-   *     implements Adapter<UserEntity, UserEntity, SaveUserRepository.Input, SaveUserRepository.Output> {
+   *     implements Adapter<SaveUserRepository.Context, SaveUserRepository.Result, UserEntity, UserEntity> {
    *
    *   private final UserJpaRepository jpaRepository;
    *
    *   @Override
    *   protected Result doExecute(Context context) {
-   *     UserEntity entity = convertInput(context);
+   *     UserEntity entity = convertContext(context);
    *     UserEntity savedEntity = process(entity);
-   *     return convertOutput(savedEntity);
+   *     return convertResult(savedEntity);
    *   }
    *
    *   @Override
-   *   public UserEntity convertInput(Input input) {
-   *     return new UserEntity(input.name(), input.email());
+   *   public UserEntity convertContext(Context context) {
+   *     return new UserEntity(context.name(), context.email());
    *   }
    *
    *   @Override
@@ -59,8 +59,8 @@ public abstract class Repository<C, R extends Validatable> extends Executor<C, R
    *   }
    *
    *   @Override
-   *   public Output convertOutput(UserEntity entity) {
-   *     return new Output(entity.getId());
+   *   public Result convertResult(UserEntity entity) {
+   *     return new Result(entity.getId());
    *   }
    * }
    * }</pre>

@@ -1,19 +1,20 @@
 package org.hermi.shell;
 
+import java.util.UUID;
 import org.hermi.commons.Executor;
 
 public abstract class Client<Req, Res> extends Executor<Req, Res> {
 
-  protected abstract void saveRequest(Req request);
+  protected abstract UUID saveRequest(Req request);
 
   protected abstract Res doExchange(Req resuest);
 
-  protected abstract void saveResult(Req request, Res response);
+  protected abstract void saveResult(UUID requestId, Res response);
 
   public Res exchange(Req request) {
-    saveRequest(request);
+    UUID requestId = saveRequest(request);
     Res response = this.execute(request);
-    saveResult(request, response);
+    saveResult(requestId, response);
     return response;
   }
 
