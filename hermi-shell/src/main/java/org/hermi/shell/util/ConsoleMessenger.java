@@ -4,31 +4,33 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import org.hermi.shell.Auditor;
 import org.hermi.shell.Messenger;
 
 public class ConsoleMessenger<M, R> extends Messenger<M, R> {
   private final Map<M, R> store;
 
   public ConsoleMessenger() {
+    super(new ConsoleMessengerAuditor<>());
     this.store = new ConcurrentHashMap<>();
   }
 
-  @Override
-  protected UUID saveMessage(M message) {
-    System.out.printf(
-        "[%s] INFO: Publishing message -> %s%n", this.getClass().getSimpleName(), message);
-    return UUID.randomUUID();
+  private static class ConsoleMessengerAuditor<M, R> implements Auditor<M, R> {
+    @Override
+    public UUID save(M input) {
+      System.out.printf("[ConsoleMessenger] INFO: Publishing message -> %s%n", input);
+      return UUID.randomUUID();
+    }
+
+    @Override
+    public void save(UUID trackingId, R output) {
+      System.out.printf("[ConsoleMessenger] INFO: Publish completed  -> %s%n", output);
+    }
   }
 
   @Override
   protected R doPublish(M message) {
     return store.get(message);
-  }
-
-  @Override
-  protected void saveResult(UUID messageId, R result) {
-    System.out.printf(
-        "[%s] INFO: Publish completed  -> %s%n", this.getClass().getSimpleName(), result);
   }
 
   public ConsoleMessenger<M, R> put(M message, R result) {

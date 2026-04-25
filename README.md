@@ -305,27 +305,45 @@ With Phase 1 complete and the core logic verified, build a technology-specific a
 Vendor Implementation, can be implemented as soon as we know the vendor
 ```java
 @Component
-public class LexisNexisClient extends Client<ApiRequest, ApiResponse> {
+public class LexisNexisAuditor implements Auditor<LexisNexisRequest, LexisNexisResponse> {
+  @Override
+  public UUID save(LexisNexisRequest input) {
+    // Save to audit DB
+    return UUID.randomUUID();
+  }
+  @Override
+  public void save(UUID trackingId, LexisNexisResponse output) {
+    // Update audit DB with output
+  }
+}
+
+@Component
+public class LexisNexisClient extends Client<LexisNexisRequest, LexisNexisResponse> {
 
   private RestTemplate restTemplate;
 
   @Autowired
-  public LexisNexisClient(RestTemplate restTemplate) {
+  public LexisNexisClient(RestTemplate restTemplate, LexisNexisAuditor auditor) {
+    super(auditor);
     this.restTemplate = restTemplate;
   }
 
   @Override
-  protected void saveRequest(ApiRequest request) {
-    // Save request to audit table
+  public LexisNexisResponse doExchange(LexisNexisRequest request) {
+    return restTemplate.postForObject("/api/users", request, LexisNexisResponse.class);
   }
-  @Override
-  public ApiResponse doExchange(ApiRequest request) {
-    return restTemplate.postForObject("/api/users", request, ApiResponse.class);
-  }
+}
 
+@Component
+public class KafkaUserAuditor implements Auditor<ProducerRecord<String, String>, RecordMetadata> {
   @Override
-  protected void saveResponse(ApiRequest request, ApiResponse response) {
-    // Save response to audit table
+  public UUID save(ProducerRecord<String, String> input) {
+    // Save to audit DB
+    return UUID.randomUUID();
+  }
+  @Override
+  public void save(UUID trackingId, RecordMetadata output) {
+    // Update audit DB with execution metadata
   }
 }
 
@@ -335,23 +353,18 @@ public class KafkaUserMessenger extends Messenger<ProducerRecord<String, String>
   private final KafkaTemplate<String, String> kafkaTemplate;
 
   @Autowired
-  public KafkaUserMessenger(KafkaTemplate<String, String> kafkaTemplate) {
+  public KafkaUserMessenger(KafkaTemplate<String, String> kafkaTemplate, KafkaUserAuditor auditor) {
+    super(auditor);
     this.kafkaTemplate = kafkaTemplate;
   }
 
   @Override
-  protected void saveMessage(ProducerRecord<String, String> message) {
-    // Save message to audit table
-  }
-
-  @Override
   public RecordMetadata doPublish(ProducerRecord<String, String> message) {
-    return kafkaTemplate.send(message).get().getRecordMetadata();
-  }
-
-  @Override
-  protected void saveResult(ProducerRecord<String, String> message, RecordMetadata result) {
-    // Save result to audit table
+    try {
+        return kafkaTemplate.send(message).get().getRecordMetadata();
+    } catch (Exception e) {
+        throw new RuntimeException(e);
+    }
   }
 }
 
@@ -363,67 +376,47 @@ public class KafkaUserMessenger extends Messenger<ProducerRecord<String, String>
 Production Adapter
 ```java
 @Component
-public class LexisNexisMapper implements Mapper<FindUserClient.Context, FindUserClient.Result, ApiRequest, ApiResponse> {
+public class LexisNexisMapper implements Mapper<FindUserClient.Context, FindUserClient.Result, LexisNexisRequest, LexisNexisResponse> {
 
   @Override
-  public ApiRequest convertContext(FindUserClient.Context context) {
-    return new ApiRequest(context.ssn());
+  public LexisNexisRequest convertContext(FindUserClient.Context context) {
+    return new LexisNexisRequest(context.ssn());
   }
 
   @Override
-  public Result convertResult(ApiResponse result) {
+  public Result convertResult(LexisNexisResponse result) {
     return new Result(result.getName(), result.getEmail());
   }
 }
-@Component
-public class LexisNexisFindUserClient extends FindUserClient{
 
-  private Client<ApiRequest, ApiResponse> client;
-  private Mapper<FindUserClient.Context, FindUserClient.Result, ApiRequest, ApiResponse> mapper;
+@Component
+public class LexisNexisFindUserClient extends FindUserClient {
+
+  private Client<LexisNexisRequest, LexisNexisResponse> client;
+  private Mapper<FindUserClient.Context, FindUserClient.Result, LexisNexisRequest, LexisNexisResponse> mapper;
 
   @Autowired
   public LexisNexisFindUserClient(
-      Client<ApiRequest, ApiResponse> client,
-      Mapper<FindUserClient.Context, FindUserClient.Result, ApiRequest, ApiResponse> mapper) {
+      Client<LexisNexisRequest, LexisNexisResponse> client,
+      Mapper<FindUserClient.Context, FindUserClient.Result, LexisNexisRequest, LexisNexisResponse> mapper) {
     this.client = client;
     this.mapper = mapper;
   }
 
   @Override
   protected Result doExecute(Context context) {
-    ApiRequest apiRequest = mapper.convertContext(context);
-    ApiResponse apiResponse = client.execute(apiRequest);
+    LexisNexisRequest apiRequest = mapper.convertContext(context);
+    LexisNexisResponse apiResponse = client.execute(apiRequest);
     return mapper.convertResult(apiResponse);
   }
 }
 ```
 ```java
 @Component
-public class JdbcSaveUserRepository extends SaveUserRepository
-    implements Adapter<SaveUserRepository.Context, SaveUserRepository.Result, UserEntity, UserEntity> {
-
-  private final UserJpaRepository jpaRepository;
-
-  @Autowired
-  public JdbcSaveUserRepository(UserJpaRepository jpaRepository) {
-    this.jpaRepository = jpaRepository;
-  }
-
+public class JdbcUserMapper implements Mapper<SaveUserRepository.Context, SaveUserRepository.Result, UserEntity, UserEntity> {
   @Override
-  protected Result doExecute(Context context) {
-    UserEntity entity = convertContext(context);
-    UserEntity savedEntity = process(entity);
-    return convertResult(savedEntity);
-  }
-
-  @Override
-  public UserEntity convertContext(Context context) {
+  public UserEntity convertContext(SaveUserRepository.Context context) {
     return new UserEntity(context.name(), context.email());
-  }
-
-  @Override
-  public UserEntity process(UserEntity entity) {
-    return jpaRepository.save(entity);
   }
 
   @Override
@@ -433,36 +426,58 @@ public class JdbcSaveUserRepository extends SaveUserRepository
 }
 
 @Component
-public class KafkaNotifyUserFoundMessenger extends NotifyUserFoundMessenger
-    implements Adapter<NotifyUserFoundMessenger.Context, NotifyUserFoundMessenger.Result, ProducerRecord<String, String>, RecordMetadata> {
-
-  private final KafkaUserMessenger<String, String> kafkaUserMessenger;
+public class JdbcSaveUserRepository extends SaveUserRepository {
+  private final UserJpaRepository jpaRepository;
+  private Mapper<SaveUserRepository.Context, SaveUserRepository.Result, UserEntity, UserEntity> mapper;
 
   @Autowired
-  public KafkaNotifyUserFoundMessenger(KafkaUserMessenger<String, String> kafkaUserMessenger) {
-    this.kafkaUserMessenger = kafkaUserMessenger;
+  public JdbcSaveUserRepository(
+      UserJpaRepository jpaRepository, 
+      Mapper<SaveUserRepository.Context, SaveUserRepository.Result, UserEntity, UserEntity> mapper) {
+    this.jpaRepository = jpaRepository;
+    this.mapper = mapper;
   }
 
   @Override
   protected Result doExecute(Context context) {
-    ProducerRecord<String, String> record = convertContext(context);
-    RecordMetadata metadata = process(record);
-    return convertResult(metadata);
+    UserEntity entity = mapper.convertContext(context);
+    UserEntity savedEntity = jpaRepository.save(entity);
+    return mapper.convertResult(savedEntity);
   }
+}
 
+@Component
+public class KafkaUserMapper implements Mapper<NotifyUserFoundMessenger.Context, NotifyUserFoundMessenger.Result, ProducerRecord<String, String>, RecordMetadata> {
   @Override
-  public ProducerRecord<String, String> convertContext(Context context) {
+  public ProducerRecord<String, String> convertContext(NotifyUserFoundMessenger.Context context) {
     return new ProducerRecord<>("user.notifications", context.message());
   }
 
   @Override
-  public RecordMetadata process(ProducerRecord<String, String> record) {
-    return kafkaUserMessenger.publish(record);
+  public Result convertResult(RecordMetadata result) {
+    return new Result(result.toString());
+  }
+}
+
+@Component
+public class KafkaNotifyUserFoundMessenger extends NotifyUserFoundMessenger {
+
+  private Messenger<ProducerRecord<String, String>, RecordMetadata> messenger;
+  private Mapper<NotifyUserFoundMessenger.Context, NotifyUserFoundMessenger.Result, ProducerRecord<String, String>, RecordMetadata> mapper;
+
+  @Autowired
+  public KafkaNotifyUserFoundMessenger(
+      Messenger<ProducerRecord<String, String>, RecordMetadata> messenger,
+      Mapper<NotifyUserFoundMessenger.Context, NotifyUserFoundMessenger.Result, ProducerRecord<String, String>, RecordMetadata> mapper) {
+    this.messenger = messenger;
+    this.mapper = mapper;
   }
 
   @Override
-  public Result convertResult(RecordMetadata metadata) {
-    return new Result(metadata.toString());
+  protected Result doExecute(Context context) {
+    ProducerRecord<String, String> record = mapper.convertContext(context);
+    RecordMetadata metadata = messenger.execute(record);
+    return mapper.convertResult(metadata);
   }
 }
 ```
@@ -600,33 +615,37 @@ hermi-user (Parent)
 ├── use-cases/hermi-find-user-usecase (Phase 1 Layer: Pure Java)
 │   ├── pom.xml
 │   ├── src/main/java/org/hermi/user/find/usecase
-│   │   ├── FindUserUseCase.java                    (Use Case Contract)
-│   │   ├── DefaultFindUserUseCase.java             (Use Case Implementation)
-│   │   ├── User.java                               (Scoped Domain Model)
-│   │   ├── FindUserClient.java                     (I/O Contract)
-│   │   ├── SaveUserRepository.java                 (I/O Contract)
-│   │   └── NotifyUserFoundMessenger.java           (I/O Contract)
+│   │   ├── FindUserUseCase.java                      (Use Case Contract)
+│   │   ├── DefaultFindUserUseCase.java               (Use Case Implementation)
+│   │   ├── User.java                                 (Scoped Domain Model)
+│   │   ├── FindUserClient.java                       (I/O Contract)
+│   │   ├── SaveUserRepository.java                   (I/O Contract)
+│   │   └── NotifyUserFoundMessenger.java             (I/O Contract)
 │   └── src/test/java/org/hermi/user/find/shell
-│       ├── FindUserMainShell.java                  (Main Shell Runner)
-│       ├── LocalFindUserClient.java                (Local Adapter)
-│       ├── InMemorySaveUserRepository.java         (Local Adapter)
-│       └── ConsoleNotifyUserFoundMessenger.java    (Local Adapter)
+│       ├── FindUserMainShell.java                    (Main Shell Runner)
+│       ├── LocalFindUserClient.java                  (Local Adapter)
+│       ├── InMemorySaveUserRepository.java           (Local Adapter)
+│       └── ConsoleNotifyUserFoundMessenger.java      (Local Adapter)
 │
 └── hermi-spring-shell (Phase 2 Layer: Framework)
     ├── pom.xml
     └── src/main/java/org/hermi/user/find/shell
-        ├── FindUserApiShell.java                   (Spring RestController)
-        ├── FindUserConsumerShell.java              (Spring KafkaConsumer)
-        ├── FindUserService.java                    (Spring Service)
+        ├── FindUserApiShell.java                     (Spring RestController)
+        ├── FindUserConsumerShell.java                (Spring KafkaConsumer)
+        ├── FindUserService.java                      (Spring Service)
         ├── client
-        │    ├── LexisNexisFindUserClient.java       (Production Adapter)
-        │    └── LexisNexisClient.java               (Vendor Client)
+        │    ├── LexisNexisFindUserClient.java        (Production Adapter)
+        │    ├── LexisNexisMapper.java                (Vendor Mapper)
+        │    ├── LexisNexisAuditor.java               (Vendor Auditor)
+        │    └── LexisNexisClient.java                (Vendor Client)
         ├── repository
-        │    ├── DefaultSaveUserRepository.java      (Production Adapter)
-        │    └── JdbcUserRepository.java             (Vendor Repository)
+        │    ├── DefaultSaveUserRepository.java       (Production Adapter)
+        │    └── JdbcUserRepository.java              (Vendor Repository)
         └── messenger
-            ├── DefaultNotifyUserFoundMessenger.java (Production Adapter)
-            └── KafkaUserMessenger.java              (Vendor Messenger)
+            ├── DefaultNotifyUserFoundMessenger.java  (Production Adapter)
+            ├── KafkaUserMapper.java                  (Vendor Mapper)
+            ├── KafkaUserAuditor.java                 (Vendor Auditor)
+            └── KafkaUserMessenger.java               (Vendor Messenger)
 ```
 Class Diagram
 ```mermaid
@@ -662,15 +681,20 @@ graph TD
     U_Repo -->|local implementation| A_LocalRepo[InMemorySaveUserRepository]
     U_Messenger -->|local implementation| A_LocalMessenger[ConsoleNotifyUserFoundMessenger]
 
-    %% Production Implementations (Updated)
+    %% Production Implementations
     U_Client -->|production implementation| A_ProdClient[LexisNexisFindUserClient]
-    A_ProdClient -->|uses| A_ProdClientImpl[LexisNexisClient]
+    A_ProdClient -->|uses| A_VendorClient[LexisNexisClient]
+    A_ProdClient -->|uses| A_VendorMapper[LexisNexisMapper]
+    A_VendorClient -->|uses| A_ClientAuditor[LexisNexisAuditor]
 
-    U_Repo -->|production implementation| A_ProdRepo[DefaultSaveUserRepository]
-    A_ProdRepo -->|uses| A_ProdRepoImpl[JdbcUserRepository]
+    U_Repo -->|production implementation| A_ProdRepo[JdbcSaveUserRepository]
+    A_ProdRepo -->|uses| A_VendorRepo[UserJpaRepository]
+    A_ProdRepo -->|uses| A_RepoMapper[JdbcUserMapper]
 
-    U_Messenger -->|production implementation| A_ProdMessenger[DefaultNotifyUserFoundMessenger]
-    A_ProdMessenger -->|uses| A_ProdMessengerImpl[KafkaUserMessenger]
+    U_Messenger -->|production implementation| A_ProdMessenger[KafkaNotifyUserFoundMessenger]
+    A_ProdMessenger -->|uses| A_VendorMessenger[KafkaUserMessenger]
+    A_ProdMessenger -->|uses| A_MessengerMapper[KafkaUserMapper]
+    A_VendorMessenger -->|uses| A_MessengerAuditor[KafkaUserAuditor]
 
     %% Styling
     classDef s_local fill:#FFFFFF,color:#000000,stroke:#000000,stroke-width:1px
@@ -685,6 +709,7 @@ graph TD
     class S_JUnit core
     class U_UseCase,U_Default,U_Client,U_Repo,U_Messenger core
     class A_ProdClient,A_ProdRepo,A_ProdMessenger s_api
-    class A_ProdClientImpl,A_ProdMessengerImpl core
-    class A_ProdRepoImpl s_api
+    class A_VendorClient,A_VendorRepo,A_VendorMessenger s_api
+    class A_VendorMapper,A_RepoMapper,A_MessengerMapper s_api
+    class A_ClientAuditor,A_MessengerAuditor s_api
 ```

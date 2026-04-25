@@ -1,19 +1,38 @@
 package org.hermi.shell;
 
+import java.util.Objects;
 import java.util.UUID;
 import org.hermi.commons.Executor;
 
+/**
+ * Base class for vendor-specific messaging clients (Protocol layer).
+ *
+ * <p><b>AI-Friendly Architecture (Rule of Three)</b>: Follow the decoupled pattern to stay within
+ * AI context limits:
+ *
+ * <ol>
+ *   <li><b>VendorMessenger</b>: Inherits from this class, handles protocol (Kafka, JMS) and
+ *       auditing.
+ *   <li><b>Mapper</b>: Handles translation between Domain Fact and Vendor Record.
+ *   <li><b>Adapter</b>: Wires Messenger and Mapper.
+ * </ol>
+ *
+ * @param <M> Vendor message type (e.g., ProducerRecord)
+ * @param <R> Vendor result type (e.g., RecordMetadata)
+ */
 public abstract class Messenger<M, R> extends Executor<M, R> {
-  protected abstract UUID saveMessage(M message);
+  private final Auditor<M, R> auditor;
+
+  protected Messenger(Auditor<M, R> auditor) {
+    this.auditor = Objects.requireNonNull(auditor, "Auditor is required for Messenger");
+  }
 
   protected abstract R doPublish(M message);
 
-  protected abstract void saveResult(UUID messageId, R result);
-
-  public R publish(M message) {
-    UUID messageId = saveMessage(message);
+  public final R publish(M message) {
+    UUID trackingId = auditor.save(message);
     R result = execute(message);
-    saveResult(messageId, result);
+    auditor.save(trackingId, result);
     return result;
   }
 

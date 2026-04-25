@@ -1,20 +1,37 @@
 package org.hermi.shell;
 
+import java.util.Objects;
 import java.util.UUID;
 import org.hermi.commons.Executor;
 
+/**
+ * Base class for vendor-specific technical clients (Protocol layer).
+ *
+ * <p><b>AI-Friendly Architecture (Rule of Three)</b>: In Phase 2 implementation, this component
+ * should follow the decoupled pattern:
+ *
+ * <ol>
+ *   <li><b>VendorClient</b>: Inherits from this class, handles protocol (REST, gRPC) and auditing.
+ *   <li><b>Mapper</b>: Handles semantic translation between Domain and Vendor types.
+ *   <li><b>Adapter</b>: Wires the Client and Mapper together to fulfill the Use Case contract.
+ * </ol>
+ *
+ * @param <Req> Vendor request type (e.g., LexisNexisRequest)
+ * @param <Res> Vendor response type (e.g., LexisNexisResponse)
+ */
 public abstract class Client<Req, Res> extends Executor<Req, Res> {
+  private final Auditor<Req, Res> auditor;
 
-  protected abstract UUID saveRequest(Req request);
+  protected Client(Auditor<Req, Res> auditor) {
+    this.auditor = Objects.requireNonNull(auditor, "Auditor is required for Client");
+  }
 
   protected abstract Res doExchange(Req resuest);
 
-  protected abstract void saveResult(UUID requestId, Res response);
-
-  public Res exchange(Req request) {
-    UUID requestId = saveRequest(request);
+  public final Res exchange(Req request) {
+    UUID trackingId = auditor.save(request);
     Res response = this.execute(request);
-    saveResult(requestId, response);
+    auditor.save(trackingId, response);
     return response;
   }
 

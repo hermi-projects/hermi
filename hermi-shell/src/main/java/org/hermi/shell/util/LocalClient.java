@@ -4,31 +4,33 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import org.hermi.shell.Auditor;
 import org.hermi.shell.Client;
 
 public class LocalClient<I, O> extends Client<I, O> {
   private final Map<I, O> store;
 
   public LocalClient() {
+    super(new LocalClientAuditor<>());
     this.store = new ConcurrentHashMap<>();
   }
 
-  @Override
-  protected UUID saveRequest(I request) {
-    System.out.printf(
-        "[%s] INFO: Exchanging input -> %s%n", this.getClass().getSimpleName(), request);
-    return UUID.randomUUID();
+  private static class LocalClientAuditor<I, O> implements Auditor<I, O> {
+    @Override
+    public UUID save(I input) {
+      System.out.printf("[LocalClient] INFO: Exchanging input -> %s%n", input);
+      return UUID.randomUUID();
+    }
+
+    @Override
+    public void save(UUID trackingId, O output) {
+      System.out.printf("[LocalClient] INFO: Exchange completed -> %s%n", output);
+    }
   }
 
   @Override
   protected O doExchange(I resuest) {
     return store.get(resuest);
-  }
-
-  @Override
-  protected void saveResult(UUID requestId, O response) {
-    System.out.printf(
-        "[%s] INFO: Exchange completed -> %s%n", this.getClass().getSimpleName(), response);
   }
 
   public LocalClient<I, O> put(I input, O output) {
