@@ -2,6 +2,7 @@ package org.hermi.shell.util;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.hermi.shell.Client;
 
@@ -13,9 +14,10 @@ public class LocalClient<I, O> extends Client<I, O> {
   }
 
   @Override
-  protected void saveRequest(I request) {
+  protected UUID saveRequest(I request) {
     System.out.printf(
         "[%s] INFO: Exchanging input -> %s%n", this.getClass().getSimpleName(), request);
+    return UUID.randomUUID();
   }
 
   @Override
@@ -24,7 +26,7 @@ public class LocalClient<I, O> extends Client<I, O> {
   }
 
   @Override
-  protected void saveResult(I request, O response) {
+  protected void saveResult(UUID requestId, O response) {
     System.out.printf(
         "[%s] INFO: Exchange completed -> %s%n", this.getClass().getSimpleName(), response);
   }

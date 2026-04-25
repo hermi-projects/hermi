@@ -2,6 +2,7 @@ package org.hermi.shell.util;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.hermi.shell.Messenger;
 
@@ -13,9 +14,10 @@ public class ConsoleMessenger<M, R> extends Messenger<M, R> {
   }
 
   @Override
-  protected void saveMessage(M message) {
+  protected UUID saveMessage(M message) {
     System.out.printf(
         "[%s] INFO: Publishing message -> %s%n", this.getClass().getSimpleName(), message);
+    return UUID.randomUUID();
   }
 
   @Override
@@ -24,7 +26,7 @@ public class ConsoleMessenger<M, R> extends Messenger<M, R> {
   }
 
   @Override
-  protected void saveResult(M message, R result) {
+  protected void saveResult(UUID messageId, R result) {
     System.out.printf(
         "[%s] INFO: Publish completed  -> %s%n", this.getClass().getSimpleName(), result);
   }
