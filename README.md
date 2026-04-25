@@ -357,34 +357,17 @@ public class KafkaUserMessenger extends Messenger<ProducerRecord<String, String>
 
 ```
 
+> [!TIP]
+> **Strategy for Vendor Replacement**: The Production Adapter is the binding point between the Domain Contract and a specific Vendor. If you need to replace or add a new vendor (e.g., swapping LexisNexis for Experian), simply implement a new adapter class following this pattern.
+
 Production Adapter
 ```java
 @Component
-public class LexisNexisFindUserClient extends FindUserClient
-    implements Adapter<FindUserClient.Context, FindUserClient.Result, ApiRequest, ApiResponse> {
-
-  private LexisNexisClient lexisNexisClient;
-
-  @Autowired
-  public LexisNexisFindUserClient(LexisNexisClient lexisNexisClient) {
-    this.lexisNexisClient = lexisNexisClient;
-  }
+public class LexisNexisMapper implements Mapper<FindUserClient.Context, FindUserClient.Result, ApiRequest, ApiResponse> {
 
   @Override
-  protected Result doExecute(Context context) {
-    ApiRequest apiRequest = convertContext(context);
-    ApiResponse apiResponse = process(apiRequest);
-    return convertResult(apiResponse);
-  }
-
-  @Override
-  public ApiRequest convertContext(Context context) {
+  public ApiRequest convertContext(FindUserClient.Context context) {
     return new ApiRequest(context.ssn());
-  }
-
-  @Override
-  public ApiResponse process(ApiRequest input) {
-    return lexisNexisClient.exchange(input);
   }
 
   @Override
@@ -392,7 +375,29 @@ public class LexisNexisFindUserClient extends FindUserClient
     return new Result(result.getName(), result.getEmail());
   }
 }
+@Component
+public class LexisNexisFindUserClient extends FindUserClient{
 
+  private Client<ApiRequest, ApiResponse> client;
+  private Mapper<FindUserClient.Context, FindUserClient.Result, ApiRequest, ApiResponse> mapper;
+
+  @Autowired
+  public LexisNexisFindUserClient(
+      Client<ApiRequest, ApiResponse> client,
+      Mapper<FindUserClient.Context, FindUserClient.Result, ApiRequest, ApiResponse> mapper) {
+    this.client = client;
+    this.mapper = mapper;
+  }
+
+  @Override
+  protected Result doExecute(Context context) {
+    ApiRequest apiRequest = mapper.convertContext(context);
+    ApiResponse apiResponse = client.execute(apiRequest);
+    return mapper.convertResult(apiResponse);
+  }
+}
+```
+```java
 @Component
 public class JdbcSaveUserRepository extends SaveUserRepository
     implements Adapter<SaveUserRepository.Context, SaveUserRepository.Result, UserEntity, UserEntity> {
