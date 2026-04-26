@@ -4,6 +4,23 @@ import org.hermi.commons.Executor;
 import org.hermi.validation.Validatable;
 
 /**
+ * <b>AI INSTRUCTION:</b> When defining a Messenger contract in the Use Case (Phase 1), use this
+ * class. DO NOT add any implementation logic. ONLY define the Context and Result records. The
+ * Result record MUST implement Validatable.
+ *
+ * <p><b>Example AI Generation:</b>
+ *
+ * <pre>{@code
+ * public abstract class NotifyUserFoundMessenger extends Messenger<NotifyUserFoundMessenger.Context, NotifyUserFoundMessenger.Result> {
+ *   public static record Context(String userId, String message) {}
+ *   public static record Result(String messageId) implements Validatable {}
+ * }
+ * }</pre>
+ */
+
+/** Phase 1 IO Contract Definition for asynchronous messaging. */
+
+/**
  * An abstract class representing a messenger for message sending, including email, SMS, Kafka, etc.
  *
  * @param <C> the type of the context

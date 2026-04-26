@@ -4,6 +4,23 @@ import org.hermi.commons.Executor;
 import org.hermi.validation.Validatable;
 
 /**
+ * <b>AI INSTRUCTION:</b> When defining a Client contract in the Use Case (Phase 1), use this class.
+ * DO NOT add any implementation logic. ONLY define the Context and Result records. The Result
+ * record MUST implement Validatable.
+ *
+ * <p><b>Example AI Generation:</b>
+ *
+ * <pre>{@code
+ * public abstract class FindUserClient extends Client<FindUserClient.Context, FindUserClient.Result> {
+ *   public static record Context(String ssn) {}
+ *   public static record Result(String name) implements Validatable {}
+ * }
+ * }</pre>
+ */
+
+/** Phase 1 IO Contract Definition for external API. */
+
+/**
  * An abstract class representing a client for 3rd party API communication, including REST, gRPC,
  * etc.
  *

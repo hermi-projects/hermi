@@ -4,6 +4,32 @@ import org.hermi.commons.Executor;
 import org.hermi.validation.Validatable;
 
 /**
+ * <b>AI INSTRUCTION:</b> When subclassing this component, this is your Phase 1 pure domain logic.
+ * NEVER mix technology concerns (e.g. Spring, JPA, HTTP, JSON). Define I/O contracts
+ * (Client/Repository) Just-In-Time as abstract classes extending Executor. Use only records for
+ * Context and Result. ONLY override {@code doExecute}.
+ *
+ * <p><b>Example AI Generation:</b>
+ *
+ * <pre>{@code
+ * public abstract class FindUserUseCase extends UseCase<FindUserUseCase.Context, FindUserUseCase.Result> {
+ *   public record Context(String id) implements Validatable {}
+ *   public record Result(String name, String email) {}
+ * }
+ *
+ * public class DefaultFindUserUseCase extends FindUserUseCase {
+ *   private final FindUserClient client;
+ *   public DefaultFindUserUseCase(FindUserClient client) { this.client = client; }
+ *   @Override protected Result doExecute(Context context) {
+ *      return new Result("Dummy", "d@example.com");
+ *   }
+ * }
+ * }</pre>
+ */
+
+/** Core domain boundary definition. */
+
+/**
  * An abstract class representing a business use case.
  *
  * @param <C> the type of the context
