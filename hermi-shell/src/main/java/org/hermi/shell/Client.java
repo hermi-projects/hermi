@@ -35,7 +35,7 @@ public abstract class Client<Req, Res> extends Executor<Req, Res> {
       auditor.save(trackingId, response);
       return response;
     } catch (Exception e) {
-      auditor.save(trackingId, e);
+      auditor.error(trackingId, e);
       throw e;
     }
   }

@@ -36,7 +36,7 @@ public abstract class Messenger<M, R> extends Executor<M, R> {
       auditor.save(trackingId, result);
       return result;
     } catch (Exception e) {
-      auditor.save(trackingId, e);
+      auditor.error(trackingId, e);
       throw e;
     }
   }
