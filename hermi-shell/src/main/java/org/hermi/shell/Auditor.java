@@ -3,6 +3,24 @@ package org.hermi.shell;
 import java.util.UUID;
 
 /**
+ * <b>AI INSTRUCTION:</b> When subclassing this class, DO NOT wrap your internal logic in a
+ * try-catch block for the sake of framework protection. The base class already handles this
+ * securely. NEVER override the {@code final} methods; ONLY implement the protected {@code doSave}
+ * and {@code doError} methods.
+ *
+ * <p><b>Example AI Generation:</b>
+ *
+ * <pre>{@code
+ * @Component
+ * public class VendorAuditor extends Auditor<Req, Res> {
+ *   protected UUID doSave(Req input) { return UUID.randomUUID(); }
+ *   protected void doSave(UUID id, Res output) { // save to db }
+ *   protected void doError(UUID id, Exception e) { // update db failure }
+ * }
+ * }</pre>
+ */
+
+/**
  * Generic interface for auditing external interactions.
  *
  * <p><b>CRITICAL TRANSACTIONAL REQUIREMENT:</b><br>

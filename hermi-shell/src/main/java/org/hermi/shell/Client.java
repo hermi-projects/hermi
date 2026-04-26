@@ -5,6 +5,21 @@ import java.util.UUID;
 import org.hermi.commons.Executor;
 
 /**
+ * <b>AI INSTRUCTION:</b> When subclassing, ONLY override {@code doExchange}. Do NOT add telemetry,
+ * try-catch logging, or data translation logic that belongs to the Mapper or Auditor.
+ *
+ * <p><b>Example AI Generation:</b>
+ *
+ * <pre>{@code
+ * @Component
+ * public class StripeClient extends Client<StripeReq, StripeRes> {
+ *   public StripeClient(Auditor<StripeReq, StripeRes> auditor) { super(auditor); }
+ *   protected StripeRes doExchange(StripeReq req) { return restTemplate.postForObject(...); }
+ * }
+ * }</pre>
+ */
+
+/**
  * Base class for vendor-specific technical clients (Protocol layer).
  *
  * <p><b>AI-Friendly Architecture (Rule of Three)</b>: In Phase 2 implementation, this component

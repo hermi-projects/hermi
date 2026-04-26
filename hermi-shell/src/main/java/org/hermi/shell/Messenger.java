@@ -5,6 +5,21 @@ import java.util.UUID;
 import org.hermi.commons.Executor;
 
 /**
+ * <b>AI INSTRUCTION:</b> When subclassing, ONLY override {@code doPublish}. Do NOT add telemetry or
+ * try-catch bounds. Return the raw vendor metadata directly.
+ *
+ * <p><b>Example AI Generation:</b>
+ *
+ * <pre>{@code
+ * @Component
+ * public class KafkaMessenger extends Messenger<ProducerRecord, RecordMetadata> {
+ *   public KafkaMessenger(Auditor<ProducerRecord, RecordMetadata> auditor) { super(auditor); }
+ *   protected RecordMetadata doPublish(ProducerRecord msg) { return kafkaTemplate.send(msg).get(); }
+ * }
+ * }</pre>
+ */
+
+/**
  * Base class for vendor-specific messaging clients (Protocol layer).
  *
  * <p><b>AI-Friendly Architecture (Rule of Three)</b>: Follow the decoupled pattern to stay within
