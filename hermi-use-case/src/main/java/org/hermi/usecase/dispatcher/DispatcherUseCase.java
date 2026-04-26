@@ -32,20 +32,42 @@ import org.hermi.validation.Validatable;
 public abstract class DispatcherUseCase<C extends Validatable, R> extends UseCase<C, R> {
   private final List<Handler<C, R>> handlers;
 
+  /**
+   * Constructs a DispatcherUseCase with a variadic array of handlers.
+   *
+   * @param handlers the handlers to register
+   */
   @SuppressWarnings("unchecked")
   public DispatcherUseCase(Handler<C, R>... handlers) {
     this(List.of(handlers));
   }
 
+  /**
+   * Constructs a DispatcherUseCase with a list of handlers.
+   *
+   * @param handlers the list of handlers
+   */
   public DispatcherUseCase(List<Handler<C, R>> handlers) {
     this.handlers = new ArrayList<>();
     this.handlers.addAll(handlers);
   }
 
+  /**
+   * Dynamically registers a new handler to this dispatcher.
+   *
+   * @param handler the handler to add
+   */
   public void register(Handler<C, R> handler) {
     this.handlers.add(handler);
   }
 
+  /**
+   * Routes the context to the first supported handler and executes it.
+   *
+   * @param context the context to process
+   * @return the result from the processing handler
+   * @throws HandlerNotFoundException if no registered handler supports the context
+   */
   @Override
   protected R doExecute(C context) {
     for (Handler<C, R> handler : handlers) {

@@ -27,5 +27,11 @@ import org.hermi.validation.Validatable;
  * @param <R> the type of the result
  */
 public abstract class Handler<C extends Validatable, R> extends UseCase<C, R> {
+  /**
+   * Evaluates if this handler supports the given context.
+   *
+   * @param context the input context to evaluate
+   * @return {@code true} if this handler can process the context, {@code false} otherwise
+   */
   public abstract boolean support(C context);
 }
