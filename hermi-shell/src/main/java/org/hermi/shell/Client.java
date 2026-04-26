@@ -30,9 +30,18 @@ public abstract class Client<Req, Res> extends Executor<Req, Res> {
 
   public final Res exchange(Req request) {
     UUID trackingId = auditor.save(request);
-    Res response = this.execute(request);
-    auditor.save(trackingId, response);
-    return response;
+    try {
+      Res response = super.execute(request);
+      auditor.save(trackingId, response);
+      return response;
+    } catch (Exception e) {
+      auditor.save(trackingId, e);
+      throw e;
+    }
+  }
+
+  public final Res execute(Req request) {
+    return this.exchange(request);
   }
 
   @Override

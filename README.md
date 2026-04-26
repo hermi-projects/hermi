@@ -406,7 +406,7 @@ public class LexisNexisFindUserClient extends FindUserClient {
   @Override
   protected Result doExecute(Context context) {
     LexisNexisRequest apiRequest = mapper.convertContext(context);
-    LexisNexisResponse apiResponse = client.execute(apiRequest);
+    LexisNexisResponse apiResponse = client.exchange(apiRequest);
     return mapper.convertResult(apiResponse);
   }
 }

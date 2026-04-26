@@ -31,9 +31,18 @@ public abstract class Messenger<M, R> extends Executor<M, R> {
 
   public final R publish(M message) {
     UUID trackingId = auditor.save(message);
-    R result = execute(message);
-    auditor.save(trackingId, result);
-    return result;
+    try {
+      R result = super.execute(message);
+      auditor.save(trackingId, result);
+      return result;
+    } catch (Exception e) {
+      auditor.save(trackingId, e);
+      throw e;
+    }
+  }
+
+  public final R execute(M message) {
+    return this.publish(message);
   }
 
   @Override

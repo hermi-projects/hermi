@@ -26,4 +26,12 @@ public interface Auditor<I, O> {
    * @param output the resulting output data
    */
   void save(UUID trackingId, O output);
+
+  /**
+   * Saves the exception after execution.
+   *
+   * @param trackingId the unique ID returned by save
+   * @param e the exception
+   */
+  void save(UUID trackingId, Exception e);
 }
