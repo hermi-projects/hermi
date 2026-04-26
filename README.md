@@ -305,15 +305,19 @@ With Phase 1 complete and the core logic verified, build a technology-specific a
 Vendor Implementation, can be implemented as soon as we know the vendor
 ```java
 @Component
-public class LexisNexisAuditor implements Auditor<LexisNexisRequest, LexisNexisResponse> {
+public class LexisNexisAuditor extends Auditor<LexisNexisRequest, LexisNexisResponse> {
   @Override
-  public UUID save(LexisNexisRequest input) {
+  protected UUID doSave(LexisNexisRequest input) {
     // Save to audit DB
     return UUID.randomUUID();
   }
   @Override
-  public void save(UUID trackingId, LexisNexisResponse output) {
+  protected void doSave(UUID trackingId, LexisNexisResponse output) {
     // Update audit DB with output
+  }
+  @Override
+  protected void doError(UUID trackingId, Exception exception) {
+    // Update audit DB with failure
   }
 }
 
@@ -335,15 +339,19 @@ public class LexisNexisClient extends Client<LexisNexisRequest, LexisNexisRespon
 }
 
 @Component
-public class KafkaUserAuditor implements Auditor<ProducerRecord<String, String>, RecordMetadata> {
+public class KafkaUserAuditor extends Auditor<ProducerRecord<String, String>, RecordMetadata> {
   @Override
-  public UUID save(ProducerRecord<String, String> input) {
+  protected UUID doSave(ProducerRecord<String, String> input) {
     // Save to audit DB
     return UUID.randomUUID();
   }
   @Override
-  public void save(UUID trackingId, RecordMetadata output) {
+  protected void doSave(UUID trackingId, RecordMetadata output) {
     // Update audit DB with execution metadata
+  }
+  @Override
+  protected void doError(UUID trackingId, Exception exception) {
+    // Update audit DB with failure
   }
 }
 

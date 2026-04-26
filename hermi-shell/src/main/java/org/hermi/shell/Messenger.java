@@ -27,8 +27,23 @@ public abstract class Messenger<M, R> extends Executor<M, R> {
     this.auditor = Objects.requireNonNull(auditor, "Auditor is required for Messenger");
   }
 
+  /**
+   * Implementation hook for executing the underlying messaging protocol (e.g., Kafka, JMS, SQS).
+   *
+   * @param message the vendor-specific message payload
+   * @return the native vendor-specific metadata or result
+   */
   protected abstract R doPublish(M message);
 
+  /**
+   * Publishes the message with full auditing lifecycle protection.
+   *
+   * <p>This method guarantees that all asynchronous publications are mechanically wrapped by the
+   * {@link Auditor}.
+   *
+   * @param message the vendor message payload
+   * @return the vendor result payload
+   */
   public final R publish(M message) {
     UUID trackingId = auditor.save(message);
     try {

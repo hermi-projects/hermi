@@ -26,8 +26,24 @@ public abstract class Client<Req, Res> extends Executor<Req, Res> {
     this.auditor = Objects.requireNonNull(auditor, "Auditor is required for Client");
   }
 
-  protected abstract Res doExchange(Req resuest);
+  /**
+   * Implementation hook for executing the underlying vendor-specific protocol (e.g., REST, SOAP,
+   * gRPC).
+   *
+   * @param request the vendor-specific request payload
+   * @return the native vendor-specific response payload
+   */
+  protected abstract Res doExchange(Req request);
 
+  /**
+   * Executes the vendor request with full auditing lifecycle protection.
+   *
+   * <p>This method guarantees that all interactions are mechanically wrapped by the {@link
+   * Auditor}.
+   *
+   * @param request the vendor input payload
+   * @return the vendor output payload
+   */
   public final Res exchange(Req request) {
     UUID trackingId = auditor.save(request);
     try {

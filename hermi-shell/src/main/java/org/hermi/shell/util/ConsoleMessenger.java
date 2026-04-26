@@ -15,16 +15,21 @@ public class ConsoleMessenger<M, R> extends Messenger<M, R> {
     this.store = new ConcurrentHashMap<>();
   }
 
-  private static class ConsoleMessengerAuditor<M, R> implements Auditor<M, R> {
+  private static class ConsoleMessengerAuditor<M, R> extends Auditor<M, R> {
     @Override
-    public UUID save(M input) {
+    protected UUID doSave(M input) {
       System.out.printf("[ConsoleMessenger] INFO: Publishing message -> %s%n", input);
       return UUID.randomUUID();
     }
 
     @Override
-    public void save(UUID trackingId, R output) {
+    protected void doSave(UUID trackingId, R output) {
       System.out.printf("[ConsoleMessenger] INFO: Publish completed  -> %s%n", output);
+    }
+
+    @Override
+    protected void doError(UUID trackingId, Exception exception) {
+      System.out.printf("[ConsoleMessenger] ERROR: Publish failed -> %s%n", exception.getMessage());
     }
   }
 

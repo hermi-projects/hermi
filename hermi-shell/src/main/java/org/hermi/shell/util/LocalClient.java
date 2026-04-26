@@ -15,16 +15,21 @@ public class LocalClient<I, O> extends Client<I, O> {
     this.store = new ConcurrentHashMap<>();
   }
 
-  private static class LocalClientAuditor<I, O> implements Auditor<I, O> {
+  private static class LocalClientAuditor<I, O> extends Auditor<I, O> {
     @Override
-    public UUID save(I input) {
+    protected UUID doSave(I input) {
       System.out.printf("[LocalClient] INFO: Exchanging input -> %s%n", input);
       return UUID.randomUUID();
     }
 
     @Override
-    public void save(UUID trackingId, O output) {
+    protected void doSave(UUID trackingId, O output) {
       System.out.printf("[LocalClient] INFO: Exchange completed -> %s%n", output);
+    }
+
+    @Override
+    protected void doError(UUID trackingId, Exception exception) {
+      System.out.printf("[LocalClient] ERROR: Exchange failed -> %s%n", exception.getMessage());
     }
   }
 
