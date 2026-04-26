@@ -38,6 +38,11 @@ import org.hermi.commons.Executor;
 public abstract class Messenger<M, R> extends Executor<M, R> {
   private final Auditor<M, R> auditor;
 
+  /**
+   * Constructs a Messenger with the required auditor.
+   *
+   * @param auditor the auditor to wrap all publish operations
+   */
   protected Messenger(Auditor<M, R> auditor) {
     this.auditor = Objects.requireNonNull(auditor, "Auditor is required for Messenger");
   }
@@ -71,6 +76,12 @@ public abstract class Messenger<M, R> extends Executor<M, R> {
     }
   }
 
+  /**
+   * Internal bridge to alias {@code publish} to the standard {@code execute} contract.
+   *
+   * @param message the vendor message payload
+   * @return the vendor result payload
+   */
   public final R execute(M message) {
     return this.publish(message);
   }

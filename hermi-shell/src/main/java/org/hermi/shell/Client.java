@@ -37,6 +37,11 @@ import org.hermi.commons.Executor;
 public abstract class Client<Req, Res> extends Executor<Req, Res> {
   private final Auditor<Req, Res> auditor;
 
+  /**
+   * Constructs a Client with the required auditor.
+   *
+   * @param auditor the auditor to wrap all exchange operations
+   */
   protected Client(Auditor<Req, Res> auditor) {
     this.auditor = Objects.requireNonNull(auditor, "Auditor is required for Client");
   }
@@ -71,6 +76,12 @@ public abstract class Client<Req, Res> extends Executor<Req, Res> {
     }
   }
 
+  /**
+   * Internal bridge to alias {@code exchange} to the standard {@code execute} contract.
+   *
+   * @param request the vendor input payload
+   * @return the vendor output payload
+   */
   public final Res execute(Req request) {
     return this.exchange(request);
   }

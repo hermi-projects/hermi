@@ -18,6 +18,12 @@ public abstract class SecureClient<Req, Res> extends Client<Req, Res> {
 
   private final Cryptor<Req, Res> cryptor;
 
+  /**
+   * Constructs a SecureClient with both an auditor and a cryptor.
+   *
+   * @param auditor the auditor to trace and persist interactions
+   * @param cryptor the cryptor to encrypt and decrypt vendor payloads
+   */
   protected SecureClient(Auditor<Req, Res> auditor, Cryptor<Req, Res> cryptor) {
     super(auditor);
     this.cryptor = Objects.requireNonNull(cryptor, "Cryptor is required for SecureClient");
