@@ -6,7 +6,9 @@ import org.hermi.validation.Validatable;
 /**
  * <b>AI INSTRUCTION:</b> When defining a Client contract in the Use Case (Phase 1), use this class.
  * DO NOT add any implementation logic. ONLY define the Context and Result records. The Result
- * record MUST implement Validatable.
+ * record MUST implement Validatable. Context and Result fields MUST use ONLY plain Java types
+ * (String, UUID, BigDecimal, LocalDate, primitives). NEVER place Spring, HTTP, or vendor-specific
+ * types (HttpHeaders, ApiRequest, RestTemplate) inside Context or Result records.
  *
  * <p><b>Example AI Generation:</b>
  *

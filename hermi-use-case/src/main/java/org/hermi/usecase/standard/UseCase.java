@@ -7,7 +7,11 @@ import org.hermi.validation.Validatable;
  * <b>AI INSTRUCTION:</b> When subclassing this component, this is your Phase 1 pure domain logic.
  * NEVER mix technology concerns (e.g. Spring, JPA, HTTP, JSON). Define I/O contracts
  * (Client/Repository) Just-In-Time as abstract classes extending Executor. Use only records for
- * Context and Result. ONLY override {@code doExecute}.
+ * Context and Result. ONLY override {@code doExecute}. When a Client or Repository throws an
+ * exception inside {@code doExecute}, ALWAYS catch and rethrow as a named domain exception (e.g.,
+ * {@code UserNotFoundException}, {@code PaymentGatewayException}). NEVER let infrastructure
+ * exceptions ({@code SocketTimeoutException}, {@code DataAccessException}) escape {@code
+ * doExecute}.
  *
  * <p><b>Example AI Generation:</b>
  *

@@ -53,6 +53,11 @@ public abstract class DispatcherUseCase<C extends Validatable, R> extends UseCas
   }
 
   /**
+   * <b>AI INSTRUCTION:</b> Call ONLY during initialization (constructor or {@code @PostConstruct}).
+   * NEVER call this method inside {@code doExecute} — the handler list is NOT thread-safe for
+   * concurrent modifications during execution.
+   */
+  /**
    * Dynamically registers a new handler to this dispatcher.
    *
    * @param handler the handler to add

@@ -3,16 +3,47 @@ package org.hermi.shell;
 import java.util.Objects;
 
 /**
- * A specialized extension of {@link Client} that enforces cryptographic security over the external
- * interaction boundary.
+ * <b>AI INSTRUCTION:</b> ONLY override {@code doExchange(String encryptedRequest)}. NEVER override
+ * or modify the {@code doExchange(Req request)} bridge method — cryptographic interception is
+ * handled there automatically by the injected {@link Cryptor}. DO NOT inject cipher logic,
+ * encryption keys, or any {@link Cryptor} calls inside the overridden method; your sole
+ * responsibility is wire-level transmission of the encrypted string.
  *
- * <p>This class implements the "Fail-Secure" integration pattern by transparently encrypting
- * outgoing vendor requests and decrypting incoming vendor responses through an injected {@link
- * Cryptor}. The protocol implementation is delegated entirely to the subclass via encrypted string
- * payloads.
+ * <p><b>Example AI Generation:</b>
  *
- * @param <Req> Vendor request type (Pre-encryption Domain Object)
- * @param <Res> Vendor response type (Post-decryption Domain Object)
+ * <pre>{@code
+ * @Component
+ * public class VaultSecureClient extends SecureClient<VaultReq, VaultRes> {
+ *   public VaultSecureClient(Auditor<VaultReq, VaultRes> auditor, Cryptor<VaultReq, VaultRes> cryptor) {
+ *     super(auditor, cryptor);
+ *   }
+ *   protected String doExchange(String encryptedRequest) {
+ *     return restTemplate.postForObject("/vault/secure", encryptedRequest, String.class);
+ *   }
+ * }
+ * }</pre>
+ */
+
+/**
+ * Phase 2 Secure Protocol Execution for PCI/high-security vendor endpoints.
+ *
+ * <p><b>Purpose:</b> Enforces a "Fail-Secure" cryptographic boundary over every vendor interaction
+ * by transparently encrypting outgoing requests and decrypting incoming responses via an injected
+ * {@link Cryptor}, without exposing plaintext across the wire.
+ *
+ * <p><b>Usage Scenarios:</b> Use when the external vendor mandates payload-level encryption (e.g.,
+ * PCI-DSS, tokenization endpoints, HSM-backed services). All other vendor integrations that do not
+ * require payload encryption should extend {@link Client} directly.
+ *
+ * <p><b>Constraints:</b> The {@link Cryptor} and {@link Auditor} are both mandatory — the
+ * constructor enforces non-null injection. Audit records are written with the <em>original domain
+ * object</em> (pre-encryption), not the encrypted string.
+ *
+ * <p><b>Dependencies:</b> Requires a concrete {@link Cryptor} implementation and a concrete {@link
+ * Auditor} implementation, both bound to the same {@code <Req, Res>} types.
+ *
+ * @param <Req> Vendor request type (pre-encryption domain object)
+ * @param <Res> Vendor response type (post-decryption domain object)
  */
 public abstract class SecureClient<Req, Res> extends Client<Req, Res> {
 

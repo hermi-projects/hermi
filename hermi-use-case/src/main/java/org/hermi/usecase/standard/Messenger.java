@@ -6,7 +6,10 @@ import org.hermi.validation.Validatable;
 /**
  * <b>AI INSTRUCTION:</b> When defining a Messenger contract in the Use Case (Phase 1), use this
  * class. DO NOT add any implementation logic. ONLY define the Context and Result records. The
- * Result record MUST implement Validatable.
+ * Result record MUST implement Validatable. Context and Result fields MUST use ONLY plain Java
+ * types (String, UUID, BigDecimal, LocalDate, primitives). NEVER place broker-specific types
+ * (ProducerRecord, Message, Envelope) inside Context or Result records — those belong exclusively
+ * in the Shell Messenger layer.
  *
  * <p><b>Example AI Generation:</b>
  *
