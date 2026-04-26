@@ -13,6 +13,14 @@ import org.hermi.validation.Validatable;
 import org.hermi.validation.Validator;
 
 /**
+ * <b>AI INSTRUCTION:</b> DO NOT subclass this class directly when building applications. Use the
+ * semantic base classes instead: UseCase, Client, Repository, or Messenger. Never override the
+ * final {@code execute} methods to bypass validation. Only implement {@code doExecute}.
+ */
+
+/** Core execution engine and validation lifecycle. */
+
+/**
  * Abstract base class for components that execute logic based on a context and return a result.
  *
  * <p>The Executor handles:
