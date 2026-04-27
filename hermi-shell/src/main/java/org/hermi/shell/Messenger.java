@@ -49,6 +49,7 @@ public abstract class Messenger<M, R> extends Executor<M, R> {
 
   /**
    * Implementation hook for executing the underlying messaging protocol (e.g., Kafka, JMS, SQS).
+   * Transactional Outbox Pattern
    *
    * @param message the vendor-specific message payload
    * @return the native vendor-specific metadata or result
