@@ -1,0 +1,19 @@
+{
+  "skill_name": "ai-contract",
+  "evals": [
+    {
+      "id": 1,
+      "name": "payment-gateway-contract",
+      "prompt": "I have a Java interface called `PaymentGateway`. I want to add an AI-Architectural Contract to it. The rules are: 1. Implementation must be thread-safe. 2. It must use a dedicated 'payment' logger. 3. No external API calls are allowed in the constructor. Write the Javadoc contract.",
+      "expected_output": "A Java interface code snippet with Javadoc containing [AI ARCHITECTURAL CONTRACT], @apiNote, @implSpec with thread-safe and logger rules, @implNote with constructor rule, and an @example.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "user-repository-harden",
+      "prompt": "Generate an AI-Native architectural contract for my `AbstractUserRepository`. It should ensure that all subclasses use `@Repository` annotation, never return `null` (use `Optional` instead), and must implement a caching strategy in the implementation layer. Provide an example.",
+      "expected_output": "Javadoc for AbstractUserRepository with [AI ARCHITECTURAL CONTRACT], including @implSpec for @Repository and Optional, and @implNote for caching requirement.",
+      "files": []
+    }
+  ]
+}

@@ -25,7 +25,7 @@ import java.util.Objects;
  */
 
 /**
- * Phase 2 Secure Protocol Execution for PCI/high-security vendor endpoints.
+ * Secure Protocol Execution for PCI/high-security vendor endpoints.
  *
  * <p><b>Purpose:</b> Enforces a "Fail-Secure" cryptographic boundary over every vendor interaction
  * by transparently encrypting outgoing requests and decrypting incoming responses via an injected
