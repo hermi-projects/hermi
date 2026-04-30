@@ -7,53 +7,53 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.hermi.shell.Messenger;
 import org.hermi.shell.audit.Auditor;
 
-public class ConsoleMessenger<M, R> extends Messenger<M, R> {
-  private final Map<M, R> store;
+public class ConsoleMessenger<P, R> extends Messenger<P, R> {
+  private final Map<P, R> store;
 
   public ConsoleMessenger() {
     super(new ConsoleMessengerAuditor<>());
     this.store = new ConcurrentHashMap<>();
   }
 
-  private static class ConsoleMessengerAuditor<M, R> extends Auditor<M, R> {
+  private static class ConsoleMessengerAuditor<P, R> extends Auditor<P, R> {
     @Override
-    protected UUID doSave(M input) {
+    protected UUID doRecordPayload(P input) {
       System.out.printf("[ConsoleMessenger] INFO: Publishing message -> %s%n", input);
       return UUID.randomUUID();
     }
 
     @Override
-    protected void doSave(UUID trackingId, R output) {
+    protected void doRecordResponse(UUID trackingId, R output) {
       System.out.printf("[ConsoleMessenger] INFO: Publish completed  -> %s%n", output);
     }
 
     @Override
-    protected void doError(UUID trackingId, Exception exception) {
+    protected void doRecordError(UUID trackingId, Exception exception) {
       System.out.printf("[ConsoleMessenger] ERROR: Publish failed -> %s%n", exception.getMessage());
     }
   }
 
   @Override
-  protected R doPublish(M message) {
-    return store.get(message);
+  protected R doPublish(P payload) {
+    return store.get(payload);
   }
 
-  public ConsoleMessenger<M, R> put(M message, R result) {
-    store.put(message, result);
+  public ConsoleMessenger<P, R> put(P payload, R response) {
+    store.put(payload, response);
     return this;
   }
 
-  public R get(M message) {
-    return store.get(message);
+  public R get(P payload) {
+    return store.get(payload);
   }
 
-  public ConsoleMessenger<M, R> remove(M message) {
-    store.remove(message);
+  public ConsoleMessenger<P, R> remove(P payload) {
+    store.remove(payload);
     return this;
   }
 
-  public boolean contains(M message) {
-    return store.containsKey(message);
+  public boolean contains(P payload) {
+    return store.containsKey(payload);
   }
 
   public int size() {
@@ -64,12 +64,12 @@ public class ConsoleMessenger<M, R> extends Messenger<M, R> {
     return store.isEmpty();
   }
 
-  public ConsoleMessenger<M, R> clear() {
+  public ConsoleMessenger<P, R> clear() {
     store.clear();
     return this;
   }
 
-  public Map<M, R> getStore() {
+  public Map<P, R> getStore() {
     return Collections.unmodifiableMap(store);
   }
 }

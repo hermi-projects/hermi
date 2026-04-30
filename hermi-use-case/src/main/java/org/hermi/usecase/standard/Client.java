@@ -73,31 +73,23 @@ public abstract class Client<C, R extends Validatable> extends Executor<C, R> {
    *
    * <pre>{@code
    * @Component
-   * public class LexisNexisFindUserClient extends FindUserClient
-   *     implements Adapter<FindUserClient.Context, FindUserClient.Result, ApiRequest, ApiResponse> {
+   * public class LexisNexisFindUserClient extends FindUserClient {
    *
-   *   private final RestTemplate restTemplate;
+   *   private final org.hermi.shell.Client<ApiRequest, ApiResponse> vendorClient;
+   *   private final Mapper<Context, Result, ApiRequest, ApiResponse> mapper;
+   *
+   *   public LexisNexisFindUserClient(
+   *       org.hermi.shell.Client<ApiRequest, ApiResponse> vendorClient,
+   *       Mapper<Context, Result, ApiRequest, ApiResponse> mapper) {
+   *     this.vendorClient = vendorClient;
+   *     this.mapper = mapper;
+   *   }
    *
    *   @Override
    *   protected Result doExecute(Context context) {
-   *     ApiRequest apiRequest = convertContext(context);
-   *     ApiResponse apiResponse = process(apiRequest);
-   *     return convertResult(apiResponse);
-   *   }
-   *
-   *   @Override
-   *   public ApiRequest convertContext(Context context) {
-   *     return new ApiRequest(context.ssn());
-   *   }
-   *
-   *   @Override
-   *   public ApiResponse process(ApiRequest input) {
-   *     return restTemplate.postForObject("/api/users", input, ApiResponse.class);
-   *   }
-   *
-   *   @Override
-   *   public Result convertResult(ApiResponse output) {
-   *     return new Result(output.getName(), output.getEmail());
+   *     ApiRequest apiRequest = mapper.toPayload(context);
+   *     ApiResponse apiResponse = vendorClient.exchange(apiRequest);
+   *     return mapper.toResult(apiResponse);
    *   }
    * }
    * }</pre>

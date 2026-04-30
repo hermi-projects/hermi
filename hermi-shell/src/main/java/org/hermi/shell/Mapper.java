@@ -33,12 +33,12 @@ package org.hermi.shell;
  *     implements Mapper<FindUserUseCase.Context, FindUserUseCase.Result, ApiRequest, ApiResponse> {
  *
  *   @Override
- *   public ApiRequest convertContext(FindUserUseCase.Context context) {
+ *   public ApiRequest toPayload(FindUserUseCase.Context context) {
  *     return new ApiRequest(context.ssn());
  *   }
  *
  *   @Override
- *   public FindUserUseCase.Result convertResult(ApiResponse response) {
+ *   public FindUserUseCase.Result toResult(ApiResponse response) {
  *     return new FindUserUseCase.Result(response.getFullName(), response.getEmail());
  *   }
  * }
@@ -49,26 +49,26 @@ package org.hermi.shell;
  * Interface for semantic translation between Core Domain records and Infrastructure/Vendor
  * payloads.
  *
- * @param <C> core context type (domain input)
- * @param <R> core result type (domain output)
- * @param <I> infrastructure input type (vendor request)
- * @param <O> infrastructure output type (vendor response)
+ * @param <UContext> use case context type (domain input)
+ * @param <UResult> use case result type (domain output)
+ * @param <SPayload> shell payload type (sent to the external system)
+ * @param <SResponse> shell response type (received from the external system)
  */
-public interface Mapper<C, R, I, O> {
+public interface Mapper<UContext, UResult, SPayload, SResponse> {
 
   /**
-   * Translates the pure domain Context object into the Vendor-specific Input payload.
+   * Converts the domain context into the system payload for transmission.
    *
    * @param context the domain context defined securely within the Use Case layer
    * @return the vendor-specific input payload ready for transmission
    */
-  I convertContext(C context);
+  SPayload toPayload(UContext context);
 
   /**
-   * Translates the Vendor-specific Output payload back into the pure domain Result object.
+   * Converts the system response back into the domain result.
    *
    * @param output the native response or event received from the external system
    * @return the domain result interpreted from the vendor payload
    */
-  R convertResult(O output);
+  UResult toResult(SResponse output);
 }

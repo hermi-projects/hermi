@@ -10,13 +10,13 @@ import org.hermi.commons.Executor;
  * <p>Provides the common {@link Auditor} field and the auditing lifecycle ({@link #execute}) shared
  * by {@link org.hermi.shell.Client} and {@link org.hermi.shell.Messenger}.
  *
- * @param <I> vendor-specific input type
- * @param <O> vendor-specific output type
+ * @param <P> payload type sent to the external system
+ * @param <R> result type received from the external system
  */
-public abstract class AuditedExecutor<I, O> extends Executor<I, O> {
-  protected final Auditor<I, O> auditor;
+public abstract class AuditedExecutor<P, R> extends Executor<P, R> {
+  protected final Auditor<P, R> auditor;
 
-  protected AuditedExecutor(Auditor<I, O> auditor) {
+  protected AuditedExecutor(Auditor<P, R> auditor) {
     this.auditor = Objects.requireNonNull(auditor, "Auditor is required for AuditedExecutor");
   }
 
@@ -26,18 +26,18 @@ public abstract class AuditedExecutor<I, O> extends Executor<I, O> {
    * <p>Saves the input via the {@link Auditor} before execution, records the result on success, and
    * logs the error on failure.
    *
-   * @param input the execution input
+   * @param payload the execution payload
    * @return the execution result
    */
   @Override
-  public final O execute(I input) {
-    UUID trackingId = auditor.save(input);
+  public final R execute(P payload) {
+    UUID trackingId = auditor.recordPayload(payload);
     try {
-      O result = super.execute(input);
-      auditor.save(trackingId, result);
+      R result = super.execute(payload);
+      auditor.recordResponse(trackingId, result);
       return result;
     } catch (Exception e) {
-      auditor.error(trackingId, e);
+      auditor.recordError(trackingId, e);
       throw e;
     }
   }

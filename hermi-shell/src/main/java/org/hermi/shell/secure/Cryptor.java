@@ -14,8 +14,7 @@ package org.hermi.shell.secure;
  *     <ul>
  *       <li>1. STATELESSNESS: Implementations MUST be strictly stateless. Do not define instance
  *           variables to store request-specific data.
- *       <li>2. NO LOGGING PLAINTEXT: NEVER log plaintext input or decrypted output (PII/Sensitive
- *           data).
+ *       <li>2. NO LOGGING PLAINTEXT: NEVER log input or unsealed output (PII/Sensitive data).
  *       <li>3. NO HARDCODED KEYS: Always inject encryption keys via {@code @Value} or secret
  *           managers.
  *       <li>4. DELEGATE CRYPTO: NEVER implement internal cipher algorithms; use JCE providers or
@@ -36,13 +35,13 @@ package org.hermi.shell.secure;
  *     @Value("${vendor.aes.key}") private String base64Key;
  *
  *     @Override
- *     public String encrypt(VaultReq input) {
+ *     public String seal(VaultReq input) {
  *         // Use AES-GCM via JCE — NEVER log 'input'
  *         return AesGcmUtil.encrypt(base64Key, serialize(input));
  *     }
  *
  *     @Override
- *     public VaultRes decrypt(String encryptedOutput) {
+ *     public VaultRes unseal(String encryptedOutput) {
  *         // Use AES-GCM via JCE — NEVER log decrypted result
  *         return deserialize(AesGcmUtil.decrypt(base64Key, encryptedOutput));
  *     }
@@ -53,25 +52,25 @@ package org.hermi.shell.secure;
 /**
  * Interface for cryptographic operations required for secure payload transit.
  *
- * @param <I> input type (raw vendor request)
- * @param <O> output type (decrypted vendor response)
+ * @param <P> payload type sent to the external system
+ * @param <R> result type received from the external system
  */
-public interface Cryptor<I, O> {
+public interface Cryptor<P, R> {
 
   /**
-   * Encrypts the raw vendor input payload before transmission.
+   * Seals (serializes + encrypts) the raw vendor input payload before transmission.
    *
-   * @param input the raw input payload
+   * @param payload the raw input payload
    * @return the encrypted string representation to be transmitted to the external system
    */
-  String encrypt(I input);
+  String seal(P payload);
 
   /**
-   * Decrypts the raw encrypted response from the external system back into the vendor output
-   * payload.
+   * Unseals (decrypts + deserializes) the raw encrypted response from the external system back into
+   * the vendor output payload.
    *
    * @param encryptedOutput the encrypted string representation received from the external system
    * @return the decrypted output data
    */
-  O decrypt(String encryptedOutput);
+  R unseal(String encryptedOutput);
 }

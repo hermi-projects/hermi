@@ -21,27 +21,21 @@ import org.hermi.shell.audit.Auditor;
 /**
  * Base class for vendor-specific messaging clients (Protocol layer).
  *
- * <p><b>AI-Friendly Architecture (Rule of Three)</b>: Follow the decoupled pattern to stay within
- * AI context limits:
+ * <p><b>AI-Friendly Architecture</b>: Follow the decoupled pattern to stay within AI context limits
+ * — a concrete messenger composes a VendorMessenger (inheriting from this class for protocol and
+ * auditing) with a {@link Mapper} for domain-vendor translation.
  *
- * <ol>
- *   <li><b>VendorMessenger</b>: Inherits from this class, handles protocol (Kafka, JMS) and
- *       auditing.
- *   <li><b>Mapper</b>: Handles translation between Domain Fact and Vendor Record.
- *   <li><b>Adapter</b>: Wires Messenger and Mapper.
- * </ol>
- *
- * @param <M> Vendor message type (e.g., ProducerRecord)
- * @param <R> Vendor result type (e.g., RecordMetadata)
+ * @param <P> payload type sent to the external system
+ * @param <R> result type received from the external system
  */
-public abstract class Messenger<M, R> extends AuditedExecutor<M, R> {
+public abstract class Messenger<P, R> extends AuditedExecutor<P, R> {
 
   /**
    * Constructs a Messenger with the required auditor.
    *
    * @param auditor the auditor to wrap all publish operations
    */
-  protected Messenger(Auditor<M, R> auditor) {
+  protected Messenger(Auditor<P, R> auditor) {
     super(auditor);
   }
 
@@ -49,10 +43,10 @@ public abstract class Messenger<M, R> extends AuditedExecutor<M, R> {
    * Implementation hook for executing the underlying messaging protocol (e.g., Kafka, JMS, SQS).
    * Transactional Outbox Pattern
    *
-   * @param message the vendor-specific message payload
+   * @param payload the vendor-specific message payload
    * @return the native vendor-specific metadata or result
    */
-  protected abstract R doPublish(M message);
+  protected abstract R doPublish(P payload);
 
   /**
    * Publishes the message with full auditing lifecycle protection.
@@ -60,15 +54,15 @@ public abstract class Messenger<M, R> extends AuditedExecutor<M, R> {
    * <p>This method guarantees that all asynchronous publications are mechanically wrapped by the
    * {@link Auditor}.
    *
-   * @param message the vendor message payload
+   * @param payload the vendor message payload
    * @return the vendor result payload
    */
-  public final R publish(M message) {
-    return execute(message);
+  public final R publish(P payload) {
+    return execute(payload);
   }
 
   @Override
-  protected R doExecute(M message) {
-    return doPublish(message);
+  protected final R doExecute(P payload) {
+    return doPublish(payload);
   }
 }

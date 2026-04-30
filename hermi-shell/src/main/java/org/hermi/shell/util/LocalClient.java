@@ -7,53 +7,53 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.hermi.shell.Client;
 import org.hermi.shell.audit.Auditor;
 
-public class LocalClient<I, O> extends Client<I, O> {
-  private final Map<I, O> store;
+public class LocalClient<P, R> extends Client<P, R> {
+  private final Map<P, R> store;
 
   public LocalClient() {
     super(new LocalClientAuditor<>());
     this.store = new ConcurrentHashMap<>();
   }
 
-  private static class LocalClientAuditor<I, O> extends Auditor<I, O> {
+  private static class LocalClientAuditor<P, R> extends Auditor<P, R> {
     @Override
-    protected UUID doSave(I input) {
+    protected UUID doRecordPayload(P input) {
       System.out.printf("[LocalClient] INFO: Exchanging input -> %s%n", input);
       return UUID.randomUUID();
     }
 
     @Override
-    protected void doSave(UUID trackingId, O output) {
+    protected void doRecordResponse(UUID trackingId, R output) {
       System.out.printf("[LocalClient] INFO: Exchange completed -> %s%n", output);
     }
 
     @Override
-    protected void doError(UUID trackingId, Exception exception) {
+    protected void doRecordError(UUID trackingId, Exception exception) {
       System.out.printf("[LocalClient] ERROR: Exchange failed -> %s%n", exception.getMessage());
     }
   }
 
   @Override
-  protected O doExchange(I request) {
-    return store.get(request);
+  protected R doExchange(P payload) {
+    return store.get(payload);
   }
 
-  public LocalClient<I, O> put(I input, O output) {
-    store.put(input, output);
+  public LocalClient<P, R> put(P payload, R response) {
+    store.put(payload, response);
     return this;
   }
 
-  public O get(I input) {
-    return store.get(input);
+  public R get(P payload) {
+    return store.get(payload);
   }
 
-  public LocalClient<I, O> remove(I input) {
-    store.remove(input);
+  public LocalClient<P, R> remove(P payload) {
+    store.remove(payload);
     return this;
   }
 
-  public boolean containsKey(I input) {
-    return store.containsKey(input);
+  public boolean containsKey(P payload) {
+    return store.containsKey(payload);
   }
 
   public int size() {
@@ -64,12 +64,12 @@ public class LocalClient<I, O> extends Client<I, O> {
     return store.isEmpty();
   }
 
-  public LocalClient<I, O> clear() {
+  public LocalClient<P, R> clear() {
     store.clear();
     return this;
   }
 
-  public Map<I, O> getStore() {
+  public Map<P, R> getStore() {
     return Collections.unmodifiableMap(store);
   }
 }

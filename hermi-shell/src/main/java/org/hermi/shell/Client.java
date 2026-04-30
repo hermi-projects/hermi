@@ -28,26 +28,21 @@ import org.hermi.shell.audit.Auditor;
 /**
  * Base class for vendor-specific technical clients (Protocol layer).
  *
- * <p><b>AI-Friendly Architecture (Rule of Three)</b>: In Phase 2 implementation, this component
- * should follow the decoupled pattern:
+ * <p><b>AI-Friendly Architecture</b>: In Phase 2 implementation, a concrete client (e.g.,
+ * LexisNexisFindUserClient) composes a VendorClient (inheriting from this class for protocol and
+ * auditing) with a {@link Mapper} for domain-vendor translation to fulfill the Use Case contract.
  *
- * <ol>
- *   <li><b>VendorClient</b>: Inherits from this class, handles protocol (REST, gRPC) and auditing.
- *   <li><b>Mapper</b>: Handles semantic translation between Domain and Vendor types.
- *   <li><b>Adapter</b>: Wires the Client and Mapper together to fulfill the Use Case contract.
- * </ol>
- *
- * @param <Req> Vendor request type (e.g., LexisNexisRequest)
- * @param <Res> Vendor response type (e.g., LexisNexisResponse)
+ * @param <P> payload type sent to the external system
+ * @param <R> result type received from the external system
  */
-public abstract class Client<Req, Res> extends AuditedExecutor<Req, Res> {
+public abstract class Client<P, R> extends AuditedExecutor<P, R> {
 
   /**
    * Constructs a Client with the required auditor.
    *
    * @param auditor the auditor to wrap all exchange operations
    */
-  protected Client(Auditor<Req, Res> auditor) {
+  protected Client(Auditor<P, R> auditor) {
     super(auditor);
   }
 
@@ -55,10 +50,10 @@ public abstract class Client<Req, Res> extends AuditedExecutor<Req, Res> {
    * Implementation hook for executing the underlying vendor-specific protocol (e.g., REST, SOAP,
    * gRPC).
    *
-   * @param request the vendor-specific request payload
+   * @param payload the vendor-specific request payload
    * @return the native vendor-specific response payload
    */
-  protected abstract Res doExchange(Req request);
+  protected abstract R doExchange(P payload);
 
   /**
    * Executes the vendor request with full auditing lifecycle protection.
@@ -66,15 +61,15 @@ public abstract class Client<Req, Res> extends AuditedExecutor<Req, Res> {
    * <p>This method guarantees that all interactions are mechanically wrapped by the {@link
    * Auditor}.
    *
-   * @param request the vendor input payload
+   * @param payload the vendor input payload
    * @return the vendor output payload
    */
-  public final Res exchange(Req request) {
-    return this.execute(request);
+  public final R exchange(P payload) {
+    return this.execute(payload);
   }
 
   @Override
-  protected Res doExecute(Req request) {
-    return this.doExchange(request);
+  protected final R doExecute(P payload) {
+    return this.doExchange(payload);
   }
 }

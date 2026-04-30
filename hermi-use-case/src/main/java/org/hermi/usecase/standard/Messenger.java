@@ -77,35 +77,23 @@ public abstract class Messenger<C, R extends Validatable> extends Executor<C, R>
    *
    * <pre>{@code
    * @Component
-   * public class KafkaNotifyUserFoundMessenger extends NotifyUserFoundMessenger
-   *     implements Adapter<NotifyUserFoundMessenger.Context, NotifyUserFoundMessenger.Result, ProducerRecord<String, String>, RecordMetadata> {
+   * public class KafkaNotifyUserFoundMessenger extends NotifyUserFoundMessenger {
    *
-   *   private final KafkaTemplate<String, String> kafkaTemplate;
+   *   private final org.hermi.shell.Messenger<ProducerRecord<String, String>, RecordMetadata> vendorMessenger;
+   *   private final Mapper<Context, Result, ProducerRecord<String, String>, RecordMetadata> mapper;
+   *
+   *   public KafkaNotifyUserFoundMessenger(
+   *       org.hermi.shell.Messenger<ProducerRecord<String, String>, RecordMetadata> vendorMessenger,
+   *       Mapper<Context, Result, ProducerRecord<String, String>, RecordMetadata> mapper) {
+   *     this.vendorMessenger = vendorMessenger;
+   *     this.mapper = mapper;
+   *   }
    *
    *   @Override
    *   protected Result doExecute(Context context) {
-   *     ProducerRecord<String, String> record = convertContext(context);
-   *     RecordMetadata metadata = process(record);
-   *     return convertResult(metadata);
-   *   }
-   *
-   *   @Override
-   *   public ProducerRecord<String, String> convertContext(Context context) {
-   *     return new ProducerRecord<>("user.notifications", context.message());
-   *   }
-   *
-   *   @Override
-   *   public RecordMetadata process(ProducerRecord<String, String> record) {
-   *     try {
-   *       return kafkaTemplate.send(record).get().getRecordMetadata();
-   *     } catch (Exception e) {
-   *       throw new RuntimeException(e);
-   *     }
-   *   }
-   *
-   *   @Override
-   *   public Result convertResult(RecordMetadata metadata) {
-   *     return new Result(metadata.toString());
+   *     ProducerRecord<String, String> record = mapper.toPayload(context);
+   *     RecordMetadata metadata = vendorMessenger.publish(record);
+   *     return mapper.toResult(metadata);
    *   }
    * }
    * }</pre>

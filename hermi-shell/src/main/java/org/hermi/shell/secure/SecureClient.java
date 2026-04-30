@@ -50,12 +50,12 @@ import org.hermi.shell.audit.Auditor;
 /**
  * High-security protocol execution base class for PCI/high-compliance vendor endpoints.
  *
- * @param <Req> vendor request type (pre-encryption)
- * @param <Res> vendor response type (post-decryption)
+ * @param <P> payload type sent to the external system (pre-encryption)
+ * @param <R> result type received from the external system (post-decryption)
  */
-public abstract class SecureClient<Req, Res> extends Client<Req, Res> {
+public abstract class SecureClient<P, R> extends Client<P, R> {
 
-  private final Cryptor<Req, Res> cryptor;
+  private final Cryptor<P, R> cryptor;
 
   /**
    * Constructs a SecureClient with both an auditor and a cryptor.
@@ -63,7 +63,7 @@ public abstract class SecureClient<Req, Res> extends Client<Req, Res> {
    * @param auditor the auditor to trace and persist interactions
    * @param cryptor the cryptor to encrypt and decrypt vendor payloads
    */
-  protected SecureClient(Auditor<Req, Res> auditor, Cryptor<Req, Res> cryptor) {
+  protected SecureClient(Auditor<P, R> auditor, Cryptor<P, R> cryptor) {
     super(auditor);
     this.cryptor = Objects.requireNonNull(cryptor, "Cryptor is required for SecureClient");
   }
@@ -77,9 +77,9 @@ public abstract class SecureClient<Req, Res> extends Client<Req, Res> {
   protected abstract String doExchange(String encryptedRequest);
 
   @Override
-  protected Res doExchange(Req request) {
-    String encryptedRequest = cryptor.encrypt(request);
+  protected final R doExchange(P payload) {
+    String encryptedRequest = cryptor.seal(payload);
     String encryptedResponse = doExchange(encryptedRequest);
-    return cryptor.decrypt(encryptedResponse);
+    return cryptor.unseal(encryptedResponse);
   }
 }

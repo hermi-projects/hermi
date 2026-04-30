@@ -74,31 +74,22 @@ public abstract class Repository<C, R extends Validatable> extends Executor<C, R
    *
    * <pre>{@code
    * @Component
-   * public class JpaSaveUserRepository extends SaveUserRepository
-   *     implements Adapter<SaveUserRepository.Context, SaveUserRepository.Result, UserEntity, UserEntity> {
+   * public class JpaSaveUserRepository extends SaveUserRepository {
    *
    *   private final UserJpaRepository jpaRepository;
+   *   private final Mapper<Context, Result, UserEntity, UserEntity> mapper;
+   *
+   *   public JpaSaveUserRepository(UserJpaRepository jpaRepository,
+   *       Mapper<Context, Result, UserEntity, UserEntity> mapper) {
+   *     this.jpaRepository = jpaRepository;
+   *     this.mapper = mapper;
+   *   }
    *
    *   @Override
    *   protected Result doExecute(Context context) {
-   *     UserEntity entity = convertContext(context);
-   *     UserEntity savedEntity = process(entity);
-   *     return convertResult(savedEntity);
-   *   }
-   *
-   *   @Override
-   *   public UserEntity convertContext(Context context) {
-   *     return new UserEntity(context.name(), context.email());
-   *   }
-   *
-   *   @Override
-   *   public UserEntity process(UserEntity entity) {
-   *     return jpaRepository.save(entity);
-   *   }
-   *
-   *   @Override
-   *   public Result convertResult(UserEntity entity) {
-   *     return new Result(entity.getId());
+   *     UserEntity entity = mapper.toPayload(context);
+   *     UserEntity savedEntity = jpaRepository.save(entity);
+   *     return mapper.toResult(savedEntity);
    *   }
    * }
    * }</pre>

@@ -25,9 +25,9 @@ import java.util.UUID;
  *
  * @implNote FORBIDDEN PATTERNS:
  *     <ul>
- *       <li>NEVER override final methods (save, error).
+ *       <li>NEVER override final methods (recordPayload, recordResponse, recordError).
  *       <li>DO NOT inject business services into the auditor to avoid circular dependencies.
- *       <li>NO REDUNDANT LOGGING: Avoid {@code log.error()} in {@code doError} as the
+ *       <li>NO REDUNDANT LOGGING: Avoid {@code log.error()} in {@code doRecordError} as the
  *           infrastructure already handles failure telemetry.
  *     </ul>
  *
@@ -38,9 +38,9 @@ import java.util.UUID;
  * public class PaymentAuditor extends Auditor<PaymentReq, PaymentRes> {
  *     private final AuditRepository repository;
  *
- *     @Override protected UUID doSave(PaymentReq paymentReq) { return repository.insertInitial(paymentReq); }
- *     @Override protected void doSave(UUID id, PaymentRes paymentRes) { repository.updateSuccess(id, paymentRes); }
- *     @Override protected void doError(UUID id, Exception e) { repository.markAsFailed(id, e.getMessage()); }
+ *     @Override protected UUID doRecordPayload(PaymentReq paymentReq) { return repository.insertInitial(paymentReq); }
+ *     @Override protected void doRecordResponse(UUID id, PaymentRes paymentRes) { repository.updateSuccess(id, paymentRes); }
+ *     @Override protected void doRecordError(UUID id, Exception e) { repository.markAsFailed(id, e.getMessage()); }
  * }
  * }</pre>
  */
@@ -48,10 +48,10 @@ import java.util.UUID;
 /**
  * Generic base class for auditing external interactions within the Hermi framework.
  *
- * @param <I> input type (request or message payload)
- * @param <O> output type (response or result payload)
+ * @param <P> payload type sent to the external system
+ * @param <R> result type received from the external system
  */
-public abstract class Auditor<I, O> {
+public abstract class Auditor<P, R> {
 
   /**
    * Implementation hook for saving the input payload.
@@ -59,20 +59,20 @@ public abstract class Auditor<I, O> {
    * <p>This method runs securely within a try-catch block. Implementations should focus solely on
    * the persistence logic (e.g., executing a DB insert or sending a Kafka message).
    *
-   * @param input the external input data
+   * @param payload the external payload data
    * @return a unique ID to be used as the tracking identifier
    * @throws Exception any internal failure; the Auditor base class will catch and suppress it
    */
-  protected abstract UUID doSave(I input);
+  protected abstract UUID doRecordPayload(P payload);
 
   /**
    * Implementation hook for saving the successful output payload.
    *
    * @param trackingId the generated tracking identifier
-   * @param output the resulting output data
+   * @param response the resulting response data
    * @throws Exception any internal failure; the Auditor base class will catch and ignore it
    */
-  protected abstract void doSave(UUID trackingId, O output);
+  protected abstract void doRecordResponse(UUID trackingId, R response);
 
   /**
    * Implementation hook for recording an execution failure.
@@ -82,17 +82,17 @@ public abstract class Auditor<I, O> {
    * @throws Exception any internal failure; the Auditor base class will suppress it onto the
    *     primary exception
    */
-  protected abstract void doError(UUID trackingId, Exception exception);
+  protected abstract void doRecordError(UUID trackingId, Exception exception);
 
   /**
    * Saves the input payload before protocol execution and returns a unique tracking identifier.
    *
-   * @param input the external input data to be sent or published
+   * @param payload the external payload data to be sent or published
    * @return a unique ID for tracking the entire lifecycle of this interaction
    */
-  public final UUID save(I input) {
+  public final UUID recordPayload(P payload) {
     try {
-      return doSave(input);
+      return doRecordPayload(payload);
     } catch (Exception e) {
       return UUID.randomUUID();
     }
@@ -101,12 +101,12 @@ public abstract class Auditor<I, O> {
   /**
    * Saves the successful output payload after protocol execution completes.
    *
-   * @param trackingId the unique ID returned by {@link #save(Object)}
-   * @param output the resulting output data from the external system
+   * @param trackingId the unique ID returned by {@link #recordPayload(Object)}
+   * @param response the resulting response data from the external system
    */
-  public final void save(UUID trackingId, O output) {
+  public final void recordResponse(UUID trackingId, R response) {
     try {
-      doSave(trackingId, output);
+      doRecordResponse(trackingId, response);
     } catch (Exception e) {
       // Swallow exception
     }
@@ -115,12 +115,12 @@ public abstract class Auditor<I, O> {
   /**
    * Records the exception if the protocol execution fails.
    *
-   * @param trackingId the unique ID returned by {@link #save(Object)}
+   * @param trackingId the unique ID returned by {@link #recordPayload(Object)}
    * @param exception the execution error that was intercepted
    */
-  public final void error(UUID trackingId, Exception exception) {
+  public final void recordError(UUID trackingId, Exception exception) {
     try {
-      doError(trackingId, exception);
+      doRecordError(trackingId, exception);
     } catch (Exception auditEx) {
       exception.addSuppressed(auditEx);
     }
