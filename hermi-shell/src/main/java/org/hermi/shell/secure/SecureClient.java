@@ -26,7 +26,7 @@ import org.hermi.shell.audit.Auditor;
  *
  * @implNote FORBIDDEN PATTERNS:
  *     <ul>
- *       <li>NEVER override or modify the {@code final doExchange(Req request)} bridge method.
+ *       <li>NEVER override or modify the {@code final doExchange(P payload)} bridge method.
  *       <li>NEVER attempt to log the {@code encryptedRequest} unless it is for pre-approved
  *           technical debugging.
  *     </ul>
@@ -61,7 +61,7 @@ public abstract class SecureClient<P, R> extends Client<P, R> {
    * Constructs a SecureClient with both an auditor and a cryptor.
    *
    * @param auditor the auditor to trace and persist interactions
-   * @param cryptor the cryptor to encrypt and decrypt vendor payloads
+   * @param cryptor the cryptor to seal and unseal payloads
    */
   protected SecureClient(Auditor<P, R> auditor, Cryptor<P, R> cryptor) {
     super(auditor);
@@ -72,7 +72,7 @@ public abstract class SecureClient<P, R> extends Client<P, R> {
    * Implementation hook for transmitting the physical, securely encrypted payload over the wire.
    *
    * @param encryptedRequest the fully encrypted string payload ready for transit
-   * @return the raw, encrypted response string from the vendor
+   * @return the raw, encrypted response string from the external system
    */
   protected abstract String doExchange(String encryptedRequest);
 

@@ -5,7 +5,7 @@ package org.hermi.shell.secure;
  *
  * @apiNote
  *     <p>ROLE: Secure Cryptographic Adapter.
- *     <p>DESIGN INTENT: Decouple encryption/decryption complexity from protocol execution.
+ *     <p>DESIGN INTENT: Decouple seal/unseal complexity from protocol execution.
  *     <p>PURPOSE: Ensure {@link SecureClient} remains focused on transport while cryptographic
  *     decisions are isolated.
  *     <p>Phase: 2
@@ -35,15 +35,15 @@ package org.hermi.shell.secure;
  *     @Value("${vendor.aes.key}") private String base64Key;
  *
  *     @Override
- *     public String seal(VaultReq input) {
- *         // Use AES-GCM via JCE — NEVER log 'input'
- *         return AesGcmUtil.encrypt(base64Key, serialize(input));
+ *     public String seal(VaultReq payload) {
+ *         // Use AES-GCM via JCE — NEVER log 'payload'
+ *         return AesGcmUtil.encrypt(base64Key, serialize(payload));
  *     }
  *
  *     @Override
- *     public VaultRes unseal(String encryptedOutput) {
- *         // Use AES-GCM via JCE — NEVER log decrypted result
- *         return deserialize(AesGcmUtil.decrypt(base64Key, encryptedOutput));
+ *     public VaultRes unseal(String encryptedResponse) {
+ *         // Use AES-GCM via JCE — NEVER log unsealed result
+ *         return deserialize(AesGcmUtil.decrypt(base64Key, encryptedResponse));
  *     }
  * }
  * }</pre>
@@ -58,7 +58,7 @@ package org.hermi.shell.secure;
 public interface Cryptor<P, R> {
 
   /**
-   * Seals (serializes + encrypts) the raw vendor input payload before transmission.
+   * Seals (serializes + encrypts) the raw input payload before transmission.
    *
    * @param payload the raw input payload
    * @return the encrypted string representation to be transmitted to the external system
@@ -67,10 +67,10 @@ public interface Cryptor<P, R> {
 
   /**
    * Unseals (decrypts + deserializes) the raw encrypted response from the external system back into
-   * the vendor output payload.
+   * the result type.
    *
-   * @param encryptedOutput the encrypted string representation received from the external system
-   * @return the decrypted output data
+   * @param encryptedResponse the encrypted string representation received from the external system
+   * @return the unsealed result data
    */
-  R unseal(String encryptedOutput);
+  R unseal(String encryptedResponse);
 }

@@ -304,25 +304,29 @@ With Phase 1 complete and the core logic verified, build a technology-specific a
 
 Vendor Implementation, can be implemented as soon as we know the vendor
 ```java
+import org.hermi.shell.Client;
+import org.hermi.shell.Messenger;
+import org.hermi.shell.audit.Auditor;
+
 @Component
-public class LexisNexisAuditor extends Auditor<LexisNexisRequest, LexisNexisResponse> {
+public class LexisNexisAuditor extends Auditor<LexisNexisPayload, LexisNexisResponse> {
   @Override
-  protected UUID doSave(LexisNexisRequest input) {
+  protected UUID doRecordPayload(LexisNexisPayload payload) {
     // Save to audit DB
     return UUID.randomUUID();
   }
   @Override
-  protected void doSave(UUID trackingId, LexisNexisResponse output) {
+  protected void doRecordResponse(UUID trackingId, LexisNexisResponse response) {
     // Update audit DB with output
   }
   @Override
-  protected void doError(UUID trackingId, Exception exception) {
+  protected void doRecordError(UUID trackingId, Exception exception) {
     // Update audit DB with failure
   }
 }
 
 @Component
-public class LexisNexisClient extends Client<LexisNexisRequest, LexisNexisResponse> {
+public class LexisNexisClient extends Client<LexisNexisPayload, LexisNexisResponse> {
 
   private RestTemplate restTemplate;
 
@@ -333,24 +337,24 @@ public class LexisNexisClient extends Client<LexisNexisRequest, LexisNexisRespon
   }
 
   @Override
-  public LexisNexisResponse doExchange(LexisNexisRequest request) {
-    return restTemplate.postForObject("/api/users", request, LexisNexisResponse.class);
+  protected LexisNexisResponse doExchange(LexisNexisPayload payload) {
+    return restTemplate.postForObject("/api/users", payload, LexisNexisResponse.class);
   }
 }
 
 @Component
 public class KafkaUserAuditor extends Auditor<ProducerRecord<String, String>, RecordMetadata> {
   @Override
-  protected UUID doSave(ProducerRecord<String, String> input) {
+  protected UUID doRecordPayload(ProducerRecord<String, String> payload) {
     // Save to audit DB
     return UUID.randomUUID();
   }
   @Override
-  protected void doSave(UUID trackingId, RecordMetadata output) {
+  protected void doRecordResponse(UUID trackingId, RecordMetadata response) {
     // Update audit DB with execution metadata
   }
   @Override
-  protected void doError(UUID trackingId, Exception exception) {
+  protected void doRecordError(UUID trackingId, Exception exception) {
     // Update audit DB with failure
   }
 }
@@ -367,9 +371,9 @@ public class KafkaUserMessenger extends Messenger<ProducerRecord<String, String>
   }
 
   @Override
-  public RecordMetadata doPublish(ProducerRecord<String, String> message) {
+  protected RecordMetadata doPublish(ProducerRecord<String, String> payload) {
     try {
-        return kafkaTemplate.send(message).get().getRecordMetadata();
+        return kafkaTemplate.send(payload).get().getRecordMetadata();
     } catch (Exception e) {
         throw new RuntimeException(e);
     }
@@ -383,16 +387,19 @@ public class KafkaUserMessenger extends Messenger<ProducerRecord<String, String>
 
 Production Adapter
 ```java
+import org.hermi.shell.Client;
+import org.hermi.shell.Mapper;
+
 @Component
-public class LexisNexisMapper implements Mapper<FindUserClient.Context, FindUserClient.Result, LexisNexisRequest, LexisNexisResponse> {
+public class LexisNexisMapper implements Mapper<FindUserClient.Context, FindUserClient.Result, LexisNexisPayload, LexisNexisResponse> {
 
   @Override
-  public LexisNexisRequest convertContext(FindUserClient.Context context) {
-    return new LexisNexisRequest(context.ssn());
+  public LexisNexisPayload toPayload(FindUserClient.Context context) {
+    return new LexisNexisPayload(context.ssn());
   }
 
   @Override
-  public Result convertResult(LexisNexisResponse result) {
+  public Result toResult(LexisNexisResponse result) {
     return new Result(result.getName(), result.getEmail());
   }
 }
@@ -400,35 +407,38 @@ public class LexisNexisMapper implements Mapper<FindUserClient.Context, FindUser
 @Component
 public class LexisNexisFindUserClient extends FindUserClient {
 
-  private Client<LexisNexisRequest, LexisNexisResponse> client;
-  private Mapper<FindUserClient.Context, FindUserClient.Result, LexisNexisRequest, LexisNexisResponse> mapper;
+  private Client<LexisNexisPayload, LexisNexisResponse> client;
+  private Mapper<FindUserClient.Context, FindUserClient.Result, LexisNexisPayload, LexisNexisResponse> mapper;
 
   @Autowired
   public LexisNexisFindUserClient(
-      Client<LexisNexisRequest, LexisNexisResponse> client,
-      Mapper<FindUserClient.Context, FindUserClient.Result, LexisNexisRequest, LexisNexisResponse> mapper) {
+      Client<LexisNexisPayload, LexisNexisResponse> client,
+      Mapper<FindUserClient.Context, FindUserClient.Result, LexisNexisPayload, LexisNexisResponse> mapper) {
     this.client = client;
     this.mapper = mapper;
   }
 
   @Override
   protected Result doExecute(Context context) {
-    LexisNexisRequest apiRequest = mapper.convertContext(context);
+    LexisNexisPayload apiRequest = mapper.toPayload(context);
     LexisNexisResponse apiResponse = client.exchange(apiRequest);
-    return mapper.convertResult(apiResponse);
+    return mapper.toResult(apiResponse);
   }
 }
 ```
 ```java
+import org.hermi.shell.Mapper;
+import org.hermi.shell.Messenger;
+
 @Component
 public class JdbcUserMapper implements Mapper<SaveUserRepository.Context, SaveUserRepository.Result, UserEntity, UserEntity> {
   @Override
-  public UserEntity convertContext(SaveUserRepository.Context context) {
+  public UserEntity toPayload(SaveUserRepository.Context context) {
     return new UserEntity(context.name(), context.email());
   }
 
   @Override
-  public Result convertResult(UserEntity entity) {
+  public Result toResult(UserEntity entity) {
     return new Result(entity.getId());
   }
 }
@@ -448,21 +458,21 @@ public class JdbcSaveUserRepository extends SaveUserRepository {
 
   @Override
   protected Result doExecute(Context context) {
-    UserEntity entity = mapper.convertContext(context);
+    UserEntity entity = mapper.toPayload(context);
     UserEntity savedEntity = jpaRepository.save(entity);
-    return mapper.convertResult(savedEntity);
+    return mapper.toResult(savedEntity);
   }
 }
 
 @Component
 public class KafkaUserMapper implements Mapper<NotifyUserFoundMessenger.Context, NotifyUserFoundMessenger.Result, ProducerRecord<String, String>, RecordMetadata> {
   @Override
-  public ProducerRecord<String, String> convertContext(NotifyUserFoundMessenger.Context context) {
+  public ProducerRecord<String, String> toPayload(NotifyUserFoundMessenger.Context context) {
     return new ProducerRecord<>("user.notifications", context.message());
   }
 
   @Override
-  public Result convertResult(RecordMetadata result) {
+  public Result toResult(RecordMetadata result) {
     return new Result(result.toString());
   }
 }
@@ -483,9 +493,9 @@ public class KafkaNotifyUserFoundMessenger extends NotifyUserFoundMessenger {
 
   @Override
   protected Result doExecute(Context context) {
-    ProducerRecord<String, String> record = mapper.convertContext(context);
-    RecordMetadata metadata = messenger.execute(record);
-    return mapper.convertResult(metadata);
+    ProducerRecord<String, String> record = mapper.toPayload(context);
+    RecordMetadata metadata = messenger.publish(record);
+    return mapper.toResult(metadata);
   }
 }
 ```

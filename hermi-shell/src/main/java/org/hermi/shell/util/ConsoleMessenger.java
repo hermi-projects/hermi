@@ -17,14 +17,14 @@ public class ConsoleMessenger<P, R> extends Messenger<P, R> {
 
   private static class ConsoleMessengerAuditor<P, R> extends Auditor<P, R> {
     @Override
-    protected UUID doRecordPayload(P input) {
-      System.out.printf("[ConsoleMessenger] INFO: Publishing message -> %s%n", input);
+    protected UUID doRecordPayload(P payload) {
+      System.out.printf("[ConsoleMessenger] INFO: Publishing payload -> %s%n", payload);
       return UUID.randomUUID();
     }
 
     @Override
-    protected void doRecordResponse(UUID trackingId, R output) {
-      System.out.printf("[ConsoleMessenger] INFO: Publish completed  -> %s%n", output);
+    protected void doRecordResponse(UUID trackingId, R response) {
+      System.out.printf("[ConsoleMessenger] INFO: Publish completed  -> %s%n", response);
     }
 
     @Override

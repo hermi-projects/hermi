@@ -55,8 +55,8 @@ public abstract class Repository<C, R extends Validatable> extends Executor<C, R
    *
    * <ul>
    *   <li><b>Use Case Layer (Phase 1)</b>: Defines the contract by extending this class and
-   *       specifying the input type {@code I} and output type {@code O}. Only the Output (which
-   *       returns to the Use Case) typically implements {@link Validatable Validatable}.
+   *       specifying the input and output types. Only the output (which returns to the Use Case)
+   *       typically implements {@link Validatable Validatable}.
    *   <li><b>Shell Layer (Phase 2)</b>: Implements the real-world data access logic using specific
    *       technologies, prefixed with the technology name (e.g., {@code JpaSaveUserRepository}).
    * </ul>

@@ -47,22 +47,21 @@ public abstract class Client<P, R> extends AuditedExecutor<P, R> {
   }
 
   /**
-   * Implementation hook for executing the underlying vendor-specific protocol (e.g., REST, SOAP,
-   * gRPC).
+   * Implementation hook for executing the underlying external protocol (e.g., REST, SOAP, gRPC).
    *
-   * @param payload the vendor-specific request payload
-   * @return the native vendor-specific response payload
+   * @param payload the payload to send to the external system
+   * @return the result received from the external system
    */
   protected abstract R doExchange(P payload);
 
   /**
-   * Executes the vendor request with full auditing lifecycle protection.
+   * Executes the exchange with full auditing lifecycle protection.
    *
    * <p>This method guarantees that all interactions are mechanically wrapped by the {@link
    * Auditor}.
    *
-   * @param payload the vendor input payload
-   * @return the vendor output payload
+   * @param payload the payload to send to the external system
+   * @return the result received from the external system
    */
   public final R exchange(P payload) {
     return this.execute(payload);

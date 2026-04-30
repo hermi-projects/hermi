@@ -43,8 +43,8 @@ public abstract class Messenger<P, R> extends AuditedExecutor<P, R> {
    * Implementation hook for executing the underlying messaging protocol (e.g., Kafka, JMS, SQS).
    * Transactional Outbox Pattern
    *
-   * @param payload the vendor-specific message payload
-   * @return the native vendor-specific metadata or result
+   * @param payload the payload to publish to the external system
+   * @return the result received from the external system
    */
   protected abstract R doPublish(P payload);
 
@@ -54,8 +54,8 @@ public abstract class Messenger<P, R> extends AuditedExecutor<P, R> {
    * <p>This method guarantees that all asynchronous publications are mechanically wrapped by the
    * {@link Auditor}.
    *
-   * @param payload the vendor message payload
-   * @return the vendor result payload
+   * @param payload the payload to publish to the external system
+   * @return the result received from the external system
    */
   public final R publish(P payload) {
     return execute(payload);

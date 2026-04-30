@@ -17,14 +17,14 @@ public class LocalClient<P, R> extends Client<P, R> {
 
   private static class LocalClientAuditor<P, R> extends Auditor<P, R> {
     @Override
-    protected UUID doRecordPayload(P input) {
-      System.out.printf("[LocalClient] INFO: Exchanging input -> %s%n", input);
+    protected UUID doRecordPayload(P payload) {
+      System.out.printf("[LocalClient] INFO: Exchanging payload -> %s%n", payload);
       return UUID.randomUUID();
     }
 
     @Override
-    protected void doRecordResponse(UUID trackingId, R output) {
-      System.out.printf("[LocalClient] INFO: Exchange completed -> %s%n", output);
+    protected void doRecordResponse(UUID trackingId, R response) {
+      System.out.printf("[LocalClient] INFO: Exchange completed -> %s%n", response);
     }
 
     @Override
