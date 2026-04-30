@@ -29,6 +29,7 @@ public abstract class AuditedExecutor<I, O> extends Executor<I, O> {
    * @param input the execution input
    * @return the execution result
    */
+  @Override
   public final O execute(I input) {
     UUID trackingId = auditor.save(input);
     try {
