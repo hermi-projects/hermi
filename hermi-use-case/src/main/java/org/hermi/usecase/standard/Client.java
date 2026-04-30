@@ -4,15 +4,36 @@ import org.hermi.commons.Executor;
 import org.hermi.validation.Validatable;
 
 /**
- * <b>AI INSTRUCTION:</b> When defining a Client contract in the Use Case (Phase 1), use this class.
- * DO NOT add any implementation logic. ONLY define the Context and Result records. The Result
- * record MUST implement Validatable. Context and Result fields MUST use ONLY plain Java types
- * (String, UUID, BigDecimal, LocalDate, primitives). NEVER place Spring, HTTP, or vendor-specific
- * types (HttpHeaders, ApiRequest, RestTemplate) inside Context or Result records.
+ * [AI ARCHITECTURAL CONTRACT]
  *
- * <p><b>Example AI Generation:</b>
+ * @apiNote
+ *     <p>ROLE: Secure External Transporter.
+ *     <p>DESIGN INTENT: Decouple domain intent from external integration complexities (REST, gRPC).
+ *     <p>PURPOSE: Provide a technology-neutral interface for external system interactions.
+ *     <p>Phase: 1 (Contract Discovery)
+ *     <p>Priority: 4 (Critical Core)
+ * @implSpec GENERATION RULES FOR AI AGENTS:
+ *     <ul>
+ *       <li>1. STATELESSNESS: Implementations MUST be strictly stateless. No request-specific
+ *           instance variables. Only final, immutable dependencies (via constructor injection) are
+ *           allowed.
+ *       <li>2. NO TECH BLEED: NEVER use technology-specific types (e.g., RestTemplate, HttpHeaders)
+ *           in contract records.
+ *       <li>3. PURE JAVA TYPES: Records MUST use ONLY plain Java types (String, UUID, BigDecimal,
+ *           etc.).
+ *       <li>4. NAMING PROPHECY: Follow the {@code {Action}{Resource}Client} pattern (e.g., {@code
+ *           FindUserClient}).
+ *       <li>5. VALIDATION: The {@code Result} record MUST implement {@link Validatable}.
+ *     </ul>
  *
- * <pre>{@code
+ * @implNote FORBIDDEN PATTERNS:
+ *     <ul>
+ *       <li>DO NOT add implementation logic to classes extending this contract in Phase 1.
+ *       <li>NEVER leak infrastructure-specific metadata into the domain context.
+ *     </ul>
+ *
+ * @example
+ *     <pre>{@code
  * public abstract class FindUserClient extends Client<FindUserClient.Context, FindUserClient.Result> {
  *   public static record Context(String ssn) {}
  *   public static record Result(String name) implements Validatable {}
@@ -20,14 +41,11 @@ import org.hermi.validation.Validatable;
  * }</pre>
  */
 
-/** Phase 1 IO Contract Definition for external API. */
-
 /**
- * An abstract class representing a client for 3rd party API communication, including REST, gRPC,
- * etc.
+ * Base class for all external service client contracts in the Hermi framework.
  *
  * @param <C> the type of the context
- * @param <R> the type of the result
+ * @param <R> the type of the result, which MUST implement {@link Validatable}
  */
 public abstract class Client<C, R extends Validatable> extends Executor<C, R> {
   /**

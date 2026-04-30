@@ -1,49 +1,58 @@
 package org.hermi.shell;
 
 /**
- * <b>AI INSTRUCTION:</b> Implementations MUST contain ONLY field-level translation logic. NEVER
- * call external services (REST, DB) from inside a Mapper. NEVER embed conditional business routing
- * or branching logic here. NEVER throw business exceptions — use {@code Optional} or explicit
- * null-checks for absent fields. DO NOT catch exceptions to silently swallow mapping failures; let
- * them propagate as-is. Follow the naming convention: {@code {Vendor}{Action}{Resource}Mapper}.
+ * [AI ARCHITECTURAL CONTRACT]
  *
- * <p><b>Example AI Generation:</b>
+ * @apiNote
+ *     <p>ROLE: Anti-Corruption Translation Gateway.
+ *     <p>DESIGN INTENT: Decouple domain-agnostic vendor payloads from the Core Domain layer.
+ *     <p>PURPOSE: Ensure that vendor-specific structures never leak into business logic.
+ *     <p>Phase: 2 (Refinement / Refactoring)
+ *     <p>Priority: 3
+ * @implSpec GENERATION RULES FOR AI AGENTS:
+ *     <ul>
+ *       <li>1. PURE TRANSLATION: Implementations MUST contain ONLY field-level translation logic.
+ *       <li>2. NO I/O: NEVER call external services (REST, DB) from inside a Mapper.
+ *       <li>3. NO BRANCHING: NEVER embed conditional business routing or complex branching logic
+ *           here.
+ *       <li>4. NO EXCEPTIONS: NEVER throw business exceptions; use Optional or explicit null-checks
+ *           for absent fields.
+ *       <li>5. NAMING PROPHECY: Follow the {@code {Vendor}{Action}{Resource}Mapper} pattern (e.g.,
+ *           {@code LexisNexisFindUserMapper}).
+ *     </ul>
  *
- * <pre>{@code
+ * @implNote FORBIDDEN PATTERNS:
+ *     <ul>
+ *       <li>DO NOT catch exceptions to silently swallow mapping failures; let them propagate as-is.
+ *       <li>DO NOT inject any dependencies; a Mapper is a pure utility.
+ *     </ul>
+ *
+ * @example
+ *     <pre>{@code
  * public class LexisNexisFindUserMapper
- *     implements Mapper<FindUserClient.Context, FindUserClient.Result, ApiRequest, ApiResponse> {
+ *     implements Mapper<FindUserUseCase.Context, FindUserUseCase.Result, ApiRequest, ApiResponse> {
  *
- *   public ApiRequest convertContext(FindUserClient.Context context) {
+ *   @Override
+ *   public ApiRequest convertContext(FindUserUseCase.Context context) {
  *     return new ApiRequest(context.ssn());
  *   }
- *   public FindUserClient.Result convertResult(ApiResponse response) {
- *     return new FindUserClient.Result(response.getFullName(), response.getEmail());
+ *
+ *   @Override
+ *   public FindUserUseCase.Result convertResult(ApiResponse response) {
+ *     return new FindUserUseCase.Result(response.getFullName(), response.getEmail());
  *   }
  * }
  * }</pre>
  */
 
 /**
- * Phase 2 Anti-Corruption Translation Gateway between Core Domain and Vendor payloads.
+ * Interface for semantic translation between Core Domain records and Infrastructure/Vendor
+ * payloads.
  *
- * <p><b>Purpose:</b> Guarantees that Vendor-specific field names, types, and structures never leak
- * into the Core Domain. This is the sole class responsible for the semantic translation in both
- * directions: Core → Vendor and Vendor → Core.
- *
- * <p><b>Usage Scenarios:</b> Always implement this interface alongside a {@link Client} or {@link
- * Messenger} subclass. Wire them together via an {@code Adapter} that calls {@code convertContext}
- * before and {@code convertResult} after the exchange.
- *
- * <p><b>Constraints:</b> ONLY plain field mapping is allowed. Use MapStruct for complex or large
- * objects to maintain declarative integrity and zero runtime overhead.
- *
- * <p><b>Dependencies:</b> None. A Mapper is a pure translation utility with no injected
- * dependencies. If mapping requires an external lookup, extract that lookup into the Adapter.
- *
- * @param <C> Core Context type (domain input, from Use Case layer)
- * @param <R> Core Result type (domain output, returned to Use Case layer)
- * @param <I> Infrastructure Input type (vendor request payload)
- * @param <O> Infrastructure Output type (vendor response payload)
+ * @param <C> core context type (domain input)
+ * @param <R> core result type (domain output)
+ * @param <I> infrastructure input type (vendor request)
+ * @param <O> infrastructure output type (vendor response)
  */
 public interface Mapper<C, R, I, O> {
 

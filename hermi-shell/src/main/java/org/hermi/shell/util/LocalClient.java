@@ -4,8 +4,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import org.hermi.shell.Auditor;
 import org.hermi.shell.Client;
+import org.hermi.shell.audit.Auditor;
 
 public class LocalClient<I, O> extends Client<I, O> {
   private final Map<I, O> store;
@@ -34,8 +34,8 @@ public class LocalClient<I, O> extends Client<I, O> {
   }
 
   @Override
-  protected O doExchange(I resuest) {
-    return store.get(resuest);
+  protected O doExchange(I request) {
+    return store.get(request);
   }
 
   public LocalClient<I, O> put(I input, O output) {

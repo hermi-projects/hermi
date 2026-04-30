@@ -4,39 +4,66 @@ import org.hermi.commons.Executor;
 import org.hermi.validation.Validatable;
 
 /**
- * <b>AI INSTRUCTION:</b> When subclassing this component, this is your Phase 1 pure domain logic.
- * NEVER mix technology concerns (e.g. Spring, JPA, HTTP, JSON). Define I/O contracts
- * (Client/Repository) Just-In-Time as abstract classes extending Executor. Use only records for
- * Context and Result. ONLY override {@code doExecute}. When a Client or Repository throws an
- * exception inside {@code doExecute}, ALWAYS catch and rethrow as a named domain exception (e.g.,
- * {@code UserNotFoundException}, {@code PaymentGatewayException}). NEVER let infrastructure
- * exceptions ({@code SocketTimeoutException}, {@code DataAccessException}) escape {@code
- * doExecute}.
+ * [AI ARCHITECTURAL CONTRACT]
  *
- * <p><b>Example AI Generation:</b>
+ * @apiNote
+ *     <p>ROLE: Pure Domain Logic Sovereign.
+ *     <p>DESIGN INTENT: Protect business intent from infrastructure delivery concerns.
+ *     <p>PURPOSE: Enforce Intent-Driven Architecture (IDA) where logic reveals its own I/O needs.
+ *     <p>Phase: 1 (Discovery & Verification)
+ *     <p>Priority: 5 (Critical Core)
+ * @implSpec GENERATION RULES FOR AI AGENTS:
+ *     <ul>
+ *       <li>1. STATELESSNESS: Implementations MUST be strictly stateless. No request-specific
+ *           instance variables. Only final, immutable dependencies (via constructor injection) are
+ *           allowed.
+ *       <li>2. SOVEREIGNTY: The Use Case layer knows NOTHING about the Shell (infrastructure).
+ *           NEVER mix technology concerns (e.g., Spring, JPA, HTTP, JSON).
+ *       <li>3. PROTOCOL INTEGRITY: The {@code Context} record MUST implement {@link Validatable}.
+ *           The base {@code execute()} method automatically validates data before calling {@code
+ *           doExecute}.
+ *       <li>4. JIT CONTRACT DISCOVERY: Define I/O contracts (Client, Repository, Messenger)
+ *           Just-In-Time as abstract classes extending Executor at the exact moment business logic
+ *           reveals a need.
+ *       <li>5. EXCEPTION WRAPPING: ALWAYS catch infrastructure-specific exceptions within {@code
+ *           doExecute} and rethrow them as named domain exceptions (e.g., {@code
+ *           UserNotFoundException}).
+ *       <li>6. NAMING PROPHECY: Follow the {@code {Action}{Resource}UseCase} naming pattern.
+ *     </ul>
  *
- * <pre>{@code
+ * @implNote FORBIDDEN PATTERNS:
+ *     <ul>
+ *       <li>NEVER allow infrastructure exceptions (e.g., SocketTimeoutException,
+ *           DataAccessException) to escape the {@code doExecute} boundary.
+ *       <li>DO NOT use framework annotations (e.g., @Service, @Transactional) in Phase 1
+ *           implementations.
+ *       <li>DO NOT use mocks for verification; use stateful local adapters in Main Shells.
+ *     </ul>
+ *
+ * @example
+ *     <pre>{@code
  * public abstract class FindUserUseCase extends UseCase<FindUserUseCase.Context, FindUserUseCase.Result> {
- *   public record Context(String id) implements Validatable {}
+ *   public record Context(@NotNull @NotBlank String ssn) implements Validatable {}
  *   public record Result(String name, String email) {}
  * }
  *
  * public class DefaultFindUserUseCase extends FindUserUseCase {
- *   private final FindUserClient client;
+ *   private final FindUserClient client; // Discovered JIT
  *   public DefaultFindUserUseCase(FindUserClient client) { this.client = client; }
- *   @Override protected Result doExecute(Context context) {
- *      return new Result("Dummy", "d@example.com");
+ *
+ *   @Override
+ *   protected Result doExecute(Context context) {
+ *      FindUserClient.Result apiResult = client.execute(new FindUserClient.Context(context.ssn()));
+ *      return new Result(apiResult.name(), apiResult.email());
  *   }
  * }
  * }</pre>
  */
 
-/** Core domain boundary definition. */
-
 /**
- * An abstract class representing a business use case.
+ * Base class for all business use cases within the Hermi framework.
  *
- * @param <C> the type of the context
+ * @param <C> the type of the context, which MUST implement {@link Validatable}
  * @param <R> the type of the result
  */
 public abstract class UseCase<C extends Validatable, R> extends Executor<C, R> {

@@ -1,4 +1,4 @@
-package org.hermi.shell;
+package org.hermi.shell.audit;
 
 import java.util.UUID;
 
@@ -7,17 +7,18 @@ import java.util.UUID;
  *
  * @apiNote
  *     <p>ROLE: Side-car Telemetry / Audit Recorder for external interactions.
- *     <p>DESIGN INTENT: Provides immutable compliance logs. Audit records MUST persist even if the
- *     primary business transaction rolls back.
+ *     <p>DESIGN INTENT: Provides immutable compliance logs that persist independently of the
+ *     primary transaction.
  *     <p>PURPOSE: Ensures interaction history is captured without interrupting service
  *     availability.
+ *     <p>Phase: 2
+ *     <p>Priority: 3
  * @implSpec GENERATION RULES FOR AI AGENTS:
  *     <ul>
  *       <li>1. STATELESSNESS: Implementations MUST be strictly stateless. Do not define instance
  *           variables to store request-specific data.
- *       <li>2. INDEPENDENT TRANSACTION: Implementations MUST use {@code @Transactional(propagation
- *           = Propagation.REQUIRES_NEW)} to ensure audit persistence regardless of the caller's
- *           transaction outcome.
+ *       <li>2. INDEPENDENT TRANSACTION: Implementations MUST use a new transaction to ensure audit
+ *           persistence regardless of the caller's transaction outcome.
  *       <li>3. NO LOCAL TRY-CATCH: Subclasses MUST NOT use local try-catch; safety and suppression
  *           logic are managed by the base class {@code final} methods.
  *     </ul>
@@ -26,7 +27,7 @@ import java.util.UUID;
  *     <ul>
  *       <li>NEVER override final methods (save, error).
  *       <li>DO NOT inject business services into the auditor to avoid circular dependencies.
- *       <li>NO REDUNDANT LOGGING: Avoid {@code log.error()} in {@code doError} as the base class or
+ *       <li>NO REDUNDANT LOGGING: Avoid {@code log.error()} in {@code doError} as the
  *           infrastructure already handles failure telemetry.
  *     </ul>
  *
@@ -45,14 +46,10 @@ import java.util.UUID;
  */
 
 /**
- * Generic interface for auditing external interactions.
+ * Generic base class for auditing external interactions within the Hermi framework.
  *
- * <p>Auditing is a side-car telemetry process designed to provide immutable compliance logs. This
- * class ensures that interaction history is captured reliably through a fail-safe, non-blocking
- * execution boundary that operates independently of the primary business flow.
- *
- * @param <I> Input type (Request or Message payload)
- * @param <O> Output type (Response or Result payload)
+ * @param <I> input type (request or message payload)
+ * @param <O> output type (response or result payload)
  */
 public abstract class Auditor<I, O> {
 

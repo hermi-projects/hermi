@@ -4,8 +4,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import org.hermi.shell.Auditor;
 import org.hermi.shell.Messenger;
+import org.hermi.shell.audit.Auditor;
 
 public class ConsoleMessenger<M, R> extends Messenger<M, R> {
   private final Map<M, R> store;

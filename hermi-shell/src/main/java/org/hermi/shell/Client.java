@@ -1,8 +1,7 @@
 package org.hermi.shell;
 
-import java.util.Objects;
-import java.util.UUID;
-import org.hermi.commons.Executor;
+import org.hermi.shell.audit.AuditedExecutor;
+import org.hermi.shell.audit.Auditor;
 
 /**
  * <b>AI INSTRUCTION:</b> When subclassing, ONLY override {@code doExchange}. Do NOT add telemetry,
@@ -12,9 +11,16 @@ import org.hermi.commons.Executor;
  *
  * <pre>{@code
  * @Component
- * public class StripeClient extends Client<StripeReq, StripeRes> {
- *   public StripeClient(Auditor<StripeReq, StripeRes> auditor) { super(auditor); }
- *   protected StripeRes doExchange(StripeReq req) { return restTemplate.postForObject(...); }
+ * public class LexisNexisUserClient extends Client<LexisNexisRequest, LexisNexisResponse> {
+ *   private final RestTemplate restTemplate;
+ *
+ *   public LexisNexisUserClient(Auditor<LexisNexisRequest, LexisNexisResponse> auditor, RestTemplate restTemplate) {
+ *     super(auditor);
+ *     this.restTemplate = restTemplate;
+ *   }
+ *   protected LexisNexisResponse doExchange(LexisNexisRequest req) {
+ *     return restTemplate.postForObject("/api/users", req, LexisNexisResponse.class);
+ *   }
  * }
  * }</pre>
  */
@@ -34,8 +40,7 @@ import org.hermi.commons.Executor;
  * @param <Req> Vendor request type (e.g., LexisNexisRequest)
  * @param <Res> Vendor response type (e.g., LexisNexisResponse)
  */
-public abstract class Client<Req, Res> extends Executor<Req, Res> {
-  private final Auditor<Req, Res> auditor;
+public abstract class Client<Req, Res> extends AuditedExecutor<Req, Res> {
 
   /**
    * Constructs a Client with the required auditor.
@@ -43,7 +48,7 @@ public abstract class Client<Req, Res> extends Executor<Req, Res> {
    * @param auditor the auditor to wrap all exchange operations
    */
   protected Client(Auditor<Req, Res> auditor) {
-    this.auditor = Objects.requireNonNull(auditor, "Auditor is required for Client");
+    super(auditor);
   }
 
   /**
@@ -65,25 +70,7 @@ public abstract class Client<Req, Res> extends Executor<Req, Res> {
    * @return the vendor output payload
    */
   public final Res exchange(Req request) {
-    UUID trackingId = auditor.save(request);
-    try {
-      Res response = super.execute(request);
-      auditor.save(trackingId, response);
-      return response;
-    } catch (Exception e) {
-      auditor.error(trackingId, e);
-      throw e;
-    }
-  }
-
-  /**
-   * Internal bridge to alias {@code exchange} to the standard {@code execute} contract.
-   *
-   * @param request the vendor input payload
-   * @return the vendor output payload
-   */
-  public final Res execute(Req request) {
-    return this.exchange(request);
+    return this.execute(request);
   }
 
   @Override

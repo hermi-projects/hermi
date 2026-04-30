@@ -1,20 +1,22 @@
-package org.hermi.shell;
+package org.hermi.shell.secure;
 
 /**
- * [AI ARCHITECTURAL CONTRACT] --------------------------------------------------
+ * [AI ARCHITECTURAL CONTRACT]
  *
  * @apiNote
- *     <p>ROLE: Secure Cryptographic Adapter for Phase 2 transit.
- *     <p>DESIGN INTENT: Decouples encryption/decryption complexity from protocol execution. Ensures
- *     {@link SecureClient} remains focused on transport while cryptographic decisions are isolated
- *     and independently replaceable.
+ *     <p>ROLE: Secure Cryptographic Adapter.
+ *     <p>DESIGN INTENT: Decouple encryption/decryption complexity from protocol execution.
+ *     <p>PURPOSE: Ensure {@link SecureClient} remains focused on transport while cryptographic
+ *     decisions are isolated.
+ *     <p>Phase: 2
+ *     <p>Priority: 3
  * @implSpec GENERATION RULES FOR AI AGENTS:
  *     <ul>
  *       <li>1. STATELESSNESS: Implementations MUST be strictly stateless. Do not define instance
  *           variables to store request-specific data.
  *       <li>2. NO LOGGING PLAINTEXT: NEVER log plaintext input or decrypted output (PII/Sensitive
  *           data).
- *       <li>3. NO HARDCODED KEYS: Always inject encryption keys via {@code @Value} or secrets
+ *       <li>3. NO HARDCODED KEYS: Always inject encryption keys via {@code @Value} or secret
  *           managers.
  *       <li>4. DELEGATE CRYPTO: NEVER implement internal cipher algorithms; use JCE providers or
  *           proven libraries (e.g., Bouncy Castle, Google Tink).
@@ -49,14 +51,10 @@ package org.hermi.shell;
  */
 
 /**
- * Cryptographic Contract for secure payload transit.
+ * Interface for cryptographic operations required for secure payload transit.
  *
- * <p>This interface decouples encryption complexity from protocol transport. It is intended for use
- * when specific vendors require non-standard encryption schemes, allowing the system to handle
- * secure payloads without leaking cryptographic logic into the business or network layers.
- *
- * @param <I> Input type (vendor request payload, pre-encryption)
- * @param <O> Output type (vendor response payload, post-decryption)
+ * @param <I> input type (raw vendor request)
+ * @param <O> output type (decrypted vendor response)
  */
 public interface Cryptor<I, O> {
 

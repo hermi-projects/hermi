@@ -37,7 +37,6 @@ A complete documentation set consists of two distinct blocks:
 ```java
 /**
  * [AI ARCHITECTURAL CONTRACT]
- * --------------------------------------------------
  * @apiNote
  * <p>ROLE: [Describe component role, e.g., Secure Transporter]
  * <p>DESIGN INTENT: [Describe the architectural goal, e.g., Isolation]
@@ -63,15 +62,10 @@ A complete documentation set consists of two distinct blocks:
  * <pre>{@code
  * // Recommended implementation pattern
  * }</pre>
- * --------------------------------------------------
  */
 
 /**
  * {Summary of the component: A concise one-sentence description ending with a period}.
- *
- * <p>{Detailed description: Elaborate on the core responsibilities, architectural 
- * alignment, and how this component interacts with the rest of the system}.</p>
- *
  * {Standard Javadoc tags: @param, @return, @see, etc., as applicable}.
  */
 ```
