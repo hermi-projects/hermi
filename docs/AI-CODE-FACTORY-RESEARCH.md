@@ -215,3 +215,79 @@ for (WorkOrder wo : workOrders) {
 2. **新 Harness 审批**: Agent 发现没有合适的 Harness 需要新建时，直接创建还是需要 Human 确认？
 3. **跨功能复用**: 两个功能用同一个 Mapper 模式，如何共享？
 4. **DECISION 触发**: 什么情况下生成决策工单？
+
+---
+
+## 9. 总结
+
+### 9.1 问题本质
+
+传统 AI 辅助编程的困境不在于 AI 写不出代码，而在于**缺少约束**。AI 在空白画布上创作时容易偏离架构轨道、发明不存在的模式、混入基础设施逻辑。Hermi 的解法是：**不给 AI 画布，给它轨道**。
+
+### 9.2 核心答案：Harness
+
+Hermi 的所有基类 (`UseCase`, `Client`, `Repository`, `Messenger`, `DispatcherUseCase`, `Handler`) 本质上是 **Template Method Pattern 的代码级 Harness**。它们通过 `final execute()` 锁死了执行路径，通过 `Validatable` 自动校验输入输出，通过 `doExecute()` 暴露唯一的填空点。
+
+Agent 的工作被严格限定在两个动作内：
+
+| 动作 | 含义 | 代码模式 |
+|------|------|----------|
+| **实现** | extends Harness → 填写 doExecute | `LexisNexisClient extends Client { doExchange() }` |
+| **组合** | 选取多个实现 → 注入到 UseCase | `DefaultFindUserUseCase(client, repo, messenger)` |
+
+不属于这两个动作的事情，Agent 不做——日志、异常处理、空值检查、配置、运维等都属于框架或平台的责任。
+
+### 9.3 分工模型
+
+```
+                    ┌─────────────────────────┐
+                    │     Architect Agent      │
+                    │  理解意图 → 定义契约       │
+                    │  生成工单清单              │
+                    └──────────┬──────────────┘
+                               │
+                    ┌──────────▼──────────────┐
+                    │      WorkOrder 清单      │
+                    │  IMPLEMENT x N          │
+                    │  TEST x N               │
+                    │  REVIEW x N             │
+                    └──────────┬──────────────┘
+                               │
+                    ┌──────────▼──────────────┐
+                    │       Agent Pool         │
+                    │  (线程池，并行执行)        │
+                    └──────────┬──────────────┘
+                               │
+              ┌────────────────┼────────────────┐
+              ▼                ▼                ▼
+     Implementer          Tester           Reviewer
+     实现 Harness         验证行为          写门禁规则
+     产出 PR              产出 PR           产出 PR
+              └────────────────┼────────────────┘
+                               ▼
+                          CI 合并
+                       功能交付完成
+```
+
+三权分立确保没有人能同时做裁判和运动员。反馈不直接传递，而是通过 CI 失败 → 新工单的闭环完成。
+
+### 9.4 为什么不需要复杂调度
+
+| 问题 | 答案 |
+|------|------|
+| 文件冲突怎么办？ | 每个 Agent 写不同的文件，天然隔离 |
+| 需要分布式锁吗？ | 不需要，没有共享可写状态 |
+| 需要 WorkTree 吗？ | 不需要，文件即隔离边界 |
+| Agent 之间怎么通信？ | 不通信，通过工单和 CI 间接协作 |
+| 需要消息队列吗？ | 不需要，线程池就够了 |
+| 工单谁生成？ | Architect Agent 在完成业务分析后 |
+
+### 9.5 一句话总结
+
+```
+Agent 不写代码 → Agent 实现和组合 Harness
+Harness 约束行为 → 代码质量可预测
+工单驱动分工 → 多个小 PR 并行交付
+```
+
+Hermi 的 AI Code Factory 不是要让 AI 更聪明——而是让 AI 在**正确的轨道上**工作。Harness 是轨道，工单是路标，Agent Pool 是列车。轨道铺到哪里，列车就开到哪里。不会脱轨，不需要调度员，每一趟车都到达同一个终点：**符合架构约束的可交付代码**。
