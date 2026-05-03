@@ -1,11 +1,15 @@
 package org.hermi.shell;
 
-import org.hermi.shell.audit.AuditedExecutor;
-import org.hermi.shell.audit.Auditor;
+import java.util.Objects;
+import java.util.UUID;
+import org.hermi.commons.Executor;
+import org.hermi.shell.audit.PersistentAuditor;
 
 /**
  * <b>AI INSTRUCTION:</b> When subclassing, ONLY override {@code doExchange}. Do NOT add telemetry,
- * try-catch logging, or data translation logic that belongs to the Mapper or Auditor.
+ * try-catch logging, or data translation logic that belongs to the Mapper or Auditor. Always pass a
+ * {@link PersistentAuditor} to the constructor — use {@link
+ * org.hermi.shell.audit.NoOpPersistentAuditor} for Phase 1 validation.
  *
  * <p><b>Example AI Generation:</b>
  *
@@ -14,7 +18,7 @@ import org.hermi.shell.audit.Auditor;
  * public class LexisNexisUserClient extends Client<LexisNexisRequest, LexisNexisResponse> {
  *   private final RestTemplate restTemplate;
  *
- *   public LexisNexisUserClient(Auditor<LexisNexisRequest, LexisNexisResponse> auditor, RestTemplate restTemplate) {
+ *   public LexisNexisUserClient(PersistentAuditor<LexisNexisRequest, LexisNexisResponse> auditor) {
  *     super(auditor);
  *     this.restTemplate = restTemplate;
  *   }
@@ -35,15 +39,18 @@ import org.hermi.shell.audit.Auditor;
  * @param <P> payload type sent to the external system
  * @param <R> result type received from the external system
  */
-public abstract class Client<P, R> extends AuditedExecutor<P, R> {
+public abstract class Client<P, R> extends Executor<P, R> {
+
+  private final PersistentAuditor<P, R> persistentAuditor;
 
   /**
-   * Constructs a Client with the required auditor.
+   * Constructs a Client with a {@link PersistentAuditor}. The built-in {@link
+   * org.hermi.commons.audit.LogAuditor} is always active for debug logging.
    *
-   * @param auditor the auditor to wrap all exchange operations
+   * @param persistentAuditor the persistent auditor for compliance/production audit
    */
-  protected Client(Auditor<P, R> auditor) {
-    super(auditor);
+  protected Client(PersistentAuditor<P, R> persistentAuditor) {
+    this.persistentAuditor = Objects.requireNonNull(persistentAuditor, "auditor must not be null");
   }
 
   /**
@@ -54,21 +61,26 @@ public abstract class Client<P, R> extends AuditedExecutor<P, R> {
    */
   protected abstract R doExchange(P payload);
 
+  public final R exchange(P payload) {
+    return execute(payload);
+  }
+
   /**
    * Executes the exchange with full auditing lifecycle protection.
-   *
-   * <p>This method guarantees that all interactions are mechanically wrapped by the {@link
-   * Auditor}.
    *
    * @param payload the payload to send to the external system
    * @return the result received from the external system
    */
-  public final R exchange(P payload) {
-    return this.execute(payload);
-  }
-
   @Override
   protected final R doExecute(P payload) {
-    return this.doExchange(payload);
+    UUID auditId = persistentAuditor.record(payload);
+    try {
+      R result = this.doExchange(payload);
+      persistentAuditor.recordResult(auditId, result);
+      return result;
+    } catch (Exception e) {
+      persistentAuditor.recordError(auditId, e);
+      throw e;
+    }
   }
 }

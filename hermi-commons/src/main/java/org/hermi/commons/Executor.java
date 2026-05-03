@@ -6,6 +6,8 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
+import org.hermi.commons.audit.LogAuditor;
 import org.hermi.commons.conversion.Converter;
 import org.hermi.commons.conversion.Convertible;
 import org.hermi.validation.InputValidationException;
@@ -15,10 +17,8 @@ import org.hermi.validation.Validator;
 /**
  * <b>AI INSTRUCTION:</b> DO NOT subclass this class directly when building applications. Use the
  * semantic base classes instead: UseCase, Client, Repository, or Messenger. Never override the
- * final {@code execute} methods to bypass validation. Only implement {@code doExecute}.
+ * final {@code execute} methods to bypass validation or auditing. Only implement {@code doExecute}.
  */
-
-/** Core execution engine and validation lifecycle. */
 
 /**
  * Abstract base class for components that execute logic based on a context and return a result.
@@ -27,6 +27,7 @@ import org.hermi.validation.Validator;
  *
  * <ul>
  *   <li>Pre-execution validation of the input context.
+ *   <li>Auditing of the execution lifecycle (logged via {@link LogAuditor} by default).
  *   <li>Post-execution validation of the returned result.
  *   <li>Generic type resolution for error reporting.
  *   <li>Convenience methods for conversion-based execution.
@@ -36,6 +37,14 @@ import org.hermi.validation.Validator;
  * @param <R> the type of the execution result
  */
 public abstract class Executor<C, R> {
+
+  private final LogAuditor<C, R> logAuditor;
+
+  /** Creates an Executor with a {@link LogAuditor} for debug logging. */
+  protected Executor() {
+    this.logAuditor = new LogAuditor<>(getClass());
+  }
+
   /**
    * Implements the core execution logic.
    *
@@ -47,16 +56,26 @@ public abstract class Executor<C, R> {
   /**
    * Executes the logic with the given context.
    *
+   * <p>The lifecycle is: audit start → validate context → {@link #doExecute} → validate result →
+   * audit success. Any exception is audited before being propagated.
+   *
    * @param context the execution context
    * @return the execution result
    * @throws InputValidationException if the context or result is invalid
    * @throws NullPointerException if the context or result is null
    */
-  public R execute(C context) {
+  public final R execute(C context) {
+    UUID logId = logAuditor.record(context);
     validateContext(context);
-    R result = doExecute(context);
-    validateResult(result);
-    return result;
+    try {
+      R result = doExecute(context);
+      validateResult(result);
+      logAuditor.recordResult(logId, result);
+      return result;
+    } catch (Exception e) {
+      logAuditor.recordError(logId, e);
+      throw e;
+    }
   }
 
   /**

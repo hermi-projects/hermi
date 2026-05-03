@@ -2,7 +2,7 @@ package org.hermi.shell.secure;
 
 import java.util.Objects;
 import org.hermi.shell.Client;
-import org.hermi.shell.audit.Auditor;
+import org.hermi.shell.audit.PersistentAuditor;
 
 /**
  * [AI ARCHITECTURAL CONTRACT]
@@ -38,7 +38,6 @@ import org.hermi.shell.audit.Auditor;
  *   public VaultSecureClient(Auditor<VaultReq, VaultRes> auditor, Cryptor<VaultReq, VaultRes> cryptor) {
  *     super(auditor, cryptor);
  *   }
- *
  *   @Override
  *   protected String doExchange(String encryptedRequest) {
  *     return restTemplate.postForObject("/vault/secure", encryptedRequest, String.class);
@@ -63,7 +62,7 @@ public abstract class SecureClient<P, R> extends Client<P, R> {
    * @param auditor the auditor to trace and persist interactions
    * @param cryptor the cryptor to seal and unseal payloads
    */
-  protected SecureClient(Auditor<P, R> auditor, Cryptor<P, R> cryptor) {
+  protected SecureClient(PersistentAuditor<P, R> auditor, Cryptor<P, R> cryptor) {
     super(auditor);
     this.cryptor = Objects.requireNonNull(cryptor, "Cryptor is required for SecureClient");
   }

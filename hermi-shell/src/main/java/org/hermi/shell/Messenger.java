@@ -1,18 +1,24 @@
 package org.hermi.shell;
 
-import org.hermi.shell.audit.AuditedExecutor;
-import org.hermi.shell.audit.Auditor;
+import java.util.Objects;
+import java.util.UUID;
+import org.hermi.commons.Executor;
+import org.hermi.shell.audit.PersistentAuditor;
 
 /**
  * <b>AI INSTRUCTION:</b> When subclassing, ONLY override {@code doPublish}. Do NOT add telemetry or
- * try-catch bounds. Return the raw vendor metadata directly.
+ * try-catch bounds. Return the raw vendor metadata directly. Always pass a {@link
+ * PersistentAuditor} to the constructor — use {@link org.hermi.shell.audit.NoOpPersistentAuditor}
+ * for Phase 1 validation.
  *
  * <p><b>Example AI Generation:</b>
  *
  * <pre>{@code
  * @Component
  * public class KafkaUserMessenger extends Messenger<ProducerRecord, RecordMetadata> {
- *   public KafkaUserMessenger(Auditor<ProducerRecord, RecordMetadata> auditor) { super(auditor); }
+ *   public KafkaUserMessenger(PersistentAuditor<ProducerRecord, RecordMetadata> auditor) {
+ *     super(auditor);
+ *   }
  *   protected RecordMetadata doPublish(ProducerRecord msg) { return kafkaTemplate.send(msg).get(); }
  * }
  * }</pre>
@@ -28,15 +34,18 @@ import org.hermi.shell.audit.Auditor;
  * @param <P> payload type sent to the external system
  * @param <R> result type received from the external system
  */
-public abstract class Messenger<P, R> extends AuditedExecutor<P, R> {
+public abstract class Messenger<P, R> extends Executor<P, R> {
+
+  private final PersistentAuditor<P, R> persistentAuditor;
 
   /**
-   * Constructs a Messenger with the required auditor.
+   * Constructs a Messenger with a {@link PersistentAuditor}. The built-in {@link
+   * org.hermi.commons.audit.LogAuditor} is always active for debug logging.
    *
-   * @param auditor the auditor to wrap all publish operations
+   * @param persistentAuditor the persistent auditor for compliance/production audit
    */
-  protected Messenger(Auditor<P, R> auditor) {
-    super(auditor);
+  protected Messenger(PersistentAuditor<P, R> persistentAuditor) {
+    this.persistentAuditor = Objects.requireNonNull(persistentAuditor, "auditor must not be null");
   }
 
   /**
@@ -51,9 +60,6 @@ public abstract class Messenger<P, R> extends AuditedExecutor<P, R> {
   /**
    * Publishes the message with full auditing lifecycle protection.
    *
-   * <p>This method guarantees that all asynchronous publications are mechanically wrapped by the
-   * {@link Auditor}.
-   *
    * @param payload the payload to publish to the external system
    * @return the result received from the external system
    */
@@ -63,6 +69,14 @@ public abstract class Messenger<P, R> extends AuditedExecutor<P, R> {
 
   @Override
   protected final R doExecute(P payload) {
-    return doPublish(payload);
+    UUID auditId = persistentAuditor.record(payload);
+    try {
+      R result = doPublish(payload);
+      persistentAuditor.recordResult(auditId, result);
+      return result;
+    } catch (Exception e) {
+      persistentAuditor.recordError(auditId, e);
+      throw e;
+    }
   }
 }

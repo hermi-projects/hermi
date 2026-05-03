@@ -2,35 +2,16 @@ package org.hermi.shell.util;
 
 import java.util.Collections;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.hermi.shell.Client;
-import org.hermi.shell.audit.Auditor;
+import org.hermi.shell.audit.NoOpPersistentAuditor;
 
 public class LocalClient<P, R> extends Client<P, R> {
   private final Map<P, R> store;
 
   public LocalClient() {
-    super(new LocalClientAuditor<>());
+    super(new NoOpPersistentAuditor<>());
     this.store = new ConcurrentHashMap<>();
-  }
-
-  private static class LocalClientAuditor<P, R> extends Auditor<P, R> {
-    @Override
-    protected UUID doRecordPayload(P payload) {
-      System.out.printf("[LocalClient] INFO: Exchanging payload -> %s%n", payload);
-      return UUID.randomUUID();
-    }
-
-    @Override
-    protected void doRecordResponse(UUID trackingId, R response) {
-      System.out.printf("[LocalClient] INFO: Exchange completed -> %s%n", response);
-    }
-
-    @Override
-    protected void doRecordError(UUID trackingId, Exception exception) {
-      System.out.printf("[LocalClient] ERROR: Exchange failed -> %s%n", exception.getMessage());
-    }
   }
 
   @Override
