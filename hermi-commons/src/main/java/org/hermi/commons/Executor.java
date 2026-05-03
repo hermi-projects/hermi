@@ -176,8 +176,11 @@ public abstract class Executor<C, R> {
 
   private String getGenericTypeName(int index) {
     Type type = resolveGenericType(getClass(), index);
-    if (type instanceof Class<?>) {
-      return ((Class<?>) type).getSimpleName();
+    if (type == null) {
+      return Object.class.getSimpleName();
+    }
+    if (type instanceof Class<?> clazz) {
+      return clazz.getSimpleName();
     }
     return type.getTypeName();
   }
@@ -185,8 +188,7 @@ public abstract class Executor<C, R> {
   private Type resolveGenericType(Class<?> clazz, int index) {
     Type superclass = clazz.getGenericSuperclass();
 
-    if (superclass instanceof ParameterizedType) {
-      ParameterizedType pt = (ParameterizedType) superclass;
+    if (superclass instanceof ParameterizedType pt) {
       Type[] args = pt.getActualTypeArguments();
       if (index < args.length) {
         return unwrap(args[index]);
@@ -202,11 +204,11 @@ public abstract class Executor<C, R> {
   }
 
   private Type unwrap(Type type) {
-    if (type instanceof ParameterizedType) {
-      return ((ParameterizedType) type).getRawType();
+    if (type instanceof ParameterizedType pt) {
+      return pt.getRawType();
     }
-    if (type instanceof TypeVariable<?>) {
-      Type[] bounds = ((TypeVariable<?>) type).getBounds();
+    if (type instanceof TypeVariable<?> tv) {
+      Type[] bounds = tv.getBounds();
       return bounds.length > 0 ? unwrap(bounds[0]) : Object.class;
     }
     return type;
