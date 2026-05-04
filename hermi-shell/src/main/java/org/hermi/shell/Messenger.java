@@ -75,7 +75,7 @@ public abstract class Messenger<P, R> extends Executor<P, R> {
       persistentAuditor.recordResult(auditId, result);
       return result;
     } catch (Exception e) {
-      persistentAuditor.recordError(auditId, e);
+      persistentAuditor.recordError(auditId, payload, e);
       throw e;
     }
   }

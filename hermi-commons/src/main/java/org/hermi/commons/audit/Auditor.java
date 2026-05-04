@@ -39,7 +39,7 @@ public abstract class Auditor<C, R> {
    * @param trackingId the ID returned by {@link #doRecordContext(Object)}
    * @param exception the exception that was thrown
    */
-  protected abstract void doRecordError(UUID trackingId, Exception exception);
+  protected abstract void doRecordError(UUID trackingId, C context, Exception exception);
 
   /**
    * Saves the input context and returns a tracking ID.
@@ -76,9 +76,9 @@ public abstract class Auditor<C, R> {
    * @param trackingId the ID from {@link #recordContext(Object)}
    * @param exception the exception that was thrown
    */
-  public final void recordError(UUID trackingId, Exception exception) {
+  public final void recordError(UUID trackingId, C context, Exception exception) {
     try {
-      doRecordError(trackingId, exception);
+      doRecordError(trackingId, context, exception);
     } catch (Exception auditEx) {
       log.warn("Auditor failed to record error for trackingId={}", trackingId, auditEx);
     }

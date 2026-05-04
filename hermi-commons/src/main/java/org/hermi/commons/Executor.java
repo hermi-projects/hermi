@@ -73,7 +73,7 @@ public abstract class Executor<C, R> {
       validateResult(result);
       return result;
     } catch (Exception e) {
-      logAuditor.recordError(logId, e);
+      logAuditor.recordError(logId, context, e);
       throw e;
     }
   }

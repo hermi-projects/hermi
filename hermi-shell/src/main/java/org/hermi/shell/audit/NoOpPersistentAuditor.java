@@ -16,7 +16,7 @@ import java.util.UUID;
 public class NoOpPersistentAuditor<P, R> extends PersistentAuditor<P, R> {
 
   @Override
-  protected UUID doRecordContext(P context) {
+  protected UUID doRecordContext(P payload) {
     return new UUID(0, 0);
   }
 
@@ -24,5 +24,5 @@ public class NoOpPersistentAuditor<P, R> extends PersistentAuditor<P, R> {
   protected void doRecordResult(UUID trackingId, R result) {}
 
   @Override
-  protected void doRecordError(UUID trackingId, Exception exception) {}
+  protected void doRecordError(UUID trackingId, P payload, Exception exception) {}
 }

@@ -1,222 +1,141 @@
-# Hermi Logging 模块 — 功能要求（Final Version v3）
+# 我的日志思考录：AI-First 理念下的业务意图与上下文
 
-Hermi Logging 是一个 **纯 Java + AspectJ（CTW）** 的日志模块，通过注解驱动实现业务方法日志记录与敏感字段脱敏。
+这份文档记录了我对 **Hermi Logging** 模块的设计思考。它不仅仅是一个技术模块，更是我对于“在 AI 时代，日志应该如何进化”的思想实验。
 
----
-
-## 🎯 1. 模块目标（Module Goals）
-
-Hermi Logging 的核心目标：
-
-- 自动记录方法入参与返回值
-- 自动记录异常信息
-- 自动对敏感字段进行脱敏
-- 输出结构化 JSON 日志
-- 支持包范围控制
-- 支持方法级业务事件配置
-- 支持嵌套对象脱敏
-- 支持集合脱敏
-- 零侵入业务代码
-- 不依赖任何框架（如 Spring）
+> [!IMPORTANT]
+> **AI-First 宣言**：过去，日志是写给人类在半夜排查问题时看的；而在 Hermi 中，日志首先是写给 **智能体 (AI Agents)** 看的。我希望通过结构化的语义还原，让 AI 能在毫秒级感知业务的意图，并独立完成故障的根因分析。
 
 ---
 
-## 📌 2. 日志触发条件（Trigger Conditions）
+## 🦾 1. AI-First 设计理念 (The AI-First Logic)
 
-日志记录需要满足 **任意一个条件**：
-
-### ✔ 条件 1：方法上有 `@HermiLogging`
-- 直接记录日志
-- event（业务名称）来自注解
-- 子方法继承父方法的 event
-
-### ✔ 条件 2：方法所在包在 `@EnableHermiLogging` 范围内
-- 即使方法没有 @HermiLogging，也要记录日志
-- event 继承自最近的父方法（如果有）
-- 如果没有父方法 event，则 event = null
-
-### ✔ 两者关系总结
-
-| 情况 | 是否记录 | event 来源 |
-|------|----------|------------|
-| 有 @HermiLogging | 是 | 注解 value |
-| 无注解，但在 @EnableHermiLogging 范围内 | 是 | 最近父方法的 event |
-| 无注解，且不在范围内 | 否 | 无 |
+在这个模块中，“AI 优先”不是一个标签，而是一系列底层决策：
+*   **不仅仅是 JSON，而是“感知机”**：日志不仅仅是数据结构，它是 AI 观察业务世界的“眼睛”。
+*   **高熵值保护**：当异常发生时，我坚持捕获所有能代表现场的入参（Masked Args），为 AI 提供零偏差的 RAG 检索上下文。
+*   **语义确定性**：通过强制性的 `event` 模型，消除 AI 对方法名歧义的解析，确保指令集与日志流的语义对齐。
 
 ---
 
-## 🧩 3. event（业务名称）继承规则
+## 🧠 2. 我的设计直觉 (Design Intuition)
 
-### ✔ 3.1 子方法继承父方法的 event
-如果父类方法有：
+除了 AI，我也在关注研发效率的本质：
+*   **无感增强 (Zero-Intrusion)**：利用 AspectJ 在编译期完成织入，让业务开发者甚至感知不到日志的存在，从而实现真正的“无痛观测”。
+*   **意图优先 (Intent-Driven)**：每条日志都必须解释“为什么要执行这个动作”，这是连接代码实现与业务需求的桥梁。
 
+---
+
+## 📌 3. 动态触发机制 (Trigger Logic)
+
+我设计了两套互相配合的机制，兼顾了灵活性与自动化：
+
+### A. 精准标记 (`@HermiLogging`)
+当我需要对核心业务逻辑进行“高精度采样”时，手动标记路径。
+*   这是最高优先级的意图定义，支持复杂的 EL 表达式解析。
+
+### B. 包级扫描 (`@EnableHermiLogging`)
+我希望 AI 能看到更完整的调用树。
+*   只要是在特定包下的方法，都会自动记录。
+*   **思考点**：在这个模式下，业务名称（Event）会通过 AOP 堆栈自动向上寻找最近的意图进行“语义锚定”。
+
+---
+
+## 🧩 4. “语义链”的传承 (Semantic Inheritance)
+
+这是我为了解决 AI 无法理解长链路上下文而设计的方案。
+
+*   **设计思路**：在复杂的业务编排中，子方法不应该孤立存在。
+*   **继承逻辑**：子方法会自动继承父方法的 `event` 事件名。
+*   **价值**：在 AI 看来，这一连串的日志不仅仅是调用关系，而是一个完整闭环的“任务序列”，极大地提高了 AI 自动分析的准确率。
+
+---
+
+## 🔐 5. 隐私与安全的边界 (Masking)
+
+AI 需要上下文，但不能触碰隐私。
+*   **深度脱敏**：我对所有数据结构的序列化进行了拦截。
+*   **开发者友好**：直接利用已有注解（`@SSN`, `@Mask`）实现零配置脱敏，确保流向 AI 引擎的数据是洗白且合规的。
+
+---
+
+## 🤖 6. 极致的观测体验 (AI & Human)
+
+### 6.1 领域自述 (Java EL Narratives)
+我厌倦了拼凑字符串。利用 EL 表达式，我让日志在运行时自己讲故事：
 ```java
-@HermiLogging("UserRegister")
-public void saveUser() {}
+@HermiLogging(message = "正在为用户 ${user.id} 处理金额为 ${amount} 的支付")
 ```
-```java
-@Override
-public void saveUser() {}
-```
-则子类方法的 event = "UserRegister"。
+这种高度语义化的 `message` 是 AI 进行语义搜索和聚类的最佳索引。
 
-✔ 3.2 子类可以覆盖父类 event
-
-如果子类方法也加了注解，则以子类为准。
-
-🧱 4. 日志内容要求（Log Content Requirements）
-
-每条日志必须包含：
-
-| 字段 | 说明 |
-| --- | --- |
-| event | 业务名称（来自注解或继承） |
-| method | 完整方法名（class.method） |
-| args | 入参（脱敏后） |
-| result | 返回值（脱敏后） |
-| exception | 异常信息（如有） |
-| costMs | 方法执行耗时（毫秒） |
-
-🔐 5. 脱敏要求（Masking Requirements）
-✔ 5.1 支持的注解
-
-来自 annotation module：
-
-    @SSN
-
-    @Email
-
-    @Phone
-
-✔ 5.2 支持的对象类型
-
-必须支持以下结构的脱敏：
-
-| 类型 | 是否支持 |
-| --- | --- |
-| POJO | ✔ |
-| 嵌套 POJO | ✔ |
-| List | ✔ |
-| Map | ✔ |
-| 数组 | ✔ |
-| 非 String 字段（如 int、long） | ✔（如果有注解） |
-
-✔ 5.3 脱敏策略
-
-    SSN → ***-**-1234
-
-    Email → a***@domain.com
-
-    Phone → 138****78
-
-    HerimiSensitive → a***g
-
-🧠 6. AOP 行为要求（Aspect Requirements）
-
-Aspect 必须：
-
-    在方法执行前记录入参
-
-    在方法执行后记录返回值
-
-    捕获异常并记录, 包含所有信息以利于AI和developer去修复问题
-
-    记录执行耗时
-
-    根据包范围和注解决定是否记录日志
-
-    处理 event 继承
-
-    输出 JSON
-
-Aspect 不得：
-* 修改返回值
-* 吞掉异常
-* 改变业务逻辑执行顺序
-
-📦 7. 输出要求（Output Requirements）
-✔ 输出方式
-
-必须使用 logger（如 SLF4J）
-
-✔ 输出格式
-
-结构化 JSON，例如：
-START: simple args
-```json 
-{
-  "event": "UserRegister",
-  "method": "UserService.register", 
-  "status": "START",
-  "args": {}
-}
-```
-SUCCESS: simple args, result
-```json
-{
-  "event": "UserRegister",
-  "method": "UserService.register", 
-  "status": "SUCCESS",
-  "args": {},
-  "result": {},
-  "cost": 12
-}
-```
-FAILED: full args
-```json
-{
-  "event": "UserRegister",
-  "method": "UserService.register", 
-  "status": "FAILED",
-  "args": {},
-  "exception": "",
-  "trace": ""
-}
-```
+### 6.2 为什么它是 AI 的理想燃料？
+*   **确定性的失败上下文**：在 `FAILED` 状态下，我抽离了独立的 `exception`、`trace` 和 `args` 数组。AI 可以直接基于这些字段生成修复方案。
+*   **token 的高效利用**：通过可选的字段折叠机制，我让日志条目尽量精简，只在必要时才暴露深层状态，为 AI 的 Context Window 节省宝贵的容量。
 
 ---
 
-## 📝 8. 领域特定叙事 (Domain-Specific Narratives)
+## 🚧 7. 坚持与约束 (Core Constraints)
 
-Hermi Logging 支持使用 **Java 表达式语言 (Java EL)** 将入参动态绑定到日志中，帮助开发者输出“人类与 AI 均友好”的上下文叙事（Narratives），且完全零依赖于 Spring。
-
-### ✔ 8.1 如何使用
-
-通过 `@HermiLogging` 的 `message` 属性，你可以使用 EL 表达式获取方法的运行参数。支持按照参数名或参数索引（`arg0`, `arg1` 等）进行取值：
-
-```java
-@HermiLogging(message = "Processing payment of ${amount} for user ${user.id}")
-public Payment processPayment(User user, BigDecimal amount) { 
-    // ...业务代码
-}
-```
-
-### ✔ 8.2 输出效果
-
-当应用上述注解后，日志框架会自动计算 EL 表达式。在输出的 JSON 中，`message` 字段将被替换（或者追加辅助状态词）：
-- `Started: Processing payment of 50.00 for user 123`
-- `Succeeded: Processing payment of 50.00 for user 123`
-- `Failed: Processing payment of 50.00 for user 123`
-
-### ✔ 8.3 安全性与降级
-
-如果在表达式中引用了不存在的属性或导致计算失败，框架会进行 **优雅降级**：直接输出原始的模板字符串并在系统执行过程中规避抛出任何异常。这保障了您的业务代码稳定性。
+1.  **静默观察**：切面绝不干涉业务逻辑。
+2.  **异常归位**：记录后必须重新抛出，保证业务的异常流转是透明的。
+3.  **轻量级核心**：坚持不依赖 Spring 全家桶，保持最纯粹的 Java 原生能力。
 
 ---
 
-## 🤖 9. 调试友好设计 (Debugging-Friendly Design)
+## 📊 8. 业务事件数据模型 (Business Event Model)
 
-Hermi Logging 框架专门针对“人类排查”和“AI 自动分析”进行了双向结构化设计。
+### 8.1 业务日志回答的核心问题
 
-### ✔ 9.1 AI 友好性 (AI-Friendly Data Context)
-大语言模型和日志分析引擎（如 ELK, Datadog）更擅长解析具备高熵值与上下文关联的结构化字段：
-- **一致的关联追踪 (Correlation ID)：** 通过 `MDC.get("event")` 传播全局 `event`，实现全链路追踪。
-- **序列化的原始状态 (Input State)：** 以 JSON 数组格式（而不是拼接字符串）保存抛出异常时的 `args` 快照。
-- **精确的代码位置 (Traceability)：** `logger`（完整类名）和 `method` 作为独立字段剥离。
-- **核心异常栈 (Root Cause Analysis)：** 直接抽离出 `exception` 类型与 `exception_message`，加速故障定界。
+| 信息 | 字段 | 示例 |
+|---|---|---|
+| 谁 | `initiator` | `userId: "john"` / `system` / `schedule` |
+| 对什么 | `resource` | `{type:"Order", id:"ORD-12345"}` |
+| 做了什么 | `event` | `ProcessPayment`、`CancelOrder` |
+| 属于哪个领域 | `domain` | `payment`、`order`、`user` |
+| 为什么 | `title` | `"为用户 john 处理支付 $100.00"` |
+| 结果 | `status` + `result` | `SUCCEEDED` → `{"orderId":"ORD-12345"}` |
 
-### ✔ 9.2 人类友好性 (Human-Friendly Readability)
-研发工程师排查问题时，关注的是易读性、业务意图和故障焦点：
-- **领域特定叙事 (Domain Narrative)：** 拒绝冰冷的 "Execution of UserService.process() failed"，通过提取 EL 变量将其转换为语义连贯的："Failed: Processing payment of 50.00 for user 123"。
-- **耗时感知 (Performance Alerting)：** 当耗时超阈值时，除将 Severity 动态提升至 `WARN` 外，`message` 中还能体现出时间维度感知。
-- **高信噪比 (High Signal-to-Noise Ratio)：** 利用灵活的 `@HermiLogging(maxArgLength = x, maxResultLength = y)` 对巨量冗余返回和超长日志参数进行折叠或摒弃。
+### 8.2 防重与关联
+
+| 信息 | 字段 | 说明 |
+|---|---|---|
+| 唯一性 | `idempotencyKey` | 同一笔支付重试 3 次，key 相同 → 不是 3 笔 |
+| 关联 | `traceId` | 和技术日志串联，从业务事件跳到技术堆栈 |
+
+### 8.3 字段矩阵
+
+**业务字段** — 回答"谁在哪个领域对什么做了什么"：
+
+| 字段 | STARTED | SUCCEEDED | FAILED |
+|---|---|---|---|
+| `event` | 必填 | 必填 | 必填 |
+| `domain` | 必填 | 必填 | 必填 |
+| `title` | 推荐 | 推荐 | 推荐 |
+| `resource` | 推荐 | 推荐 | 推荐 |
+| `initiator` | 推荐 | 推荐 | 推荐 |
+| `idempotencyKey` | 推荐 | 推荐 | 推荐 |
+
+**技术字段** — 回答"执行过程中发生了什么"：
+
+| 字段 | STARTED | SUCCEEDED | FAILED |
+|---|---|---|---|
+| `traceId` | 必填 | 必填 | 必填 |
+| `args` | 可选（轻量） | — | **必填（全量）** |
+| `result` | — | 推荐 | — |
+| `duration` | — | 必填 | **必填** |
+| `exceptionClass/Message/stackTrace` | — | — | 必填 |
+
+### 8.4 失败 = 犯罪现场
+
+成功时结果本身就是最好的说明，不需要输入。失败时 `args` 是 AI 根因分析的核心燃料 — 全量输出，脱敏但不截断。
+
+FAILED 状态下 `duration` 是必填字段：超时异常 (`SocketTimeoutException`) 的 `rootCause` 经常为空，只有 `duration` 能区分真假超时（30012ms = 真超时，50ms = 参数错误）。
+
+### 8.5 与 LogAuditor 的分工
+
+| | LogAuditor | HermiLogging |
+|---|---|---|
+| **受众** | AI（开发时自修复） | 人 + AI（运维、业务分析） |
+| **级别** | DEBUG | INFO / ERROR |
+| **触发** | 每个 Executor 自动 | `@HermiLogging` opt-in |
+| **字段** | 技术字段 | 业务字段 + 技术字段 |
+
+> LogAuditor 告诉 AI "代码哪里崩了"，HermiLogging 告诉业务方 "支付为什么失败了"。同一个 traceId，两个视角。
