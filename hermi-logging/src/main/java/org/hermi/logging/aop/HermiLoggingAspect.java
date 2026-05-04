@@ -52,19 +52,18 @@ public class HermiLoggingAspect {
   public Object traceEntry(ProceedingJoinPoint jp) throws Throwable {
     Class<?> declaringType = jp.getSignature().getDeclaringType();
 
-    HermiLogging herm = tracer.resolveConfig(jp);
-    int depth = tracer.getDepth();
+    HermiLogging hermiLogging = tracer.resolveConfig(jp);
 
-    if (herm != null && packageRegistry.shouldTrace(declaringType)) {
-      tracer.setDepth(depth + 1);
+    if (hermiLogging != null && packageRegistry.shouldTrace(declaringType)) {
+      int prev = tracer.enterChain();
       try {
-        return tracer.trace(jp, herm.message());
+        return tracer.trace(jp, hermiLogging.message());
       } finally {
-        tracer.setDepth(depth);
+        tracer.leaveChain(prev);
       }
     }
 
-    if (depth > 0 && packageRegistry.shouldTrace(declaringType)) {
+    if (tracer.isInChain() && packageRegistry.shouldTrace(declaringType)) {
       return tracer.trace(jp, "");
     }
 

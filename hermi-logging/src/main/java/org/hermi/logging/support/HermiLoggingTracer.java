@@ -14,14 +14,25 @@ public class HermiLoggingTracer {
 
   private static final Pattern EL_PATTERN = Pattern.compile("\\$\\{(.+?)\\}");
 
-  private final ThreadLocal<Integer> traceDepth = ThreadLocal.withInitial(() -> 0);
+  // 用计数器而非 boolean：@HermiLogging 方法可能嵌套调用另一个 @HermiLogging 方法，
+  // boolean 在内层退出时会把链状态清掉，导致外层后续调用丢失 trace。
+  private final ThreadLocal<Integer> chainDepth = ThreadLocal.withInitial(() -> 0);
 
-  public int getDepth() {
-    return traceDepth.get();
+  /** 进入 trace 链，返回进入前的深度用于退出时恢复。 */
+  public int enterChain() {
+    int prev = chainDepth.get();
+    chainDepth.set(prev + 1);
+    return prev;
   }
 
-  public void setDepth(int depth) {
-    traceDepth.set(depth);
+  /** 退出 trace 链，恢复到进入前的深度。 */
+  public void leaveChain(int previousDepth) {
+    chainDepth.set(previousDepth);
+  }
+
+  /** 当前是否在 trace 链中。 */
+  public boolean isInChain() {
+    return chainDepth.get() > 0;
   }
 
   // ------------------------------------------------------------------
@@ -35,7 +46,8 @@ public class HermiLoggingTracer {
     HermiLogging herm = method.getAnnotation(HermiLogging.class);
     if (herm != null) return herm;
 
-    return (HermiLogging) sig.getDeclaringType().getAnnotation(HermiLogging.class);
+    Class<?> declaringType = sig.getDeclaringType();
+    return declaringType.getAnnotation(HermiLogging.class);
   }
 
   // ------------------------------------------------------------------
