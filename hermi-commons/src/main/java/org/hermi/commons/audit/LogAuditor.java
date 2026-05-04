@@ -23,7 +23,6 @@ import org.slf4j.LoggerFactory;
  */
 public class LogAuditor<C, R> extends Auditor<C, R> {
 
-  private static final UUID NIL = new UUID(0, 0);
   private static final String KEY_CONTEXT_ID = "contextId";
   private static final String KEY_CONTEXT = "context";
   private static final String KEY_RESULT = "result";
@@ -38,10 +37,10 @@ public class LogAuditor<C, R> extends Auditor<C, R> {
 
   @Override
   protected UUID doRecordContext(C context) {
-    if (!log.isDebugEnabled()) {
-      return NIL;
-    }
     UUID uuid = UUID.randomUUID();
+    if (!log.isDebugEnabled()) {
+      return uuid;
+    }
     log.atDebug()
         .addKeyValue(KEY_CONTEXT_ID, uuid)
         .addKeyValue(KEY_CONTEXT, context)
