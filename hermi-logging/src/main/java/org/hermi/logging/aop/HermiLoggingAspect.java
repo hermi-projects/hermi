@@ -1,18 +1,11 @@
 package org.hermi.logging.aop;
 
-import jakarta.el.ELProcessor;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.reflect.MethodSignature;
-import org.hermi.logging.annotations.EnableHermiLogging;
 import org.hermi.logging.annotations.HermiLogging;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.hermi.logging.support.HermiLoggingTracer;
+import org.hermi.logging.support.RootPackageRegistry;
 
 /**
  *
@@ -52,155 +45,29 @@ import org.slf4j.LoggerFactory;
 @Aspect
 public class HermiLoggingAspect {
 
-  private static final Pattern EL_PATTERN = Pattern.compile("\\$\\{(.+?)\\}");
-
-  private static final List<String> ROOT_PACKAGES = new ArrayList<>();
-  private static volatile boolean rootInitialized;
-
-  private static final ThreadLocal<Integer> TRACE_DEPTH = ThreadLocal.withInitial(() -> 0);
-
-  // ------------------------------------------------------------------
-  // Entry point
-  // ------------------------------------------------------------------
+  private final RootPackageRegistry packageRegistry = RootPackageRegistry.instance();
+  private final HermiLoggingTracer tracer = new HermiLoggingTracer();
 
   @Around("execution(!private * *(..))")
   public Object traceEntry(ProceedingJoinPoint jp) throws Throwable {
     Class<?> declaringType = jp.getSignature().getDeclaringType();
-    initRootIfNeeded(declaringType);
 
-    HermiLogging herm = resolveHermiLogging(jp);
-    int depth = TRACE_DEPTH.get();
+    HermiLogging herm = tracer.resolveConfig(jp);
+    int depth = tracer.getDepth();
 
-    // @HermiLogging → trace & starts a chain (if within root package)
-    if (herm != null && shouldTrace(declaringType)) {
-      TRACE_DEPTH.set(depth + 1);
+    if (herm != null && packageRegistry.shouldTrace(declaringType)) {
+      tracer.setDepth(depth + 1);
       try {
-        return proceed(jp, herm.message());
+        return tracer.trace(jp, herm.message());
       } finally {
-        TRACE_DEPTH.set(depth);
+        tracer.setDepth(depth);
       }
     }
 
-    // Inside a trace chain → trace downstream calls within root package
-    if (depth > 0 && shouldTrace(declaringType)) {
-      return proceed(jp, "");
+    if (depth > 0 && packageRegistry.shouldTrace(declaringType)) {
+      return tracer.trace(jp, "");
     }
 
     return jp.proceed();
-  }
-
-  // ------------------------------------------------------------------
-  // Root package initialization
-  // ------------------------------------------------------------------
-
-  private void initRootIfNeeded(Class<?> clazz) {
-    if (rootInitialized) return;
-
-    EnableHermiLogging enable = clazz.getAnnotation(EnableHermiLogging.class);
-    if (enable == null) return;
-
-    synchronized (HermiLoggingAspect.class) {
-      if (rootInitialized) return;
-
-      if (enable.value().isEmpty()) {
-        ROOT_PACKAGES.add(clazz.getPackageName());
-      } else {
-        for (String pkg : enable.value().split(";")) {
-          String trimmed = pkg.trim();
-          if (!trimmed.isEmpty() && !ROOT_PACKAGES.contains(trimmed)) {
-            ROOT_PACKAGES.add(trimmed);
-          }
-        }
-      }
-      rootInitialized = true;
-    }
-  }
-
-  private boolean shouldTrace(Class<?> clazz) {
-    String pkg = clazz.getPackageName();
-    for (String root : ROOT_PACKAGES) {
-      if (pkg.startsWith(root)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  // ------------------------------------------------------------------
-  // Annotation resolution
-  // ------------------------------------------------------------------
-
-  private HermiLogging resolveHermiLogging(ProceedingJoinPoint jp) {
-    MethodSignature sig = (MethodSignature) jp.getSignature();
-    java.lang.reflect.Method method = sig.getMethod();
-
-    HermiLogging herm = method.getAnnotation(HermiLogging.class);
-    if (herm != null) return herm;
-
-    return (HermiLogging) sig.getDeclaringType().getAnnotation(HermiLogging.class);
-  }
-
-  // ------------------------------------------------------------------
-  // Core tracing logic
-  // ------------------------------------------------------------------
-
-  private Object proceed(ProceedingJoinPoint jp, String message) throws Throwable {
-    Class<?> targetClass = jp.getTarget().getClass();
-    Logger log = LoggerFactory.getLogger(targetClass);
-
-    String methodName = jp.getSignature().getName();
-    String simpleName = targetClass.getSimpleName();
-    String label =
-        resolveMessage(
-            message, jp.getArgs(), (MethodSignature) jp.getSignature(), simpleName, methodName);
-
-    log.atInfo().addKeyValue("args", jp.getArgs()).log("{} - started", label);
-
-    try {
-      Object result = jp.proceed();
-      log.atInfo().addKeyValue("result", result).log("{} - finished", label);
-      return result;
-    } catch (Throwable ex) {
-      log.atError()
-          .addKeyValue("args", jp.getArgs())
-          .addKeyValue("exceptionClass", ex.getClass().getName())
-          .addKeyValue("exceptionMessage", ex.getMessage())
-          .setCause(ex)
-          .log("{} - failed: {}", label);
-      throw ex;
-    }
-  }
-
-  // ------------------------------------------------------------------
-  // EL message resolution
-  // ------------------------------------------------------------------
-
-  private String resolveMessage(
-      String message, Object[] args, MethodSignature sig, String simpleName, String methodName) {
-    if (message == null || message.isEmpty()) {
-      return String.format("%s.%s()", simpleName, methodName);
-    }
-
-    ELProcessor el = new ELProcessor();
-
-    String[] paramNames = sig.getParameterNames();
-    for (int i = 0; i < args.length; i++) {
-      String name = paramNames != null && i < paramNames.length ? paramNames[i] : "arg" + i;
-      el.setValue(name, args[i]);
-    }
-
-    Matcher m = EL_PATTERN.matcher(message);
-    StringBuilder sb = new StringBuilder();
-    while (m.find()) {
-      String expr = m.group(1);
-      try {
-        Object val = el.eval(expr);
-        m.appendReplacement(sb, val != null ? Matcher.quoteReplacement(val.toString()) : "null");
-      } catch (Exception e) {
-        m.appendReplacement(sb, "{" + expr + "}");
-      }
-    }
-    m.appendTail(sb);
-    return sb.toString();
   }
 }

@@ -1,0 +1,104 @@
+package org.hermi.logging.support;
+
+import jakarta.el.ELProcessor;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.reflect.MethodSignature;
+import org.hermi.logging.annotations.HermiLogging;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/** 负责 {@code @HermiLogging} 的注解解析、trace 链、日志输出。 */
+public class HermiLoggingTracer {
+
+  private static final Pattern EL_PATTERN = Pattern.compile("\\$\\{(.+?)\\}");
+
+  private final ThreadLocal<Integer> traceDepth = ThreadLocal.withInitial(() -> 0);
+
+  public int getDepth() {
+    return traceDepth.get();
+  }
+
+  public void setDepth(int depth) {
+    traceDepth.set(depth);
+  }
+
+  // ------------------------------------------------------------------
+  // Annotation resolution
+  // ------------------------------------------------------------------
+
+  public HermiLogging resolveConfig(ProceedingJoinPoint jp) {
+    MethodSignature sig = (MethodSignature) jp.getSignature();
+    java.lang.reflect.Method method = sig.getMethod();
+
+    HermiLogging herm = method.getAnnotation(HermiLogging.class);
+    if (herm != null) return herm;
+
+    return (HermiLogging) sig.getDeclaringType().getAnnotation(HermiLogging.class);
+  }
+
+  // ------------------------------------------------------------------
+  // Tracing
+  // ------------------------------------------------------------------
+
+  public Object trace(ProceedingJoinPoint jp, String message) throws Throwable {
+    Class<?> targetClass = jp.getTarget().getClass();
+    Logger log = LoggerFactory.getLogger(targetClass);
+
+    String methodName = jp.getSignature().getName();
+    String simpleName = targetClass.getSimpleName();
+    String label =
+        resolveMessage(
+            message, jp.getArgs(), (MethodSignature) jp.getSignature(), simpleName, methodName);
+
+    log.atInfo().addKeyValue("args", jp.getArgs()).log("{} - started", label);
+
+    try {
+      Object result = jp.proceed();
+      log.atInfo().addKeyValue("result", result).log("{} - finished", label);
+      return result;
+    } catch (Throwable ex) {
+      log.atError()
+          .addKeyValue("args", jp.getArgs())
+          .addKeyValue("exceptionClass", ex.getClass().getName())
+          .addKeyValue("exceptionMessage", ex.getMessage())
+          .setCause(ex)
+          .log("{} - failed: {}", label);
+      throw ex;
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // EL message resolution
+  // ------------------------------------------------------------------
+
+  private String resolveMessage(
+      String message, Object[] args, MethodSignature sig, String simpleName, String methodName) {
+    if (message == null || message.isEmpty()) {
+      return String.format("%s.%s()", simpleName, methodName);
+    }
+
+    ELProcessor el = new ELProcessor();
+
+    String[] paramNames = sig.getParameterNames();
+    for (int i = 0; i < args.length; i++) {
+      String name = paramNames != null && i < paramNames.length ? paramNames[i] : "arg" + i;
+      el.setValue(name, args[i]);
+    }
+
+    Matcher m = EL_PATTERN.matcher(message);
+    StringBuilder sb = new StringBuilder();
+    while (m.find()) {
+      String expr = m.group(1);
+      try {
+        Object val = el.eval(expr);
+        m.appendReplacement(sb, val != null ? Matcher.quoteReplacement(val.toString()) : "null");
+      } catch (Exception e) {
+        m.appendReplacement(sb, "{" + expr + "}");
+      }
+    }
+    m.appendTail(sb);
+    return sb.toString();
+  }
+}
