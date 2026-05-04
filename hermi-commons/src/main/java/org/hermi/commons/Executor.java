@@ -65,12 +65,12 @@ public abstract class Executor<C, R> {
    * @throws NullPointerException if the context or result is null
    */
   public final R execute(C context) {
-    UUID logId = logAuditor.record(context);
+    UUID logId = logAuditor.recordContext(context);
     validateContext(context);
     try {
       R result = doExecute(context);
-      validateResult(result);
       logAuditor.recordResult(logId, result);
+      validateResult(result);
       return result;
     } catch (Exception e) {
       logAuditor.recordError(logId, e);

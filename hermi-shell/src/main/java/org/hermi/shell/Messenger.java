@@ -69,7 +69,7 @@ public abstract class Messenger<P, R> extends Executor<P, R> {
 
   @Override
   protected final R doExecute(P payload) {
-    UUID auditId = persistentAuditor.record(payload);
+    UUID auditId = persistentAuditor.recordContext(payload);
     try {
       R result = doPublish(payload);
       persistentAuditor.recordResult(auditId, result);

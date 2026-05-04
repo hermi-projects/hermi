@@ -22,7 +22,7 @@ import org.hermi.commons.audit.Auditor;
  *         this.repository = repository;
  *     }
  *
- *     @Override protected UUID doRecord(PaymentRequest request) {
+ *     @Override protected UUID doRecordContext(PaymentRequest request) {
  *         return repository.insert(request);
  *     }
  *
@@ -42,6 +42,6 @@ import org.hermi.commons.audit.Auditor;
 public abstract class PersistentAuditor<P, R> extends Auditor<P, R> {
 
   // PersistentAuditor inherits the full lifecycle from Auditor.
-  // Subclasses implement doRecord, doRecordResult, and doRecordError
+  // Subclasses implement doRecordContext, doRecordResult, and doRecordError
   // with persistent storage logic.
 }

@@ -73,7 +73,7 @@ public abstract class Client<P, R> extends Executor<P, R> {
    */
   @Override
   protected final R doExecute(P payload) {
-    UUID auditId = persistentAuditor.record(payload);
+    UUID auditId = persistentAuditor.recordContext(payload);
     try {
       R result = this.doExchange(payload);
       persistentAuditor.recordResult(auditId, result);
