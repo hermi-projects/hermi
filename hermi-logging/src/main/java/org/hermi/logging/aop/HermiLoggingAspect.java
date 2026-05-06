@@ -51,20 +51,21 @@ public class HermiLoggingAspect {
   @Around("execution(!private * *(..))")
   public Object traceEntry(ProceedingJoinPoint jp) throws Throwable {
     Class<?> declaringType = jp.getSignature().getDeclaringType();
-
+    if (!packageRegistry.shouldTrace(declaringType)) {
+      return jp.proceed();
+    }
     HermiLogging hermiLogging = tracer.resolveConfig(jp);
 
-    if (hermiLogging != null && packageRegistry.shouldTrace(declaringType)) {
-      String msg = hermiLogging.message();
+    if (hermiLogging != null) {
       int prev = tracer.enterChain();
       try {
-        return msg.isEmpty() ? tracer.trace(jp) : tracer.trace(jp, tracer.resolveMessage(msg, jp));
+        return tracer.trace(jp, hermiLogging.message());
       } finally {
         tracer.leaveChain(prev);
       }
     }
 
-    if (tracer.isInChain() && packageRegistry.shouldTrace(declaringType)) {
+    if (tracer.isInChain()) {
       return tracer.trace(jp);
     }
 

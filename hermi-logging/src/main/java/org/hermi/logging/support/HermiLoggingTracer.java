@@ -51,12 +51,51 @@ public class HermiLoggingTracer {
   }
 
   // ------------------------------------------------------------------
-  // Label building (called by aspect)
+  // Tracing
   // ------------------------------------------------------------------
 
-  /** 解析 message 中的 EL 表达式。 */
-  public String resolveMessage(String message, ProceedingJoinPoint jp) {
-    if (message == null || message.isEmpty()) return "";
+  /** 用默认 label（{@code ClassName.methodName()}）执行 trace。 */
+  public Object trace(ProceedingJoinPoint jp) throws Throwable {
+    return trace(jp, "");
+  }
+
+  /** 用 message 执行 trace（message 为空时使用默认 label，非空时解析 EL 表达式）。 */
+  public Object trace(ProceedingJoinPoint jp, String message) throws Throwable {
+    Class<?> targetClass = jp.getTarget().getClass();
+    String label =
+        message == null || message.isBlank()
+            ? targetClass.getSimpleName() + "." + jp.getSignature().getName() + "()"
+            : resolveMessage(message, jp);
+    return doTrace(jp, label, targetClass);
+  }
+
+  private Object doTrace(ProceedingJoinPoint jp, String label, Class<?> targetClass)
+      throws Throwable {
+    Logger log = LoggerFactory.getLogger(targetClass);
+
+    log.atInfo().addKeyValue("args", jp.getArgs()).log("{} - started", label);
+
+    try {
+      Object result = jp.proceed();
+      log.atInfo().addKeyValue("result", result).log("{} - finished", label);
+      return result;
+    } catch (Throwable ex) {
+      log.atError()
+          .addKeyValue("args", jp.getArgs())
+          .addKeyValue("exceptionClass", ex.getClass().getName())
+          .addKeyValue("exceptionMessage", ex.getMessage())
+          .setCause(ex)
+          .log("{} - failed: {}", label);
+      throw ex;
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // EL message resolution
+  // ------------------------------------------------------------------
+
+  private String resolveMessage(String message, ProceedingJoinPoint jp) {
+    if (!message.contains("${")) return message;
 
     MethodSignature sig = (MethodSignature) jp.getSignature();
     Object[] args = jp.getArgs();
@@ -82,43 +121,5 @@ public class HermiLoggingTracer {
     }
     m.appendTail(sb);
     return sb.toString();
-  }
-
-  // ------------------------------------------------------------------
-  // Tracing
-  // ------------------------------------------------------------------
-
-  /** 用默认 label 执行 trace。 */
-  public Object trace(ProceedingJoinPoint jp) throws Throwable {
-    Class<?> targetClass = jp.getTarget().getClass();
-    String label =
-        String.format("%s.%s()", targetClass.getSimpleName(), jp.getSignature().getName());
-    return trace(jp, label);
-  }
-
-  /** 用预解析的 label 执行 trace。 */
-  public Object trace(ProceedingJoinPoint jp, String label) throws Throwable {
-    return trace(jp, label, jp.getTarget().getClass());
-  }
-
-  private Object trace(ProceedingJoinPoint jp, String label, Class<?> targetClass)
-      throws Throwable {
-    Logger log = LoggerFactory.getLogger(targetClass);
-
-    log.atInfo().addKeyValue("args", jp.getArgs()).log("{} - started", label);
-
-    try {
-      Object result = jp.proceed();
-      log.atInfo().addKeyValue("result", result).log("{} - finished", label);
-      return result;
-    } catch (Throwable ex) {
-      log.atError()
-          .addKeyValue("args", jp.getArgs())
-          .addKeyValue("exceptionClass", ex.getClass().getName())
-          .addKeyValue("exceptionMessage", ex.getMessage())
-          .setCause(ex)
-          .log("{} - failed: {}", label);
-      throw ex;
-    }
   }
 }
