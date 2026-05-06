@@ -55,16 +55,17 @@ public class HermiLoggingAspect {
     HermiLogging hermiLogging = tracer.resolveConfig(jp);
 
     if (hermiLogging != null && packageRegistry.shouldTrace(declaringType)) {
+      String msg = hermiLogging.message();
       int prev = tracer.enterChain();
       try {
-        return tracer.trace(jp, hermiLogging.message());
+        return msg.isEmpty() ? tracer.trace(jp) : tracer.trace(jp, tracer.resolveMessage(msg, jp));
       } finally {
         tracer.leaveChain(prev);
       }
     }
 
     if (tracer.isInChain() && packageRegistry.shouldTrace(declaringType)) {
-      return tracer.trace(jp, "");
+      return tracer.trace(jp);
     }
 
     return jp.proceed();
