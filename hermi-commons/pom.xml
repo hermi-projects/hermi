@@ -22,5 +22,9 @@
       <groupId>tools.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.hermi</groupId>
+      <artifactId>hermi-annotations</artifactId>
+    </dependency>
   </dependencies>
 </project>

@@ -5,12 +5,12 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import org.hermi.annotations.markers.SSNMarker;
+import org.hermi.annotations.serializers.SSNSerializer;
 import org.hermi.annotations.validators.SSNValidator;
 
 @Documented
 @jakarta.validation.Constraint(validatedBy = SSNValidator.class)
-@org.hermi.annotations.logging.Constraint(markedBy = SSNMarker.class)
+@org.hermi.annotations.mask.Constraint(maskedBy = SSNSerializer.class)
 @Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface SSN {}

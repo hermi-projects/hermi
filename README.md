@@ -116,6 +116,9 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
 #### Step 3: The Execution Harness: Pure Java Main Shell
 Establish the execution harness to enable continuous execution and debugging during development. By using a standard `public static void main` method, we completely avoid external framework dependencies (like JUnit) in Phase 1, keeping the core purely Java.
 
+> [!TIP]
+> AI can run with debug modle to get detailed input/output
+
 ```java
 public class FindUserMainShell {
     public static void main(String[] args) {
@@ -731,3 +734,6 @@ graph TD
     class A_VendorMapper,A_RepoMapper,A_MessengerMapper s_api
     class A_ClientAuditor,A_MessengerAuditor s_api
 ```
+
+AI提示：
+文件行数超过300，要功能分区
