@@ -18,8 +18,7 @@ import tools.jackson.databind.ser.ValueSerializerModifier;
 public class MaskModule extends SimpleModule {
   private static final Map<Class<?>, Constraint> CONSTRAINT_CACHE = new ConcurrentHashMap<>();
 
-  private final Map<Class<? extends ValueSerializer<?>>, ValueSerializer<?>> serializerCache =
-      new ConcurrentHashMap<>();
+  private final Map<Class<?>, ValueSerializer<?>> serializerCache = new ConcurrentHashMap<>();
 
   public MaskModule() {
     super("MaskModule", Version.unknownVersion());
@@ -90,20 +89,17 @@ public class MaskModule extends SimpleModule {
     return CONSTRAINT_CACHE.computeIfAbsent(annotationType, t -> t.getAnnotation(Constraint.class));
   }
 
-  private ValueSerializer<Object> createSerializer(Class<? extends ValueSerializer<?>> clazz) {
-    @SuppressWarnings("unchecked")
-    ValueSerializer<Object> ser =
-        (ValueSerializer<Object>)
-            serializerCache.computeIfAbsent(
-                clazz,
-                k -> {
-                  try {
-                    return k.getDeclaredConstructor().newInstance();
-                  } catch (Exception e) {
-                    throw new RuntimeException(
-                        "Failed to instantiate serializer: " + k.getName(), e);
-                  }
-                });
-    return ser;
+  @SuppressWarnings("unchecked")
+  private ValueSerializer<Object> createSerializer(Class<?> clazz) {
+    return (ValueSerializer<Object>)
+        serializerCache.computeIfAbsent(
+            clazz,
+            k -> {
+              try {
+                return (ValueSerializer<?>) k.getDeclaredConstructor().newInstance();
+              } catch (Exception e) {
+                throw new RuntimeException("Failed to instantiate serializer: " + k.getName(), e);
+              }
+            });
   }
 }

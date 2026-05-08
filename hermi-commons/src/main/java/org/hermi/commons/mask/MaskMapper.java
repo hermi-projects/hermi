@@ -1,31 +1,26 @@
 package org.hermi.commons.mask;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
 
-public class MaskMapper {
+public final class MaskMapper {
 
   private MaskMapper() {}
 
-  private static class Holder {
-    static final MaskMapper INSTANCE = new MaskMapper();
-  }
+  private static final Logger LOG = LoggerFactory.getLogger(MaskMapper.class);
+  private static final JsonMapper MAPPER = JsonMapper.builder().addModule(new MaskModule()).build();
 
-  public static MaskMapper instance() {
-    return Holder.INSTANCE;
-  }
-
-  private final JsonMapper mapper = JsonMapper.builder().addModule(new MaskModule()).build();
-
-  public JsonMapper getMapper() {
-    return mapper;
-  }
-
-  public String mask(Object obj) {
+  public static String mask(Object obj) {
+    if (obj == null) {
+      return null;
+    }
     try {
-      return mapper.writeValueAsString(obj);
+      return MAPPER.writeValueAsString(obj);
     } catch (JacksonException e) {
-      throw new RuntimeException("Mask serialization failed", e);
+      LOG.error("Mask serialization failed, falling back to toString()", e);
+      return obj.toString();
     }
   }
 }

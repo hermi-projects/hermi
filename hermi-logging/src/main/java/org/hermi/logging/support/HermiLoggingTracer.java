@@ -5,6 +5,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.hermi.commons.mask.MaskMapper;
 import org.hermi.logging.annotations.HermiLogging;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,15 +74,15 @@ public class HermiLoggingTracer {
       throws Throwable {
     Logger log = LoggerFactory.getLogger(targetClass);
 
-    log.atInfo().addKeyValue("args", jp.getArgs()).log("{} - started", label);
+    log.atInfo().addKeyValue("args", MaskMapper.mask(jp.getArgs())).log("{} - started", label);
 
     try {
       Object result = jp.proceed();
-      log.atInfo().addKeyValue("result", result).log("{} - finished", label);
+      log.atInfo().addKeyValue("result", MaskMapper.mask(result)).log("{} - finished", label);
       return result;
     } catch (Throwable ex) {
       log.atError()
-          .addKeyValue("args", jp.getArgs())
+          .addKeyValue("args", MaskMapper.mask(jp.getArgs()))
           .addKeyValue("exceptionClass", ex.getClass().getName())
           .addKeyValue("exceptionMessage", ex.getMessage())
           .setCause(ex)
