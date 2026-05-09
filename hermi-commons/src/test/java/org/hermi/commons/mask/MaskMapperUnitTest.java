@@ -44,6 +44,34 @@ public class MaskMapperUnitTest {
     }
   }
 
+  @Test
+  void shouldMaskInheritedSSNField() {
+    String json = MaskMapper.mask(new ChildUser("Dave"));
+    assertThat(json).contains("\"ssn\":\"***-**-6789\"");
+  }
+
+  @SuppressWarnings("unused")
+  private static class ParentUser {
+    @SSN private String ssn = "123-45-6789";
+
+    public String getSsn() {
+      return ssn;
+    }
+  }
+
+  @SuppressWarnings("unused")
+  private static class ChildUser extends ParentUser {
+    private String name;
+
+    ChildUser(String name) {
+      this.name = name;
+    }
+
+    public String getName() {
+      return name;
+    }
+  }
+
   @SuppressWarnings("unused")
   private static class MaskedUser {
     private String name;

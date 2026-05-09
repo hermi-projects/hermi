@@ -1,8 +1,11 @@
 package org.hermi.commons.mask;
 
+import java.lang.annotation.Annotation;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.hermi.annotations.mask.Constraint;
 import tools.jackson.core.Version;
@@ -32,7 +35,7 @@ public class MaskModule extends SimpleModule {
               BeanDescription.Supplier beanDesc,
               List<BeanPropertyWriter> beanProperties) {
             for (BeanPropertyWriter writer : beanProperties) {
-              Constraint constraint = findMaskConstraint(writer);
+              Constraint constraint = findConstraint(writer);
               if (constraint != null) {
                 writer.assignSerializer(createSerializer(constraint.maskedBy()));
               }
@@ -42,14 +45,39 @@ public class MaskModule extends SimpleModule {
         });
   }
 
-  private static Constraint findMaskConstraint(BeanPropertyWriter writer) {
+  private static Constraint findConstraint(BeanPropertyWriter writer) {
     return writer
         .getMember()
         .annotations()
-        .map(ann -> ann.annotationType().getAnnotation(Constraint.class))
+        .map(MaskModule::resolveConstraint)
         .filter(Objects::nonNull)
         .findFirst()
         .orElse(null);
+  }
+
+  private static Constraint resolveConstraint(Annotation ann) {
+    return resolveConstraint(ann.annotationType(), new HashSet<>());
+  }
+
+  private static Constraint resolveConstraint(Class<?> annType, Set<Class<?>> visited) {
+    if (!visited.add(annType)) {
+      return null;
+    }
+    Constraint constraint = annType.getAnnotation(Constraint.class);
+    if (constraint != null) {
+      return constraint;
+    }
+    for (Annotation metaAnn : annType.getAnnotations()) {
+      Class<? extends Annotation> metaType = metaAnn.annotationType();
+      if (metaType.getName().startsWith("java.lang.annotation")) {
+        continue;
+      }
+      constraint = resolveConstraint(metaType, visited);
+      if (constraint != null) {
+        return constraint;
+      }
+    }
+    return null;
   }
 
   @SuppressWarnings("unchecked")
