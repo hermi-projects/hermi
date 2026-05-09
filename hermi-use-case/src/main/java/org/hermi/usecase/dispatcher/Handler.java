@@ -1,7 +1,7 @@
 package org.hermi.usecase.dispatcher;
 
+import org.hermi.commons.validation.Validatable;
 import org.hermi.usecase.standard.UseCase;
-import org.hermi.validation.Validatable;
 
 /**
  * <b>AI INSTRUCTION:</b> When subclassing Handler, implement both {@code support} (routing

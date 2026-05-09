@@ -1,4 +1,4 @@
-package org.hermi.validation;
+package org.hermi.commons.validation;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;

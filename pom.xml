@@ -31,7 +31,6 @@
   <modules>
     <module>hermi-commons</module>
     <module>hermi-logging</module>
-    <module>hermi-validation</module>
     <module>hermi-use-case</module>
     <module>hermi-shell</module>
     <module>hermi-starter</module>

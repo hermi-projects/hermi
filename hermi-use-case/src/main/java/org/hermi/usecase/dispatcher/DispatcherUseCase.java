@@ -2,8 +2,8 @@ package org.hermi.usecase.dispatcher;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.hermi.commons.validation.Validatable;
 import org.hermi.usecase.standard.UseCase;
-import org.hermi.validation.Validatable;
 
 /**
  * <b>AI INSTRUCTION:</b> When subclassing DispatcherUseCase, do NOT override {@code doExecute}.
