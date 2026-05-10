@@ -9,19 +9,19 @@ public class MaskMapperUnitTest {
 
   @Test
   void shouldSerializePlainObject() {
-    String json = MaskMapper.mask(new UnmaskedUser("Alice", "123-45-6789"));
+    String json = MaskMapper.mask(new UnmaskedUser("Alice", "123-45-6789")).toString();
     assertThat(json).contains("Alice").contains("123-45-6789");
   }
 
   @Test
   void shouldMaskSSNField() {
-    String json = MaskMapper.mask(new MaskedUser("Bob", "123-45-6789"));
+    String json = MaskMapper.mask(new MaskedUser("Bob", "123-45-6789")).toString();
     assertThat(json).contains("\"ssn\":\"***-**-6789\"");
   }
 
   @Test
   void shouldNotMaskNonAnnotatedFields() {
-    String json = MaskMapper.mask(new MaskedUser("Carol", "987-65-4321"));
+    String json = MaskMapper.mask(new MaskedUser("Carol", "987-65-4321")).toString();
     assertThat(json).contains("\"name\":\"Carol\"");
   }
 
@@ -46,7 +46,7 @@ public class MaskMapperUnitTest {
 
   @Test
   void shouldMaskInheritedSSNField() {
-    String json = MaskMapper.mask(new ChildUser("Dave"));
+    String json = MaskMapper.mask(new ChildUser("Dave")).toString();
     assertThat(json).contains("\"ssn\":\"***-**-6789\"");
   }
 

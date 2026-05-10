@@ -3,6 +3,7 @@ package org.hermi.constraint.mask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 public final class MaskMapper {
@@ -12,15 +13,12 @@ public final class MaskMapper {
   private static final Logger LOG = LoggerFactory.getLogger(MaskMapper.class);
   private static final JsonMapper MAPPER = JsonMapper.builder().addModule(new MaskModule()).build();
 
-  public static String mask(Object obj) {
-    if (obj == null) {
-      return null;
-    }
+  public static JsonNode mask(Object obj) {
     try {
-      return MAPPER.writeValueAsString(obj);
+      return MAPPER.valueToTree(obj);
     } catch (JacksonException e) {
       LOG.error("Mask serialization failed, falling back to toString()", e);
-      return obj.toString();
+      return MAPPER.valueToTree(obj.toString());
     }
   }
 }
