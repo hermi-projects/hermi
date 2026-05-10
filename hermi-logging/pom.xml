@@ -37,10 +37,6 @@
       <groupId>org.hermi</groupId>
       <artifactId>hermi-constraint</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.hermi</groupId>
-      <artifactId>hermi-commons</artifactId>
-    </dependency>
     <!-- Testing -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
