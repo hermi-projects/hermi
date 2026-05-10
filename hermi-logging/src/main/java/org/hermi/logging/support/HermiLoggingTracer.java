@@ -5,7 +5,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
-import org.hermi.commons.mask.MaskMapper;
+import org.hermi.constraint.mask.MaskMapper;
 import org.hermi.logging.annotations.HermiLogging;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

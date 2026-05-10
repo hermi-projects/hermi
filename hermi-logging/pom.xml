@@ -35,7 +35,7 @@
     </dependency>
     <dependency>
       <groupId>org.hermi</groupId>
-      <artifactId>hermi-annotations</artifactId>
+      <artifactId>hermi-constraint</artifactId>
     </dependency>
     <dependency>
       <groupId>org.hermi</groupId>

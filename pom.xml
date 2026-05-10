@@ -29,12 +29,12 @@
   </developers>
 
   <modules>
+    <module>hermi-constraint</module>
     <module>hermi-commons</module>
     <module>hermi-logging</module>
     <module>hermi-use-case</module>
     <module>hermi-shell</module>
     <module>hermi-starter</module>
-    <module>hermi-annotations</module>
   </modules>
 
   <scm>
@@ -73,12 +73,7 @@
       </dependency>
       <dependency>
         <groupId>org.hermi</groupId>
-        <artifactId>hermi-annotations</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.hermi</groupId>
-        <artifactId>hermi-validation</artifactId>
+        <artifactId>hermi-constraint</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

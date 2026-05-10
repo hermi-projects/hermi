@@ -1,7 +1,7 @@
 package org.hermi.commons.audit;
 
 import java.util.UUID;
-import org.hermi.commons.mask.MaskMapper;
+import org.hermi.constraint.mask.MaskMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

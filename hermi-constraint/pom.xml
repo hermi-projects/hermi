@@ -7,20 +7,20 @@
     <version>1.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>hermi-commons</artifactId>
+  <artifactId>hermi-constraint</artifactId>
 
   <dependencies>
     <dependency>
-      <groupId>org.hermi</groupId>
-      <artifactId>hermi-constraint</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
+      <groupId>jakarta.validation</groupId>
+      <artifactId>jakarta.validation-api</artifactId>
     </dependency>
     <dependency>
       <groupId>tools.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
     </dependency>
   </dependencies>
 </project>

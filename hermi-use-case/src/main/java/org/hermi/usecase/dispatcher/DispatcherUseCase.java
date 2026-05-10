@@ -2,7 +2,7 @@ package org.hermi.usecase.dispatcher;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.hermi.commons.validation.Validatable;
+import org.hermi.constraint.validation.Validatable;
 import org.hermi.usecase.standard.UseCase;
 
 /**

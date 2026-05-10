@@ -10,9 +10,9 @@ import java.util.UUID;
 import org.hermi.commons.audit.LogAuditor;
 import org.hermi.commons.conversion.Converter;
 import org.hermi.commons.conversion.Convertible;
-import org.hermi.commons.validation.InputValidationException;
-import org.hermi.commons.validation.Validatable;
-import org.hermi.commons.validation.Validator;
+import org.hermi.constraint.validation.InputValidationException;
+import org.hermi.constraint.validation.Validatable;
+import org.hermi.constraint.validation.Validator;
 
 /**
  * <b>AI INSTRUCTION:</b> DO NOT subclass this class directly when building applications. Use the

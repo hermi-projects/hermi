@@ -1,7 +1,7 @@
 package org.hermi.usecase.standard;
 
 import org.hermi.commons.Executor;
-import org.hermi.commons.validation.Validatable;
+import org.hermi.constraint.validation.Validatable;
 
 /**
  * [AI ARCHITECTURAL CONTRACT]
