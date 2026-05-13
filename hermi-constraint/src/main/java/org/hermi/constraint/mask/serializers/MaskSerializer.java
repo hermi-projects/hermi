@@ -1,10 +1,15 @@
 package org.hermi.constraint.mask.serializers;
 
-import tools.jackson.core.JacksonException;
-import tools.jackson.core.JsonGenerator;
-import tools.jackson.databind.SerializationContext;
-import tools.jackson.databind.ser.std.StdSerializer;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import java.io.IOException;
 
+/**
+ * Generic masking serializer that preserves the first and last character of a value, replacing
+ * interior characters with {@code *}. Single-character and two-character values pass through
+ * unmasked, as does null.
+ */
 public class MaskSerializer extends StdSerializer<Object> {
 
   public MaskSerializer() {
@@ -12,8 +17,8 @@ public class MaskSerializer extends StdSerializer<Object> {
   }
 
   @Override
-  public void serialize(Object value, JsonGenerator gen, SerializationContext ctxt)
-      throws JacksonException {
+  public void serialize(Object value, JsonGenerator gen, SerializerProvider provider)
+      throws IOException {
     if (value == null) {
       gen.writeString((String) null);
       return;

@@ -1,19 +1,18 @@
 package org.hermi.constraint.mask;
 
+import com.fasterxml.jackson.core.Version;
+import com.fasterxml.jackson.databind.BeanDescription;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializationConfig;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.ser.BeanPropertyWriter;
+import com.fasterxml.jackson.databind.ser.BeanSerializerModifier;
 import java.lang.annotation.Annotation;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import tools.jackson.core.Version;
-import tools.jackson.databind.BeanDescription;
-import tools.jackson.databind.SerializationConfig;
-import tools.jackson.databind.ValueSerializer;
-import tools.jackson.databind.module.SimpleModule;
-import tools.jackson.databind.ser.BeanPropertyWriter;
-import tools.jackson.databind.ser.ValueSerializerModifier;
 
 /**
  * Jackson module that replaces a field's serializer with a masking serializer when the field
@@ -32,7 +31,7 @@ import tools.jackson.databind.ser.ValueSerializerModifier;
  * }</pre>
  */
 public class MaskModule extends SimpleModule {
-  private final Map<Class<?>, ValueSerializer<?>> serializerCache = new ConcurrentHashMap<>();
+  private final Map<Class<?>, JsonSerializer<?>> serializerCache = new ConcurrentHashMap<>();
 
   public MaskModule() {
     super("MaskModule", Version.unknownVersion());
@@ -42,12 +41,12 @@ public class MaskModule extends SimpleModule {
   public void setupModule(SetupContext context) {
     super.setupModule(context);
 
-    context.addSerializerModifier(
-        new ValueSerializerModifier() {
+    context.addBeanSerializerModifier(
+        new BeanSerializerModifier() {
           @Override
           public List<BeanPropertyWriter> changeProperties(
               SerializationConfig config,
-              BeanDescription.Supplier beanDesc,
+              BeanDescription beanDesc,
               List<BeanPropertyWriter> beanProperties) {
             for (BeanPropertyWriter writer : beanProperties) {
               Constraint constraint = findConstraint(writer);
@@ -66,13 +65,13 @@ public class MaskModule extends SimpleModule {
    * with {@code @SSN}) are discovered.
    */
   private static Constraint findConstraint(BeanPropertyWriter writer) {
-    return writer
-        .getMember()
-        .annotations()
-        .map(MaskModule::resolveConstraint)
-        .filter(Objects::nonNull)
-        .findFirst()
-        .orElse(null);
+    for (Annotation ann : writer.getMember().getAllAnnotations().annotations()) {
+      Constraint constraint = resolveConstraint(ann);
+      if (constraint != null) {
+        return constraint;
+      }
+    }
+    return null;
   }
 
   /**
@@ -110,8 +109,8 @@ public class MaskModule extends SimpleModule {
    * are memoized in {@code serializerCache} so each serializer class is created at most once.
    */
   @SuppressWarnings("unchecked")
-  private ValueSerializer<Object> createSerializer(Class<?> clazz) {
-    return (ValueSerializer<Object>)
+  private JsonSerializer<Object> createSerializer(Class<?> clazz) {
+    return (JsonSerializer<Object>)
         serializerCache.computeIfAbsent(
             clazz,
             k -> {
@@ -120,7 +119,7 @@ public class MaskModule extends SimpleModule {
                 if (!constructor.canAccess(null)) {
                   constructor.setAccessible(true);
                 }
-                return (ValueSerializer<?>) constructor.newInstance();
+                return (JsonSerializer<?>) constructor.newInstance();
               } catch (NoSuchMethodException e) {
                 throw new IllegalStateException(
                     "Masking serializer " + k.getName() + " must have a no-args constructor", e);
