@@ -53,7 +53,7 @@ public class LogAuditor<C, R> extends Auditor<C, R> {
 
   @Override
   protected void doRecordResult(UUID uuid, R result) {
-    log.atDebug()
+    log.atInfo()
         .addKeyValue(KEY_CONTEXT_ID, uuid)
         .addKeyValue(KEY_RESULT, MaskMapper.mask(result))
         .log("{} execution succeeded.", executorClassName);

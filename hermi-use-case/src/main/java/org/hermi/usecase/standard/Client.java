@@ -97,5 +97,6 @@ public abstract class Client<C, R extends Validatable> extends Executor<C, R> {
    * @param context the client request context
    * @return the client response result
    */
+  @Override
   protected abstract R doExecute(C context);
 }
