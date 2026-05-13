@@ -74,11 +74,11 @@ public class HermiLoggingTracer {
       throws Throwable {
     Logger log = LoggerFactory.getLogger(targetClass);
 
-    log.atInfo().addKeyValue("args", MaskMapper.mask(jp.getArgs())).log("{} - started", label);
+    log.atInfo().log("{} - STARTED", label);
 
     try {
       Object result = jp.proceed();
-      log.atInfo().addKeyValue("result", MaskMapper.mask(result)).log("{} - finished", label);
+      log.atInfo().log("{} - FINISHED", label);
       return result;
     } catch (Throwable ex) {
       log.atError()
@@ -86,7 +86,7 @@ public class HermiLoggingTracer {
           .addKeyValue("exceptionClass", ex.getClass().getName())
           .addKeyValue("exceptionMessage", ex.getMessage())
           .setCause(ex)
-          .log("{} - failed: {}", label);
+          .log("{} - FAILED", label);
       throw ex;
     }
   }

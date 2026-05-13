@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory;
  *
  * <ul>
  *   <li>{@code uuid} — correlation id across STARTED/SUCCEEDED/FAILED (all events)
- *   <li>{@code class} — executor class name (all events)
  *   <li>{@code context} — masked context JSON (STARTED, FAILED)
  *   <li>{@code result} — masked result JSON (SUCCEEDED)
  *   <li>{@code exceptionClass}, {@code exceptionMessage} — error metadata (FAILED)
@@ -30,36 +29,34 @@ public class LogAuditor<C, R> extends Auditor<C, R> {
   private static final String KEY_CONTEXT_ID = "contextId";
   private static final String KEY_CONTEXT = "context";
   private static final String KEY_RESULT = "result";
+
   private static final String KEY_EX_CLASS = "exceptionClass";
   private static final String KEY_EX_MESSAGE = "exceptionMessage";
 
   private final Logger log;
+  private final String executorClassName;
 
   public LogAuditor(Class<?> executorClass) {
     this.log = LoggerFactory.getLogger(executorClass);
+    this.executorClassName = executorClass.getSimpleName();
   }
 
   @Override
   protected UUID doRecordContext(C context) {
     UUID uuid = UUID.randomUUID();
-    if (!log.isDebugEnabled()) {
-      return uuid;
-    }
-    log.atDebug()
+    log.atInfo()
         .addKeyValue(KEY_CONTEXT_ID, uuid)
         .addKeyValue(KEY_CONTEXT, MaskMapper.mask(context))
-        .log("Execution started.");
+        .log("{} execution started.", executorClassName);
     return uuid;
   }
 
   @Override
   protected void doRecordResult(UUID uuid, R result) {
-    if (log.isDebugEnabled()) {
-      log.atDebug()
-          .addKeyValue(KEY_CONTEXT_ID, uuid)
-          .addKeyValue(KEY_RESULT, MaskMapper.mask(result))
-          .log("Execution succeeded.");
-    }
+    log.atDebug()
+        .addKeyValue(KEY_CONTEXT_ID, uuid)
+        .addKeyValue(KEY_RESULT, MaskMapper.mask(result))
+        .log("{} execution succeeded.", executorClassName);
   }
 
   @Override
@@ -70,6 +67,6 @@ public class LogAuditor<C, R> extends Auditor<C, R> {
         .addKeyValue(KEY_EX_CLASS, exception.getClass().getName())
         .addKeyValue(KEY_EX_MESSAGE, exception.getMessage())
         .setCause(exception)
-        .log("Execution failed.");
+        .log("{} execution failed.", executorClassName);
   }
 }
