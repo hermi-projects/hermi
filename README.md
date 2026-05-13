@@ -309,21 +309,21 @@ Vendor Implementation, can be implemented as soon as we know the vendor
 ```java
 import org.hermi.shell.Client;
 import org.hermi.shell.Messenger;
-import org.hermi.shell.audit.Auditor;
+import org.hermi.shell.audit.PersistentAuditor;
 
 @Component
-public class LexisNexisAuditor extends Auditor<LexisNexisPayload, LexisNexisResponse> {
+public class LexisNexisAuditor extends PersistentAuditor<LexisNexisPayload, LexisNexisResponse> {
   @Override
-  protected UUID doRecordPayload(LexisNexisPayload payload) {
+  protected UUID doRecordContext(LexisNexisPayload payload) {
     // Save to audit DB
     return UUID.randomUUID();
   }
   @Override
-  protected void doRecordResponse(UUID trackingId, LexisNexisResponse response) {
+  protected void doRecordResult(UUID trackingId, LexisNexisResponse response) {
     // Update audit DB with output
   }
   @Override
-  protected void doRecordError(UUID trackingId, Exception exception) {
+  protected void doRecordError(UUID trackingId, LexisNexisPayload payload, Exception exception) {
     // Update audit DB with failure
   }
 }
@@ -344,20 +344,21 @@ public class LexisNexisClient extends Client<LexisNexisPayload, LexisNexisRespon
     return restTemplate.postForObject("/api/users", payload, LexisNexisResponse.class);
   }
 }
-
+```
+```java
 @Component
-public class KafkaUserAuditor extends Auditor<ProducerRecord<String, String>, RecordMetadata> {
+public class KafkaUserAuditor extends PersistentAuditor<ProducerRecord<String, String>, RecordMetadata> {
   @Override
-  protected UUID doRecordPayload(ProducerRecord<String, String> payload) {
+  protected UUID doRecordContext(ProducerRecord<String, String> payload) {
     // Save to audit DB
     return UUID.randomUUID();
   }
   @Override
-  protected void doRecordResponse(UUID trackingId, RecordMetadata response) {
+  protected void doRecordResult(UUID trackingId, RecordMetadata response) {
     // Update audit DB with execution metadata
   }
   @Override
-  protected void doRecordError(UUID trackingId, Exception exception) {
+  protected void doRecordError(UUID trackingId, ProducerRecord<String, String> payload, Exception exception) {
     // Update audit DB with failure
   }
 }
@@ -415,10 +416,10 @@ public class LexisNexisFindUserClient extends FindUserClient {
 
   @Autowired
   public LexisNexisFindUserClient(
-      Client<LexisNexisPayload, LexisNexisResponse> client,
-      Mapper<FindUserClient.Context, FindUserClient.Result, LexisNexisPayload, LexisNexisResponse> mapper) {
-    this.client = client;
-    this.mapper = mapper;
+      LexisNexisClient lexisNexisClient,
+      LexisNexisMapper lexisNexisMapper) {
+    this.client = lexisNexisClient;
+    this.mapper = lexisNexisMapper;
   }
 
   @Override
@@ -454,9 +455,9 @@ public class JdbcSaveUserRepository extends SaveUserRepository {
   @Autowired
   public JdbcSaveUserRepository(
       UserJpaRepository jpaRepository, 
-      Mapper<SaveUserRepository.Context, SaveUserRepository.Result, UserEntity, UserEntity> mapper) {
+      JdbcUserMapper jdbcUserMapper) {
     this.jpaRepository = jpaRepository;
-    this.mapper = mapper;
+    this.mapper = jdbcUserMapper;
   }
 
   @Override
@@ -466,7 +467,8 @@ public class JdbcSaveUserRepository extends SaveUserRepository {
     return mapper.toResult(savedEntity);
   }
 }
-
+```
+```java
 @Component
 public class KafkaUserMapper implements Mapper<NotifyUserFoundMessenger.Context, NotifyUserFoundMessenger.Result, ProducerRecord<String, String>, RecordMetadata> {
   @Override
@@ -488,10 +490,10 @@ public class KafkaNotifyUserFoundMessenger extends NotifyUserFoundMessenger {
 
   @Autowired
   public KafkaNotifyUserFoundMessenger(
-      Messenger<ProducerRecord<String, String>, RecordMetadata> messenger,
-      Mapper<NotifyUserFoundMessenger.Context, NotifyUserFoundMessenger.Result, ProducerRecord<String, String>, RecordMetadata> mapper) {
-    this.messenger = messenger;
-    this.mapper = mapper;
+      KafkaUserMessenger kafkaUserMessenger,
+      KafkaUserMapper kafkaUserMapper) {
+    this.messenger = kafkaUserMessenger;
+    this.mapper = kafkaUserMapper;
   }
 
   @Override
