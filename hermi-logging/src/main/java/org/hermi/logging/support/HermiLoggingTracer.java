@@ -1,6 +1,8 @@
 package org.hermi.logging.support;
 
 import jakarta.el.ELProcessor;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -75,14 +77,17 @@ public class HermiLoggingTracer {
     Logger log = LoggerFactory.getLogger(targetClass);
 
     log.atInfo().log("{} - STARTED", label);
-
+    Instant start = Instant.now();
     try {
       Object result = jp.proceed();
-      log.atInfo().log("{} - FINISHED", label);
+      log.atInfo()
+          .addKeyValue("duration", Duration.between(start, Instant.now()).toMillis())
+          .log("{} - FINISHED", label);
       return result;
     } catch (Throwable ex) {
       log.atError()
           .addKeyValue("args", MaskMapper.mask(jp.getArgs()))
+          .addKeyValue("duration", Duration.between(start, Instant.now()).toMillis())
           .addKeyValue("exceptionClass", ex.getClass().getName())
           .addKeyValue("exceptionMessage", ex.getMessage())
           .setCause(ex)
