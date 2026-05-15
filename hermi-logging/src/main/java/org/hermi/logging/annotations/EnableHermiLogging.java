@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
  *
  * <p>同一个 org 前缀下的所有非 private 方法都会被 trace。
  */
-@Target({ElementType.TYPE, ElementType.PACKAGE})
+@Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface EnableHermiLogging {
 

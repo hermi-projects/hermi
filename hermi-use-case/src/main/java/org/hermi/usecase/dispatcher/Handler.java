@@ -33,5 +33,5 @@ public abstract class Handler<C extends Validatable, R> extends UseCase<C, R> {
    * @param context the input context to evaluate
    * @return {@code true} if this handler can process the context, {@code false} otherwise
    */
-  public abstract boolean support(C context);
+  public abstract boolean supports(C context);
 }

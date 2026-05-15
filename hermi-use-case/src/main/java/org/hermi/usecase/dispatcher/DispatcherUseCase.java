@@ -76,7 +76,7 @@ public abstract class DispatcherUseCase<C extends Validatable, R> extends UseCas
   @Override
   protected R doExecute(C context) {
     for (Handler<C, R> handler : handlers) {
-      if (handler.support(context)) {
+      if (handler.supports(context)) {
         return handler.execute(context);
       }
     }
