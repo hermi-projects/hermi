@@ -97,5 +97,6 @@ public abstract class Repository<C, R extends Validatable> extends Executor<C, R
    * @param context the repository request context
    * @return the repository response result
    */
+  @Override
   protected abstract R doExecute(C context);
 }

@@ -179,5 +179,6 @@ public abstract class UseCase<C extends Validatable, R> extends Executor<C, R> {
    * @param context the use case input
    * @return the use case output
    */
+  @Override
   protected abstract R doExecute(C context);
 }
