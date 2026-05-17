@@ -70,7 +70,7 @@ Phase 1 is about revealing and proving the system's behavior. We answer _"What"_
 
 Phase 2 is about materializing the discovered intents. We answer _"How"_ the system delivers value by mapping contracts to specific technologies:
 
-7. **Implement Production Adapters**: For each I/O contract discovered in Phase 1, build the technology-specific adapter (e.g., `JdbcUserRepository`).
+7. **Implement Production Implementations**: For each I/O contract discovered in Phase 1, build the technology-specific implementation (e.g., `JdbcUserRepository`).
 8. **Expose via Entry Points**: Wire the adapters into the chosen delivery mechanism (e.g., REST Controller, Kafka Consumer, or AI MCP Server).
 
 ## 4. Progressive Tutorial: Realizing the Discovery
@@ -302,7 +302,7 @@ public class FindUserMainShell {
 
 ### Phase 2: Building the Shell (Example: Spring Boot)
 
-#### Step 9: Realizing the Shell (Production Adapters)
+#### Step 9: Realizing the Shell (Production Implementations)
 With Phase 1 complete and the core logic verified, build a technology-specific adapter class for each I/O contract discovered in Phase 1.
 
 Vendor Implementation, can be implemented as soon as we know the vendor
@@ -312,7 +312,7 @@ import org.hermi.shell.Messenger;
 import org.hermi.shell.audit.PersistentAuditor;
 
 @Component
-public class LexisNexisAuditor extends PersistentAuditor<LexisNexisPayload, LexisNexisResponse> {
+public class LexisNexisUserAuditor extends PersistentAuditor<LexisNexisPayload, LexisNexisResponse> {
   @Override
   protected UUID doRecordContext(LexisNexisPayload payload) {
     // Save to audit DB
@@ -329,12 +329,12 @@ public class LexisNexisAuditor extends PersistentAuditor<LexisNexisPayload, Lexi
 }
 
 @Component
-public class LexisNexisClient extends Client<LexisNexisPayload, LexisNexisResponse> {
+public class LexisNexisUserClient extends Client<LexisNexisPayload, LexisNexisResponse> {
 
   private RestTemplate restTemplate;
 
   @Autowired
-  public LexisNexisClient(RestTemplate restTemplate, LexisNexisAuditor auditor) {
+  public LexisNexisUserClient(RestTemplate restTemplate, LexisNexisUserAuditor auditor) {
     super(auditor);
     this.restTemplate = restTemplate;
   }
@@ -387,15 +387,15 @@ public class KafkaUserMessenger extends Messenger<ProducerRecord<String, String>
 ```
 
 > [!TIP]
-> **Strategy for Vendor Replacement**: The Production Adapter is the binding point between the Domain Contract and a specific Vendor. If you need to replace or add a new vendor (e.g., swapping LexisNexis for Experian), simply implement a new adapter class following this pattern.
+> **Strategy for Vendor Replacement**: The Production Implementation is the binding point between the Domain Contract and a specific Vendor. If you need to replace or add a new vendor (e.g., swapping LexisNexis for Experian), simply implement a new implementation class following this pattern.
 
-Production Adapter
+Production Implementation
 ```java
 import org.hermi.shell.Client;
 import org.hermi.shell.Mapper;
 
 @Component
-public class LexisNexisMapper implements Mapper<FindUserClient.Context, FindUserClient.Result, LexisNexisPayload, LexisNexisResponse> {
+public class LexisNexisUserMapper implements Mapper<FindUserClient.Context, FindUserClient.Result, LexisNexisPayload, LexisNexisResponse> {
 
   @Override
   public LexisNexisPayload toPayload(FindUserClient.Context context) {
@@ -416,10 +416,10 @@ public class LexisNexisFindUserClient extends FindUserClient {
 
   @Autowired
   public LexisNexisFindUserClient(
-      LexisNexisClient lexisNexisClient,
-      LexisNexisMapper lexisNexisMapper) {
-    this.client = lexisNexisClient;
-    this.mapper = lexisNexisMapper;
+      LexisNexisUserClient lexisNexisUserClient,
+      LexisNexisUserMapper lexisNexisUserMapper) {
+    this.client = lexisNexisUserClient;
+    this.mapper = lexisNexisUserMapper;
   }
 
   @Override
@@ -432,7 +432,6 @@ public class LexisNexisFindUserClient extends FindUserClient {
 ```
 ```java
 import org.hermi.shell.Mapper;
-import org.hermi.shell.Messenger;
 
 @Component
 public class JdbcUserMapper implements Mapper<SaveUserRepository.Context, SaveUserRepository.Result, UserEntity, UserEntity> {
@@ -449,12 +448,12 @@ public class JdbcUserMapper implements Mapper<SaveUserRepository.Context, SaveUs
 
 @Component
 public class JdbcSaveUserRepository extends SaveUserRepository {
-  private final UserJpaRepository jpaRepository;
+  private final JpaUserRepository jpaRepository;
   private Mapper<SaveUserRepository.Context, SaveUserRepository.Result, UserEntity, UserEntity> mapper;
 
   @Autowired
   public JdbcSaveUserRepository(
-      UserJpaRepository jpaRepository, 
+      JpaUserRepository jpaRepository, 
       JdbcUserMapper jdbcUserMapper) {
     this.jpaRepository = jpaRepository;
     this.mapper = jdbcUserMapper;
@@ -506,7 +505,7 @@ public class KafkaNotifyUserFoundMessenger extends NotifyUserFoundMessenger {
 ```
 
 #### Step 10: Final Delivery (Entry Points)
-Wire the production adapters into the appropriate entry point for your Shell. The exact mechanism depends on the chosen framework. In this Spring Boot example, a `@RestController` is used, with an intermediate `@Service` layer to support `@Transactional`. If no cross-cutting concerns are required, the `DefaultFindUserUseCase` can be wired directly into the entry point without a dedicated Service class. Other Shell implementations (e.g., Quarkus, CLI runners, message consumers, AI MCP servers) will differ in their wiring approach, but the Use Case core remains unchanged.
+Wire the production implementations into the appropriate entry point for your Shell. The exact mechanism depends on the chosen framework. In this Spring Boot example, a `@RestController` is used, with an intermediate `@Service` layer to support `@Transactional`. If no cross-cutting concerns are required, the `DefaultFindUserUseCase` can be wired directly into the entry point without a dedicated Service class. Other Shell implementations (e.g., Quarkus, CLI runners, message consumers, AI MCP servers) will differ in their wiring approach, but the Use Case core remains unchanged.
 
 ```java
 @Service
@@ -518,7 +517,7 @@ public class FindUserService {
     public FindUserService(LexisNexisFindUserClient client, 
                            JdbcSaveUserRepository repo, 
                            KafkaNotifyUserFoundMessenger messenger) {
-        // Instantiate the Use Case with production adapters
+        // Instantiate the Use Case with production implementations
         this.findUserUseCase = new DefaultFindUserUseCase(client, repo, messenger);
     }
 
@@ -583,18 +582,27 @@ Pure Java, technology-neutral business logic.
 | Component | Naming Pattern | Example |
 | :--- | :--- | :--- |
 | **UseCase** | `{Action}{Resource}UseCase` | `FindUserUseCase` |
+| **UseCase Implementation** | `Default{Action}{Resource}UseCase` | `DefaultFindUserUseCase` |
 | **I/O: Client** | `{Action}{Resource}Client` | `FindUserClient` (Initiating Action) |
 | **I/O: Repository** | `{Action}{Resource}Repository` | `SaveUserRepository` (Initiating Action) |
-| **I/O: Messenger** | **`{Notify}{Fact}Messenger`** | `NotifyUserFoundMessenger` (Initiating Action) |
+| **I/O: Messenger** | **`Notify{Fact}Messenger`** | `NotifyUserFoundMessenger` (Initiating Action) |
 | **Inner Model** | `{Resource}` | `User` (Scoped specifically to the UseCase) |
+| **Main Shell** | `{Action}{Resource}MainShell` | `FindUserMainShell` |
+| **Local Implementation** | `{Local\|InMemory\|Console}{ContractName}` | `LocalFindUserClient`, `InMemorySaveUserRepository`, `ConsoleNotifyUserFoundMessenger` |
 
 ### 2. Phase 2: Shell Layer (Infrastructure)
 Technology-specific implementations (e.g., Spring, JDBC, Kafka).
 
 | Component | Naming Pattern | Example |
 | :--- | :--- | :--- |
-| **Prod Adapter** | `{Tech/Vendor}{ActualContractName}` | `JdbcSaveUserRepository`, `KafkaNotifyUserFoundMessenger`, `LexisNexisFindUserClient` |
+| **Production Implementation** | `{Tech\|Vendor}{ActualContractName}` | `JdbcSaveUserRepository`, `KafkaNotifyUserFoundMessenger`, `LexisNexisFindUserClient` |
 | **Entry Point** | `{Action}{Resource}{Type}Shell` | `FindUserApiShell`, `FindUserConsumerShell` |
+| **Vendor Client** | `{Vendor}{Resource}Client` | `LexisNexisUserClient` |
+| **Vendor Messenger** | `{Tech}{Resource}Messenger` | `KafkaUserMessenger` |
+| **Vendor Repository** | `{Jpa}{Resource}Repository` | `JpaUserRepository` |
+| **Mapper** | `{Vendor}{Resource}Mapper` | `LexisNexisUserMapper`, `JdbcUserMapper`, `KafkaUserMapper` |
+| **Auditor** | `{Vendor}{Resource}Auditor` | `LexisNexisUserAuditor`, `KafkaUserAuditor` |
+| **Service** | `{Action}{Resource}Service` | `FindUserService` |
 
 ### 3. The Three Golden Rules
 
@@ -644,6 +652,10 @@ hermi-user (Parent)
 │   │   ├── FindUserClient.java                       (I/O Contract)
 │   │   ├── SaveUserRepository.java                   (I/O Contract)
 │   │   └── NotifyUserFoundMessenger.java             (I/O Contract)
+│   ├── src/test/java/org/hermi/user/find/usecase
+│   │   ├── UserUnitTest.java                         (User Test)
+│   │   ├── FindUserUseCaseConponentTest.java         (Use Case Conponent Test)
+│   │   └── FindUserUseCaseUnitTest.java              (Use Case Unit Test)
 │   └── src/test/java/org/hermi/user/find/shell
 │       ├── FindUserMainShell.java                    (Main Shell Runner)
 │       ├── LocalFindUserClient.java                  (Local Adapter)
@@ -657,15 +669,16 @@ hermi-user (Parent)
         ├── FindUserConsumerShell.java                (Spring KafkaConsumer)
         ├── FindUserService.java                      (Spring Service)
         ├── client
-        │    ├── LexisNexisFindUserClient.java        (Production Adapter)
-        │    ├── LexisNexisMapper.java                (Vendor Mapper)
-        │    ├── LexisNexisAuditor.java               (Vendor Auditor)
-        │    └── LexisNexisClient.java                (Vendor Client)
+        │    ├── LexisNexisFindUserClient.java        (Production Implementation)
+        │    ├── LexisNexisUserMapper.java            (Vendor Mapper)
+        │    ├── LexisNexisUserAuditor.java           (Vendor Auditor)
+        │    └── LexisNexisUserClient.java            (Vendor Client)
         ├── repository
-        │    ├── DefaultSaveUserRepository.java       (Production Adapter)
-        │    └── JdbcUserRepository.java              (Vendor Repository)
+        │    ├── JdbcSaveUserRepository.java          (Production Implementation)
+        │    ├── JpaUserMapper.java                   (Vendor Mapper)
+        │    └── JpaUserRepository.java               (Vendor Repository)
         └── messenger
-            ├── DefaultNotifyUserFoundMessenger.java  (Production Adapter)
+            ├── KafkaNotifyUserFoundMessenger.java    (Production Implementation)
             ├── KafkaUserMapper.java                  (Vendor Mapper)
             ├── KafkaUserAuditor.java                 (Vendor Auditor)
             └── KafkaUserMessenger.java               (Vendor Messenger)
@@ -706,12 +719,12 @@ graph TD
 
     %% Production Implementations
     U_Client -->|production implementation| A_ProdClient[LexisNexisFindUserClient]
-    A_ProdClient -->|uses| A_VendorClient[LexisNexisClient]
-    A_ProdClient -->|uses| A_VendorMapper[LexisNexisMapper]
-    A_VendorClient -->|uses| A_ClientAuditor[LexisNexisAuditor]
+    A_ProdClient -->|uses| A_VendorClient[LexisNexisUserClient]
+    A_ProdClient -->|uses| A_VendorMapper[LexisNexisUserMapper]
+    A_VendorClient -->|uses| A_ClientAuditor[LexisNexisUserAuditor]
 
     U_Repo -->|production implementation| A_ProdRepo[JdbcSaveUserRepository]
-    A_ProdRepo -->|uses| A_VendorRepo[UserJpaRepository]
+    A_ProdRepo -->|uses| A_VendorRepo[JpaUserRepository]
     A_ProdRepo -->|uses| A_RepoMapper[JdbcUserMapper]
 
     U_Messenger -->|production implementation| A_ProdMessenger[KafkaNotifyUserFoundMessenger]
