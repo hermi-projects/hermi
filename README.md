@@ -376,11 +376,7 @@ public class KafkaUserMessenger extends Messenger<ProducerRecord<String, String>
 
   @Override
   protected RecordMetadata doPublish(ProducerRecord<String, String> payload) {
-    try {
-        return kafkaTemplate.send(payload).get().getRecordMetadata();
-    } catch (Exception e) {
-        throw new RuntimeException(e);
-    }
+    return kafkaTemplate.send(payload).get().getRecordMetadata();
   }
 }
 
