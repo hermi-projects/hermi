@@ -3,6 +3,7 @@ package org.hermi.shell;
 import java.util.Objects;
 import java.util.UUID;
 import org.hermi.commons.Executor;
+import org.hermi.shell.audit.NoOpPersistentAuditor;
 import org.hermi.shell.audit.PersistentAuditor;
 
 /**
@@ -45,7 +46,8 @@ public abstract class Messenger<P, R> extends Executor<P, R> {
    * @param persistentAuditor the persistent auditor for compliance/production audit
    */
   protected Messenger(PersistentAuditor<P, R> persistentAuditor) {
-    this.persistentAuditor = Objects.requireNonNull(persistentAuditor, "auditor must not be null");
+    this.persistentAuditor =
+        Objects.requireNonNullElse(persistentAuditor, new NoOpPersistentAuditor<>());
   }
 
   /**
