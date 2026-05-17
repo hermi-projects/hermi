@@ -347,30 +347,13 @@ public class LexisNexisUserClient extends Client<LexisNexisPayload, LexisNexisRe
 ```
 ```java
 @Component
-public class KafkaUserAuditor extends PersistentAuditor<ProducerRecord<String, String>, RecordMetadata> {
-  @Override
-  protected UUID doRecordContext(ProducerRecord<String, String> payload) {
-    // Save to audit DB
-    return UUID.randomUUID();
-  }
-  @Override
-  protected void doRecordResult(UUID trackingId, RecordMetadata response) {
-    // Update audit DB with execution metadata
-  }
-  @Override
-  protected void doRecordError(UUID trackingId, ProducerRecord<String, String> payload, Exception exception) {
-    // Update audit DB with failure
-  }
-}
-
-@Component
 public class KafkaUserMessenger extends Messenger<ProducerRecord<String, String>, RecordMetadata> {
 
   private final KafkaTemplate<String, String> kafkaTemplate;
 
   @Autowired
-  public KafkaUserMessenger(KafkaTemplate<String, String> kafkaTemplate, KafkaUserAuditor auditor) {
-    super(auditor);
+  public KafkaUserMessenger(KafkaTemplate<String, String> kafkaTemplate) {
+    super(null);
     this.kafkaTemplate = kafkaTemplate;
   }
 
@@ -676,7 +659,6 @@ hermi-user (Parent)
         └── messenger
             ├── KafkaNotifyUserFoundMessenger.java    (Production Implementation)
             ├── KafkaUserMapper.java                  (Vendor Mapper)
-            ├── KafkaUserAuditor.java                 (Vendor Auditor)
             └── KafkaUserMessenger.java               (Vendor Messenger)
 ```
 Class Diagram
@@ -726,7 +708,7 @@ graph TD
     U_Messenger -->|production implementation| A_ProdMessenger[KafkaNotifyUserFoundMessenger]
     A_ProdMessenger -->|uses| A_VendorMessenger[KafkaUserMessenger]
     A_ProdMessenger -->|uses| A_MessengerMapper[KafkaUserMapper]
-    A_VendorMessenger -->|uses| A_MessengerAuditor[KafkaUserAuditor]
+    A_VendorMessenger -->|uses| A_MessengerAuditor[NoOpPersistentAuditor]
 
     %% Styling
     classDef s_local fill:#FFFFFF,color:#000000,stroke:#000000,stroke-width:1px
