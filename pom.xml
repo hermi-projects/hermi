@@ -32,7 +32,7 @@
     <module>hermi-constraint</module>
     <module>hermi-commons</module>
     <module>hermi-logging</module>
-    <module>hermi-use-case</module>
+    <module>hermi-usecase</module>
     <module>hermi-shell</module>
     <module>hermi-starter</module>
   </modules>
@@ -88,7 +88,7 @@
       </dependency>
       <dependency>
         <groupId>org.hermi</groupId>
-        <artifactId>hermi-use-case</artifactId>
+        <artifactId>hermi-usecase</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

@@ -12,7 +12,7 @@
   <dependencies>
     <dependency>
       <groupId>org.hermi</groupId>
-      <artifactId>hermi-use-case</artifactId>
+      <artifactId>hermi-usecase</artifactId>
     </dependency>
     <dependency>
       <groupId>org.hermi</groupId>
