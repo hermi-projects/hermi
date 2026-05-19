@@ -1,10 +1,46 @@
-# Hermi Framework: AI Agent Guidelines
+# AI Agent Guidelines (Powered by Hermi Framework)
 
 ## 1. Project Overview & Architecture
-**Framework**: `Hermi`
-**Architecture**: Intent-Driven Architecture
+**Context**: You are an AI Agent developing a business application that uses the Hermi Framework as its foundational architecture. Do not attempt to modify the Hermi library itself.
+**Architecture**: Intent-Driven Architecture (IDA)
 **Purpose**: Ensure strict separation between Pure Domain Logic (Phase 1: Use Cases) and Infrastructure/Delivery concerns (Phase 2: Shell).
 
+### Hermi Library Dependencies
+When configuring your project's `pom.xml` or `build.gradle`, you MUST respect these module boundaries:
+- **Phase 1 (Core Domain) Modules**: You are ONLY allowed to import `<groupId>org.hermi</groupId> <artifactId>hermi-use-case</artifactId>` for development and `<artifactId>hermi-shell</artifactId>` for local test.
+- **Phase 2 (Shell Infra) Modules**: You may import `<groupId>org.hermi</groupId> <artifactId>hermi-shell</artifactId>` and `<artifactId>hermi-logging</artifactId>`.
+
+### Project Structure (Strict Layering)
+When generating files, you MUST respect the physical boundary between Phase 1 and Phase 2 by adhering to this exact folder structure and naming pattern mapping:
+
+```text
+parent-module
+├── {project}-{action}-{resource}-use-case (Phase 1 Layer: Pure Java)
+│   ├── src/main/java/{org}/{resource}/{action}/usecase
+│   │   ├── {Action}{Resource}UseCase.java           (e.g., FindUserUseCase)
+│   │   ├── Default{Action}{Resource}UseCase.java    (e.g., DefaultFindUserUseCase)
+│   │   ├── {Action}{Resource}Client.java            (e.g., FindUserClient)
+│   │   ├── {Action}{Resource}Repository.java        (e.g., SaveUserRepository)
+│   │   └── Notify{Fact}Messenger.java               (e.g., NotifyUserFoundMessenger)
+│   └── src/test/java/{org}/{resource}/{action}/shell
+│       ├── {Action}{Resource}MainShell.java         (e.g., FindUserMainShell)
+│       ├── Local{Action}{Resource}Client.java       (e.g., LocalFindUserClient)
+│       └── InMemory{Action}{Resource}Repository.java(e.g., InMemorySaveUserRepository)
+└── {project}-{framework}-{type}-shell (Phase 2 Layer: Framework)
+    └── src/main/java/{org}/{resource}/{action}/shell
+        ├── {Action}{Resource}ApiShell.java          (e.g., FindUserApiShell)
+        ├── {Action}{Resource}ConsumerShell.java     (e.g., FindUserConsumerShell)
+        ├── {Action}{Resource}Service.java           (e.g., FindUserService)
+        ├── client
+        │   ├── {Tech}{Action}{Resource}Client.java  (e.g., LexisNexisFindUserClient)
+        │   ├── {Vendor}{Resource}Client.java        (e.g., LexisNexisUserClient)
+        │   └── {Vendor}{Resource}Mapper.java        (e.g., LexisNexisUserMapper)
+        └── repository
+            ├── {Tech}{Action}{Resource}Repository.java (e.g., JdbcSaveUserRepository)
+            ├── {Vendor}{Resource}Mapper.java        (e.g., JdbcUserMapper)
+            └── {Jpa}{Resource}Repository.java       (e.g., JpaUserRepository)
+```
+*(**Rule**: File lines should not exceed 300 lines. Use functional partitioning if files grow too large.)*
 ## 2. ALLOWED SCOPE
 
 When generating new functionality, the primary architectural components **MUST** be a subclass or implementation of the base contracts listed in the grid below. DO NOT invent new global services or managers. 
