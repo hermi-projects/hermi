@@ -67,6 +67,11 @@ public abstract class SecureClient<P, R> extends Client<P, R> {
     this.cryptor = Objects.requireNonNull(cryptor, "Cryptor is required for SecureClient");
   }
 
+  protected SecureClient(Cryptor<P, R> cryptor) {
+    super();
+    this.cryptor = Objects.requireNonNull(cryptor, "Cryptor is required for SecureClient");
+  }
+
   /**
    * Implementation hook for transmitting the physical, securely encrypted payload over the wire.
    *

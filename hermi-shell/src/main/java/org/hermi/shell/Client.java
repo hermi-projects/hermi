@@ -52,7 +52,11 @@ public abstract class Client<P, R> extends Executor<P, R> {
    */
   protected Client(PersistentAuditor<P, R> persistentAuditor) {
     this.persistentAuditor =
-        Objects.requireNonNullElse(persistentAuditor, new NoOpPersistentAuditor<>());
+        Objects.requireNonNull(persistentAuditor, "PersistentAuditor is required");
+  }
+
+  protected Client() {
+    this(new NoOpPersistentAuditor<>());
   }
 
   /**

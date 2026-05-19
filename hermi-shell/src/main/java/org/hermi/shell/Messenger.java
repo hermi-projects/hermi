@@ -47,7 +47,11 @@ public abstract class Messenger<P, R> extends Executor<P, R> {
    */
   protected Messenger(PersistentAuditor<P, R> persistentAuditor) {
     this.persistentAuditor =
-        Objects.requireNonNullElse(persistentAuditor, new NoOpPersistentAuditor<>());
+        Objects.requireNonNull(persistentAuditor, "PersistentAuditor is required");
+  }
+
+  protected Messenger() {
+    this(new NoOpPersistentAuditor<>());
   }
 
   /**
