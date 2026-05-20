@@ -26,12 +26,12 @@ import org.slf4j.LoggerFactory;
  */
 public class LogAuditor<C, R> extends Auditor<C, R> {
 
-  private static final String KEY_CONTEXT_ID = "contextId";
-  private static final String KEY_CONTEXT = "context";
-  private static final String KEY_RESULT = "result";
+  private static final String CONTEXT_ID = "contextId";
+  private static final String CONTEXT = "context";
+  private static final String RESULT = "result";
 
-  private static final String KEY_EX_CLASS = "exceptionClass";
-  private static final String KEY_EX_MESSAGE = "exceptionMessage";
+  private static final String EXCEPTION_CLASS = "exceptionClass";
+  private static final String EXCEPTION_MESSAGE = "exceptionMessage";
 
   private final Logger log;
   private final String executorClassName;
@@ -45,8 +45,8 @@ public class LogAuditor<C, R> extends Auditor<C, R> {
   protected UUID doRecordContext(C context) {
     UUID uuid = UUID.randomUUID();
     log.atInfo()
-        .addKeyValue(KEY_CONTEXT_ID, uuid)
-        .addKeyValue(KEY_CONTEXT, MaskMapper.mask(context))
+        .addKeyValue(CONTEXT_ID, uuid)
+        .addKeyValue(CONTEXT, MaskMapper.mask(context))
         .log("{} execution started.", executorClassName);
     return uuid;
   }
@@ -54,18 +54,18 @@ public class LogAuditor<C, R> extends Auditor<C, R> {
   @Override
   protected void doRecordResult(UUID uuid, R result) {
     log.atInfo()
-        .addKeyValue(KEY_CONTEXT_ID, uuid)
-        .addKeyValue(KEY_RESULT, MaskMapper.mask(result))
+        .addKeyValue(CONTEXT_ID, uuid)
+        .addKeyValue(RESULT, MaskMapper.mask(result))
         .log("{} execution succeeded.", executorClassName);
   }
 
   @Override
   protected void doRecordError(UUID uuid, C context, Exception exception) {
     log.atError()
-        .addKeyValue(KEY_CONTEXT_ID, uuid)
-        .addKeyValue(KEY_CONTEXT, MaskMapper.mask(context))
-        .addKeyValue(KEY_EX_CLASS, exception.getClass().getName())
-        .addKeyValue(KEY_EX_MESSAGE, exception.getMessage())
+        .addKeyValue(CONTEXT_ID, uuid)
+        .addKeyValue(CONTEXT, MaskMapper.mask(context))
+        .addKeyValue(EXCEPTION_CLASS, exception.getClass().getName())
+        .addKeyValue(EXCEPTION_MESSAGE, exception.getMessage())
         .setCause(exception)
         .log("{} execution failed.", executorClassName);
   }

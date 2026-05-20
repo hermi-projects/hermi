@@ -38,6 +38,9 @@ import org.hermi.constraint.validation.Validator;
  */
 public abstract class Executor<C, R> {
 
+  private static final int CONTEXT_TYPE_INDEX = 0;
+  private static final int RESULT_TYPE_INDEX = 1;
+
   private final LogAuditor<C, R> logAuditor;
 
   /** Creates an Executor with a {@link LogAuditor} for debug logging. */
@@ -153,7 +156,7 @@ public abstract class Executor<C, R> {
    * @return context type name
    */
   protected String getContextTypeName() {
-    return getGenericTypeName(0);
+    return getGenericTypeName(CONTEXT_TYPE_INDEX);
   }
 
   /**
@@ -162,7 +165,7 @@ public abstract class Executor<C, R> {
    * @return result type name
    */
   protected String getResultTypeName() {
-    return getGenericTypeName(1);
+    return getGenericTypeName(RESULT_TYPE_INDEX);
   }
 
   /**
