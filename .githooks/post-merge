@@ -1,0 +1,39 @@
+#!/bin/bash
+# -----------------------------------------------------------------------------
+# 🤖 [AI Linker] Git Post-Merge Lifecycle Hook
+# Triggered automatically after a successful 'git pull' or 'git merge'.
+# -----------------------------------------------------------------------------
+
+# Prevent the script from breaking down standard Git operations if an error occurs
+set -e
+
+SOURCE_DIR=".agents/skills"
+TARGET_DIR=".claude/skills"
+
+if [ -d "$SOURCE_DIR" ]; then
+    mkdir -p "$TARGET_DIR"
+    
+    # Iterate through all available generic AI skill directories
+    for skill_path in "$SOURCE_DIR"/*; do
+        if [ -d "$skill_path" ]; then
+            skill_name=$(basename "$skill_path")
+            
+            # Compatibility Check: If on Windows environment (MinGW / MSYS), use Windows Symlinks
+            if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
+                if [ ! -e "$TARGET_DIR/$skill_name" ]; then
+                    # Convert paths to backward slashes for Windows native cmd execution
+                    win_target=$(echo ".claude\skills\\$skill_name" | sed 's/\//\\/g')
+                    win_source=$(echo "..\..\.agents\skills\\$skill_name" | sed 's/\//\\/g')
+                    cmd //c "mklink /d \"$win_target\" \"$win_source\"" > /dev/null
+                    echo "🤖 [AI Linker] (Windows) Automatically mapped new skill: /$skill_name"
+                fi
+            else
+                # Standard Unix Symlinks for macOS and Linux environments
+                if [ ! -e "$TARGET_DIR/$skill_name" ] && [ ! -L "$TARGET_DIR/$skill_name" ]; then
+                    ln -s "../../$SOURCE_DIR/$skill_name" "$TARGET_DIR/$skill_name"
+                    echo "🤖 [AI Linker] Automatically mapped new skill: /$skill_name"
+                fi
+            fi
+        fi
+    done
+fi
