@@ -3,7 +3,7 @@ package org.hermi.shell;
 import java.util.Objects;
 import java.util.UUID;
 import org.hermi.commons.Executor;
-import org.hermi.shell.audit.NoOpPersistentAuditor;
+import org.hermi.shell.audit.NoopPersistentAuditor;
 import org.hermi.shell.audit.PersistentAuditor;
 
 /**
@@ -56,7 +56,7 @@ public abstract class Client<P, R> extends Executor<P, R> {
   }
 
   protected Client() {
-    this(new NoOpPersistentAuditor<>());
+    this(new NoopPersistentAuditor<>());
   }
 
   /**

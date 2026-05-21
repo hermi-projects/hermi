@@ -4,13 +4,13 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.hermi.shell.Messenger;
-import org.hermi.shell.audit.NoOpPersistentAuditor;
+import org.hermi.shell.audit.NoopPersistentAuditor;
 
 public class ConsoleMessenger<P, R> extends Messenger<P, R> {
   private final Map<P, R> store;
 
   public ConsoleMessenger() {
-    super(new NoOpPersistentAuditor<>());
+    super(new NoopPersistentAuditor<>());
     this.store = new ConcurrentHashMap<>();
   }
 

@@ -13,7 +13,7 @@ import java.util.UUID;
  * @param <P> payload type
  * @param <R> result type
  */
-public class NoOpPersistentAuditor<P, R> extends PersistentAuditor<P, R> {
+public class NoopPersistentAuditor<P, R> extends PersistentAuditor<P, R> {
   private final UUID uuid = new UUID(0, 0);
 
   @Override

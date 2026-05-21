@@ -4,13 +4,13 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.hermi.shell.Client;
-import org.hermi.shell.audit.NoOpPersistentAuditor;
+import org.hermi.shell.audit.NoopPersistentAuditor;
 
 public class LocalClient<P, R> extends Client<P, R> {
   private final Map<P, R> store;
 
   public LocalClient() {
-    super(new NoOpPersistentAuditor<>());
+    super(new NoopPersistentAuditor<>());
     this.store = new ConcurrentHashMap<>();
   }
 
