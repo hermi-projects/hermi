@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Element Specification</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: 127 127 127;
+      --primary-light: 191 191 191;
+      --primary-dark: 64 64 64;
+      --background: 13 13 15;
+      --surface: 20 20 23;
+      --border: 255 255 255;
+      --gray-50: 246 246 246;
+      --gray-100: 241 241 241;
+      --gray-200: 226 226 226;
+      --gray-300: 209 209 209;
+      --gray-400: 162 162 162;
+      --gray-500: 115 115 115;
+      --gray-600: 83 83 83;
+      --gray-700: 66 66 66;
+      --gray-800: 41 41 41;
+      --gray-900: 26 26 26;
+      --gray-950: 14 14 14;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: rgb(var(--background));
+      color: rgb(var(--gray-100));
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Layout */
+    .wrapper {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 64px 24px 120px;
+    }
+
+    /* Typography */
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-top: 56px;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(var(--border), 0.08);
+      color: #fff;
+    }
+
+    h3 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-top: 36px;
+      margin-bottom: 12px;
+      color: #fff;
+    }
+
+    h4 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-top: 24px;
+      margin-bottom: 8px;
+      color: rgb(var(--gray-100));
+    }
+
+    p, li { color: rgb(var(--gray-300)); }
+    p { margin-bottom: 16px; }
+
+    a {
+      color: #fff;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      text-decoration-color: rgba(var(--border), 0.25);
+    }
+    a:hover { text-decoration-color: #fff; }
+
+    strong { color: rgb(var(--gray-100)); font-weight: 600; }
+
+    /* Lead blockquote */
+    .lead {
+      font-size: 1.125rem;
+      color: rgb(var(--gray-400));
+      border-left: 3px solid rgb(var(--primary));
+      padding-left: 20px;
+      margin-bottom: 32px;
+      line-height: 1.6;
+    }
+
+    /* Code */
+    code {
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.8125rem;
+      background: rgba(var(--border), 0.06);
+      border: 1px solid rgba(var(--border), 0.08);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: rgb(var(--gray-100));
+    }
+
+    pre {
+      background: rgb(var(--surface));
+      border: 1px solid rgba(var(--border), 0.08);
+      border-radius: 12px;
+      padding: 20px 24px;
+      overflow-x: auto;
+      margin: 16px 0 24px;
+      font-size: 0.8125rem;
+      line-height: 1.6;
+    }
+
+    pre code {
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: inherit;
+      color: rgb(var(--gray-200));
+    }
+
+    /* Inline code in headings should be normal size */
+    h2 code, h3 code { font-size: 0.9em; }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0 24px;
+      font-size: 0.875rem;
+    }
+
+    thead {
+      border-bottom: 1px solid rgba(var(--border), 0.12);
+    }
+
+    th {
+      text-align: left;
+      padding: 10px 12px;
+      font-weight: 600;
+      color: rgb(var(--gray-100));
+      font-size: 0.8125rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(var(--border), 0.06);
+      color: rgb(var(--gray-300));
+    }
+
+    td:first-child {
+      font-weight: 500;
+      color: rgb(var(--gray-100));
+    }
+
+    /* Lists */
+    ul, ol { margin: 8px 0 20px; padding-left: 24px; }
+    li { margin-bottom: 6px; }
+    li::marker { color: rgb(var(--gray-500)); }
+
+    /* Card component */
+    .card {
+      background: rgb(var(--surface));
+      border: 1px solid rgba(var(--border), 0.08);
+      border-radius: 16px;
+      padding: 24px 28px;
+      margin: 24px 0 28px;
+    }
+
+    .card h4 {
+      margin-top: 0;
+      font-size: 0.8125rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: rgb(var(--gray-400));
+      font-weight: 600;
+    }
+
+    .card p { margin-bottom: 12px; }
+    .card p:last-child { margin-bottom: 0; }
+
+    .card pre {
+      background: rgb(var(--background));
+      border-color: rgba(var(--border), 0.06);
+      margin: 12px 0 0;
+      padding: 16px 20px;
+    }
+
+    .card pre:last-child { margin-bottom: 0; }
+
+    .card ul { margin-bottom: 0; }
+    .card table { margin-bottom: 0; }
+
+    /* Note component */
+    .note {
+      background: rgba(var(--primary), 0.08);
+      border: 1px solid rgba(var(--primary), 0.15);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin: 20px 0 24px;
+      font-size: 0.875rem;
+      color: rgb(var(--gray-200));
+    }
+
+    .note strong { color: #fff; }
+
+    /* Inline code markdown-like backtick styling */
+    p > code, li > code, .lead > code {
+      font-size: 0.8125rem;
+    }
+
+    /* Header underline */
+    .divider {
+      border: none;
+      border-top: 1px solid rgba(var(--border), 0.08);
+      margin: 32px 0;
+    }
+
+    /* Section subtitle */
+    .section-desc {
+      font-size: 0.9375rem;
+      color: rgb(var(--gray-400));
+      margin-top: -8px;
+      margin-bottom: 24px;
+    }
+
+    /* Status badge */
+    .badge {
+      display: inline-block;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 2px 10px;
+      border-radius: 100px;
+      background: rgba(var(--primary), 0.12);
+      color: rgb(var(--gray-300));
+      border: 1px solid rgba(var(--primary), 0.15);
+    }
+
+    /* Navigation breadcrumb */
+    .breadcrumb {
+      font-size: 0.8125rem;
+      color: rgb(var(--gray-500));
+      margin-bottom: 24px;
+    }
+
+    .breadcrumb a {
+      color: rgb(var(--gray-400));
+      text-decoration: none;
+    }
+
+    .breadcrumb a:hover { color: #fff; }
+
+    /* Field name in tables */
+    .field-req {
+      display: inline-block;
+      font-size: 0.625rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 1px 6px;
+      border-radius: 4px;
+      margin-left: 6px;
+    }
+    .field-req-yes { background: rgba(34, 197, 94, 0.15); color: rgb(34, 197, 94); }
+    .field-req-no { background: rgba(var(--gray-500), 0.15); color: rgb(var(--gray-400)); }
+
+    /* Example label */
+    .example-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: rgb(var(--gray-500));
+      margin-bottom: 8px;
+    }
+
+    .example-label + p { font-size: 0.875rem; }
+
+    hr {
+      border: none;
+      border-top: 1px solid rgba(var(--border), 0.08);
+      margin: 40px 0;
+    }
+
+    /* Smooth scroll */
+    html { scroll-behavior: smooth; }
+
+    /* Selection */
+    ::selection { background: rgba(var(--primary), 0.25); }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .wrapper { padding: 32px 16px 80px; }
+      h1 { font-size: 1.75rem; }
+      h2 { font-size: 1.25rem; }
+      table { font-size: 0.8125rem; }
+      .card { padding: 20px; }
+      pre { padding: 16px; }
+    }
+
+    /* Directory tree styling */
+    .dir-tree {
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.8125rem;
+      line-height: 1.8;
+      background: rgb(var(--surface));
+      border: 1px solid rgba(var(--border), 0.08);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin: 16px 0 24px;
+      color: rgb(var(--gray-300));
+    }
+
+    .dir-tree .comment {
+      color: rgb(var(--gray-500));
+    }
+
+    .dir-tree .highlight {
+      color: #fff;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+
+    <!-- Title -->
+    <h1>Element Specification</h1>
+    <div class="lead">
+      The complete format specification for Elements.
+    </div>
+
+    <!-- ===================== -->
+    <!-- Directory Structure -->
+    <!-- ===================== -->
+
+    <h2>Directory structure</h2>
+
+    <p>An element is a directory containing, at minimum, a <code>ELEMENT.md</code> file:</p>
+
+    <div class="dir-tree">
+element-name/<br/>
+├── <span class="highlight">ELEMENT.md</span>         <span class="comment"># Required: metadata + specification</span><br/>
+├── <span class="highlight">scripts/</span>           <span class="comment"># Optional: executable code</span><br/>
+├── <span class="highlight">references/</span>        <span class="comment"># Optional: documentation</span><br/>
+├── <span class="highlight">assets/</span>            <span class="comment"># Optional: templates, resources</span><br/>
+└── <span class="highlight">...</span>                <span class="comment"># Any additional files or directories</span>
+    </div>
+
+    <!-- ===================== -->
+    <!-- ELEMENT.md format -->
+    <!-- ===================== -->
+
+    <h2><code>ELEMENT.md</code> format</h2>
+
+    <p>The <code>ELEMENT.md</code> file must contain YAML frontmatter followed by Markdown content.</p>
+
+    <h3>Frontmatter</h3>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Required</th>
+          <th>Constraints</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>name</code></td>
+          <td><span class="field-req field-req-yes">Yes</span></td>
+          <td>Max 64 characters. Lowercase letters, numbers, and hyphens only. Must not start or end with a hyphen.</td>
+        </tr>
+        <tr>
+          <td><code>description</code></td>
+          <td><span class="field-req field-req-yes">Yes</span></td>
+          <td>Max 1024 characters. Non-empty. Describes what the element does and when to use it.</td>
+        </tr>
+        <tr>
+          <td><code>license</code></td>
+          <td><span class="field-req field-req-no">No</span></td>
+          <td>License name or reference to a bundled license file.</td>
+        </tr>
+        <tr>
+          <td><code>compatibility</code></td>
+          <td><span class="field-req field-req-no">No</span></td>
+          <td>Max 500 characters. Indicates environment requirements (intended product, system packages, network access, etc.).</td>
+        </tr>
+        <tr>
+          <td><code>metadata</code></td>
+          <td><span class="field-req field-req-no">No</span></td>
+          <td>Arbitrary key-value mapping for additional metadata.</td>
+        </tr>
+        <tr>
+          <td><code>allowed-tools</code></td>
+          <td><span class="field-req field-req-no">No</span></td>
+          <td>Space-separated string of pre-approved tools the element may use. (Experimental)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Card: Frontmatter Examples -->
+    <div class="card">
+      <h4>Minimal example</h4>
+      <pre><code>---
+name: element-name
+description: A description of what this element does and when to use it.
+---</code></pre>
+
+      <h4 style="margin-top: 24px;">Example with optional fields</h4>
+      <pre><code>---
+name: use-case
+description: Describes a business operation and orchestrates domain logic through external contracts. Use when implementing a business feature or domain operation.
+license: Apache-2.0
+metadata:
+  class: "com.example.usecase.standard.UseCase"
+  phase: "1"
+  priority: high
+---</code></pre>
+    </div>
+
+    <!-- ===================== -->
+    <!-- name field -->
+    <!-- ===================== -->
+
+    <h3><code>name</code> field</h3>
+
+    <p>The required <code>name</code> field:</p>
+
+    <ul>
+      <li>Must be 1–64 characters</li>
+      <li>May only contain lowercase alphanumeric characters (<code>a-z</code>, <code>0-9</code>) and hyphens (<code>-</code>)</li>
+      <li>Must not start or end with a hyphen (<code>-</code>)</li>
+      <li>Must not contain consecutive hyphens (<code>--</code>)</li>
+      <li>Must match the parent directory name</li>
+    </ul>
+
+    <div class="card">
+      <h4>Valid examples</h4>
+      <pre><code>name: use-case</code></pre>
+      <pre><code>name: shell-client</code></pre>
+      <pre><code>name: data-analysis</code></pre>
+
+      <h4 style="margin-top: 24px;">Invalid examples</h4>
+      <pre><code>name: UseCase           <span class="comment" style="color: rgb(var(--gray-500));"># uppercase not allowed</span></code></pre>
+      <pre><code>name: -use-case         <span class="comment" style="color: rgb(var(--gray-500));"># cannot start with hyphen</span></code></pre>
+      <pre><code>name: use--case         <span class="comment" style="color: rgb(var(--gray-500));"># consecutive hyphens not allowed</span></code></pre>
+    </div>
+
+    <!-- ===================== -->
+    <!-- description field -->
+    <!-- ===================== -->
+
+    <h3><code>description</code> field</h3>
+
+    <p>The required <code>description</code> field:</p>
+
+    <ul>
+      <li>Must be 1–1024 characters</li>
+      <li>Should describe both what the element does and when to use it</li>
+      <li>Should include specific keywords that help agents identify relevant tasks</li>
+    </ul>
+
+    <div class="card">
+      <h4>Good example</h4>
+      <pre><code>description: Describes a business operation and orchestrates domain logic
+  through external contracts. Use when implementing a business
+  feature or domain operation.
+  Keywords: use case, business logic, feature, domain service.</code></pre>
+
+      <h4 style="margin-top: 24px;">Poor example</h4>
+      <pre><code>description: The use case element.</code></pre>
+    </div>
+
+    <!-- ===================== -->
+    <!-- license field -->
+    <!-- ===================== -->
+
+    <h3><code>license</code> field</h3>
+
+    <p>The optional <code>license</code> field:</p>
+
+    <ul>
+      <li>Specifies the license applied to the element</li>
+      <li>We recommend keeping it short (either the name of a license or the name of a bundled license file)</li>
+    </ul>
+
+    <div class="card">
+      <h4>Example</h4>
+      <pre><code>license: Proprietary. LICENSE.txt has complete terms</code></pre>
+    </div>
+
+    <!-- ===================== -->
+    <!-- compatibility field -->
+    <!-- ===================== -->
+
+    <h3><code>compatibility</code> field</h3>
+
+    <p>The optional <code>compatibility</code> field:</p>
+
+    <ul>
+      <li>Must be 1–500 characters if provided</li>
+      <li>Should only be included if your element has specific environment requirements</li>
+      <li>Can indicate intended product, required system packages, network access needs, etc.</li>
+    </ul>
+
+    <div class="card">
+      <h4>Examples</h4>
+      <pre><code>compatibility: Designed for Claude Code (or similar products)</code></pre>
+      <pre><code>compatibility: Requires git, docker, jq, and access to the internet</code></pre>
+      <pre><code>compatibility: Requires Python 3.14+ and uv</code></pre>
+    </div>
+
+    <div class="note">
+      <strong>Most elements do not need the <code>compatibility</code> field.</strong>
+    </div>
+
+    <!-- ===================== -->
+    <!-- allowed-tools field -->
+    <!-- ===================== -->
+
+    <h3><code>allowed-tools</code> field</h3>
+
+    <p>The optional <code>allowed-tools</code> field:</p>
+
+    <ul>
+      <li>A space-separated string of tools that are pre-approved to run</li>
+      <li>Experimental. Support for this field may vary between agent implementations</li>
+    </ul>
+
+    <div class="card">
+      <h4>Example</h4>
+      <pre><code>allowed-tools: Bash(git:*) Bash(jq:*) Read</code></pre>
+    </div>
+
+    <!-- ===================== -->
+    <!-- metadata field -->
+    <!-- ===================== -->
+
+    <h3><code>metadata</code> field</h3>
+
+    <p>The optional <code>metadata</code> field:</p>
+
+    <ul>
+      <li>A map from string keys to string values</li>
+      <li>Stores additional properties not defined by the Element spec</li>
+      <li>Common conventions: <code>class</code> (type bound for code generation), <code>phase</code> (architecture phase), <code>priority</code></li>
+    </ul>
+
+    <div class="card">
+      <h4>Example</h4>
+      <pre><code>metadata:
+  class: "com.example.usecase.standard.UseCase"
+  phase: "1"
+  priority: high</code></pre>
+    </div>
+
+    <!-- ===================== -->
+    <!-- Body content -->
+    <!-- ===================== -->
+
+    <h3>Body content</h3>
+
+    <p>The Markdown body after the frontmatter defines <strong>what information is needed to implement this element</strong>. An AI agent reads these sections to gather the inputs required for code generation.</p>
+
+    <p>There are no format restrictions, but a well-structured element typically includes:</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Section</th>
+          <th>Purpose</th>
+          <th>What it provides</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Role &amp; Design Intent</strong></td>
+          <td>Establishes context</td>
+          <td>Why this element exists, what problem it solves, when to use it</td>
+        </tr>
+        <tr>
+          <td><strong>Directory Structure</strong></td>
+          <td>Defines output layout</td>
+          <td>File tree, naming conventions, package/module structure</td>
+        </tr>
+        <tr>
+          <td><strong>Generation Rules</strong></td>
+          <td>Constrains code generation</td>
+          <td>Numbered rules with code snippets that the AI must follow when generating</td>
+        </tr>
+        <tr>
+          <td><strong>Forbidden Patterns</strong></td>
+          <td>Prevents mistakes</td>
+          <td>Anti-patterns, common errors, things the AI must never do</td>
+        </tr>
+        <tr>
+          <td><strong>Complete Example</strong></td>
+          <td>Serves as reference</td>
+          <td>Full implementation showing all rules applied together</td>
+        </tr>
+        <tr>
+          <td><strong>Verification</strong></td>
+          <td>Defines test strategy</td>
+          <td>How to verify the generated implementation is correct</td>
+        </tr>
+        <tr>
+          <td><strong>Related Elements</strong></td>
+          <td>Cross-references</td>
+          <td>Other elements this one depends on, generates, or integrates with</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>Code examples within the body serve as <strong>implementation templates</strong> for the AI — they show the expected structure, conventions, and patterns in context. If the element involves code generation, include the type bound (e.g. <code>class</code>) in <code>metadata</code> and demonstrate how to extend or implement it in the body examples.</p>
+
+    <div class="note">
+      <strong>Progressive loading.</strong> An agent will load this entire file once it decides to activate an element. Keep the main <code>ELEMENT.md</code> under 500 lines. Move detailed reference material (extended examples, contract definitions, edge cases) into <code>references/</code>.
+    </div>
+
+    <!-- ===================== -->
+    <!-- Optional directories -->
+    <!-- ===================== -->
+
+    <h2>Optional directories</h2>
+
+    <h3><code>scripts/</code></h3>
+
+    <p>Contains executable code that agents can run as part of this element:</p>
+    <ul>
+      <li><code>generate.sh</code> — Code generation script</li>
+      <li><code>validate.sh</code> — Element validation script</li>
+    </ul>
+
+    <h3><code>references/</code></h3>
+
+    <p>Contains additional documentation that agents can read when needed:</p>
+    <ul>
+      <li><code>REFERENCE.md</code> — Detailed technical reference</li>
+      <li><code>FORMS.md</code> — Form templates or structured data formats</li>
+      <li>Domain-specific files (<code>finance.md</code>, <code>legal.md</code>, etc.)</li>
+    </ul>
+    <p>Keep individual reference files focused. Agents load these on demand, so smaller files mean less use of context.</p>
+
+    <h3><code>assets/</code></h3>
+
+    <p>Contains static resources:</p>
+    <ul>
+      <li>Templates (file templates, configuration templates)</li>
+      <li>Diagrams or images</li>
+      <li>Data files (lookup tables, schemas)</li>
+    </ul>
+
+    <!-- ===================== -->
+    <!-- Progressive loading -->
+    <!-- ===================== -->
+
+    <h2>Progressive loading</h2>
+
+    <p>Agents load elements progressively, pulling in more detail only as a task calls for it:</p>
+
+    <ol>
+      <li><strong>Metadata</strong> (~100 tokens): The <code>name</code> and <code>description</code> fields are loaded at discovery time</li>
+      <li><strong>Specification</strong> (&lt; 5000 tokens recommended): The full <code>ELEMENT.md</code> body is loaded when the element is activated</li>
+      <li><strong>Resources</strong> (as needed): Files in <code>scripts/</code>, <code>references/</code>, or <code>assets/</code> are loaded only when required</li>
+    </ol>
+
+    <p>Keep your main <code>ELEMENT.md</code> under 500 lines. Move detailed reference material to separate files.</p>
+
+    <!-- ===================== -->
+    <!-- File references -->
+    <!-- ===================== -->
+
+    <h2>File references</h2>
+
+    <p>When referencing other files in your element, use relative paths from the element root:</p>
+
+    <pre><code>See [the reference guide](references/REFERENCE.md) for details.
+
+Run the extraction script:
+scripts/extract.py</code></pre>
+
+    <p>Keep file references one level deep from <code>ELEMENT.md</code>. Avoid deeply nested reference chains.</p>
+
+    <!-- ===================== -->
+    <!-- Element chain -->
+    <!-- ===================== -->
+
+    <h2>Element chain</h2>
+
+    <p>Elements can reference and depend on other elements. For example, a code-generation element may reference a template element, or a testing element may depend on a fixture element.</p>
+    <p>Cross-link related elements in the <strong>Related Elements</strong> section of each <code>ELEMENT.md</code>.</p>
+
+    <!-- ===================== -->
+    <!-- Validation -->
+    <!-- ===================== -->
+
+    <h2>Validation</h2>
+
+    <p>Ensure every element conforms to this specification:</p>
+
+    <ol>
+      <li><code>name</code> field matches the parent directory name</li>
+      <li><code>ELEMENT.md</code> exists and has valid YAML frontmatter</li>
+      <li>Required fields (<code>name</code>, <code>description</code>) are present and non-empty</li>
+      <li>All referenced files exist relative to the element root</li>
+    </ol>
+
+    <hr />
+
+    <p style="font-size: 0.8125rem; color: rgb(var(--gray-500));">
+      Element Specification
+    </p>
+
+  </div>
+</body>
+</html>
