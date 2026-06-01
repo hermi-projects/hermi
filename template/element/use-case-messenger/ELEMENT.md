@@ -1,6 +1,6 @@
 ---
 name: use-case-messenger
-description: Defines a notification contract for async messaging and events. JIT-discovered when use case logic requires sending notifications or publishing events. Keywords: use case messenger, notification, event, message, publish, notify.
+description: Defines an abstract notification contract within the use case module. Use when a use case requires sending notifications or publishing events. Keywords: use case messenger, notification, event, message, publish, notify, abstract contract.
 metadata:
   class: "org.hermi.usecase.standard.Messenger"
   phase: "use case"
@@ -11,45 +11,121 @@ metadata:
 
 ## Role & Design Intent
 
-**Use this element when `doExecute` reveals a need to send a notification or publish an event.** A Use Case Messenger is a JIT-discovered I/O contract representing a single notification operation. It:
+**Use Case Messenger is the abstract contract for notifications and event publishing within the use case module.** It defines the input (`Context`) and output (`Result`) types for a single messaging operation, remaining technology-agnostic — no Kafka, no JMS, no vendor imports.
 
-- Defines **one** messaging boundary (notify a user, publish order-placed event)
-- Is generated **inline** in the use case source directory — not a separate module
-- Remains technology-agnostic until Phase 2 (Kafka, email, SMS adapters)
-- Returns data that crosses INTO the use case — `Result` **MUST** be `Validatable`
+It handles:
+- Defining the I/O boundary for a notification operation
+- Input validation (via `Validatable` on `Result`)
+- Inversion of control — use cases depend on this abstract class, not concrete implementations
+
+It does NOT handle:
+- Message publishing — use [shell-messenger](template/element/shell-messenger/ELEMENT.md)
+- Type conversion — use [shell-mapper](template/element/shell-mapper/ELEMENT.md)
+- Any vendor-specific logic
+
+## Required Inputs
+
+The following inputs are needed to generate a Use Case Messenger:
+
+| Input | Description | Example |
+|---|---|---|
+| Vendor | Messaging technology | `Kafka` |
+| Resource / Fact | Business event being notified | `UserFound` |
+| Context Fields | Data sent with the notification | `email: String, message: String` |
+| Result Fields | Data returned after publishing | `messageId: String` |
+
+## Output Specification
+
+When generating the code, please adhere to the following structure:
+
+1. **Abstract Class**: Extends `org.hermi.usecase.standard.Messenger<Context, Result>`
+2. **Context record**: Input parameters flowing out to infrastructure
+3. **Result record**: Output data flowing into the use case, implementing `Validatable`
+4. **Vendor Implementation**: A concrete class that composes shell-messenger + mapper to fulfill the contract
+5. **No implementation in abstract class**: Abstract class has no method bodies
 
 ## Generation
 
-The Messenger lives alongside the use case that discovered it.
+### Abstract Contract
 
-### Directory
+#### Directory
 
 ```
 src/main/java/{org}/{resource}/{action}/usecase/
 └── Notify{Fact}Messenger.java
 ```
 
-### Contract Structure
+#### Code Skeleton
 
 ```java
-public abstract class NotifyUserFoundMessenger extends Messenger<NotifyUserFoundMessenger.Context, NotifyUserFoundMessenger.Result> {
-  public record Context(String email, String message) {}
-  public record Result(String messageId) implements Validatable {}
+public abstract class Notify{Fact}Messenger extends Messenger<Notify{Fact}Messenger.Context, Notify{Fact}Messenger.Result> {
+  public record Context({contextFields}) {}
+  public record Result({resultFields}) implements Validatable {}
 }
 ```
 
-### Validatable Rules
-
 | Boundary | Validatable? | Why |
 |---|---|---|
-| `Context` (flows OUT to infra) | No | Data leaving the core |
+| `Context` (flows OUT to infra) | Optional | Data leaving the core |
 | `Result` (flows INTO the core) | **Yes** | Data entering the core must be validated |
 
-### Naming
+### Vendor Implementation
 
-`Notify{Fact}Messenger` — e.g., `NotifyUserFoundMessenger`, `NotifyOrderPlacedMessenger`
+The concrete implementation wires a [shell-messenger](template/element/shell-messenger/ELEMENT.md) and [shell-mapper](template/element/shell-mapper/ELEMENT.md) together to fulfill the abstract contract:
+
+#### Directory
+
+```
+src/main/java/{org}/{resource}/{action}/usecase/
+├── Notify{Fact}Messenger.java                         # Abstract contract
+└── {Vendor}Notify{Fact}Messenger.java                 # Vendor-specific implementation
+```
+
+#### Code Skeleton
+
+```java
+@Component
+public class {Vendor}Notify{Fact}Messenger extends Notify{Fact}Messenger {
+  private final {Vendor}{Resource}Messenger vendorMessenger;
+  private final Notify{Fact}Mapper mapper;
+
+  public {Vendor}Notify{Fact}Messenger({Vendor}{Resource}Messenger vendorMessenger,
+                                         Notify{Fact}Mapper mapper) {
+    this.vendorMessenger = vendorMessenger;
+    this.mapper = mapper;
+  }
+
+  @Override
+  protected Result doExecute(Context context) {
+    var payload = mapper.toPayload(context);
+    var response = vendorMessenger.publish(payload);
+    return mapper.toResult(response);
+  }
+}
+```
+
+The implementation flow:
+
+```
+Context → [Mapper.toPayload] → vendor payload → [Vendor Messenger.publish] → vendor response → [Mapper.toResult] → Result
+```
+
+## Naming
+
+| Component | Pattern | Example |
+|---|---|---|
+| Use Case Messenger | `Notify{Fact}Messenger` | `NotifyUserFoundMessenger` |
+| Vendor Implementation | `{Vendor}Notify{Fact}Messenger` | `KafkaNotifyUserFoundMessenger` |
+
+## Forbidden Patterns
+
+- ❌ No vendor imports in abstract contract — must stay technology-agnostic
+- ❌ No messaging protocol details — no Kafka, JMS, SQS references
+- ❌ No business logic in vendor implementation — it only delegates to mapper and shell-messenger
+- ❌ No `Result` without `Validatable` — data entering the core must be validated
 
 ## Related Elements
 
 - [use-case](template/element/use-case/ELEMENT.md) — discovers and owns this messenger
-- [shell-messenger](template/element/shell-messenger/ELEMENT.md) — Phase 2 wraps this contract with technology
+- [shell-messenger](template/element/shell-messenger/ELEMENT.md) — technology-specific implementation of this contract
+- [shell-mapper](template/element/shell-mapper/ELEMENT.md) — type conversion between domain and vendor types

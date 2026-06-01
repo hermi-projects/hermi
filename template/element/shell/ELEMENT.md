@@ -1,6 +1,6 @@
 ---
 name: shell
-description: Defines the Shell layer — verification harnesses and delivery entry points for the Hermi architecture. Covers Phase 1 shells (MainShell, local adapters) for continuous use case verification and Phase 2 delivery shells (REST, Kafka, CLI, AI MCP) for production exposure. Keywords: shell, main shell, play button, entry point, rest controller, kafka consumer, service wiring, delivery mechanism, phase 1, phase 2.
+description: Defines the Shell layer — verification harnesses and delivery entry points for the Hermi architecture. Covers verification shells (MainShell, local utilities) for continuous use case testing and delivery shells (REST, Kafka, CLI, AI MCP) for production exposure. Keywords: shell, main shell, play button, entry point, rest controller, kafka consumer, service wiring, delivery mechanism, verification.
 metadata:
   class: "org.hermi.shell.EntryPoint"
   phase: "shell"
@@ -11,13 +11,13 @@ metadata:
 
 ## Role & Design Intent
 
-**Use this element to define how the system is verified (Phase 1) and delivered (Phase 2).** The Shell connects pure business logic to the outside world through two categories:
+**The Shell connects pure business logic to the outside world through two categories:**
 
-**Phase 1 — Verification Shells:** Provide continuous validation during development without infrastructure. Includes the MainShell "Play Button" and stateful local adapters (Local, InMemory, Console) for each JIT-discovered contract.
+**Verification Shells:** Provide continuous validation during development without infrastructure. Includes the MainShell "Play Button" and stateful local utilities (LocalClient, InMemoryRepository, ConsoleMessenger) for each JIT-discovered contract.
 
-**Phase 2 — Delivery Shells:** Expose the use case through production delivery mechanisms. Includes Service wiring, REST API, Kafka Consumer, CLI, and AI MCP entry points.
+**Delivery Shells:** Expose the use case through production delivery mechanisms. Includes Service wiring, REST API, Kafka Consumer, CLI, and AI MCP entry points.
 
-## Phase 1 — Verification Shells
+## Verification Shells
 
 Verification shells live in the test source tree and enable continuous execution without mocking frameworks, databases, or network.
 
@@ -26,14 +26,14 @@ Verification shells live in the test source tree and enable continuous execution
 ```
 src/test/java/{org}/{resource}/{action}/shell/
 ├── {Action}{Resource}MainShell.java           # Play Button
-├── Local{Action}{Resource}Client.java         # Programmable local adapter
-├── InMemory{Action}{Resource}Repository.java  # Stateful in-memory adapter
-└── Console{Action}{Resource}Messenger.java    # Tracing adapter
+├── Local{Action}{Resource}Client.java         # Programmable local utility
+├── InMemory{Action}{Resource}Repository.java  # Stateful in-memory utility
+└── Console{Action}{Resource}Messenger.java    # Tracing utility
 ```
 
 ### MainShell — Play Button
 
-The MainShell is the primary execution harness for Phase 1. It instantiates the use case with stateful local adapters and provides a `main` method for immediate execution:
+The MainShell is the primary execution harness. It instantiates the use case with stateful local utilities and provides a `main` method for immediate execution:
 
 ```java
 import org.hermi.shell.util.LocalClient;
@@ -62,13 +62,13 @@ public class FindUserMainShell {
 
 ### Reusable Utilities
 
-For Phase 1 verification, Hermi provides pre-built in-memory utilities in `org.hermi.shell.util` — no manual adapter classes needed:
+Hermi provides pre-built in-memory utilities in `org.hermi.shell.util` — no manual implementation classes needed:
 
 | Utility | Base Class | Package | Details |
 |---|---|---|---|
-| `LocalClient<P, R>` | `Client<P, R>` | `org.hermi.shell.util` | See [shell-client](template/element/shell-client/ELEMENT.md#phase-1-testing) |
-| `InMemoryRepository<E, R>` | standalone | `org.hermi.shell.util` | See [shell-repository](template/element/shell-repository/ELEMENT.md#phase-1-testing) |
-| `ConsoleMessenger<P, R>` | `Messenger<P, R>` | `org.hermi.shell.util` | See [shell-messenger](template/element/shell-messenger/ELEMENT.md#phase-1-testing) |
+| `LocalClient<P, R>` | `Client<P, R>` | `org.hermi.shell.util` | See [shell-client](template/element/shell-client/ELEMENT.md) |
+| `InMemoryRepository<E, R>` | standalone | `org.hermi.shell.util` | See [shell-repository](template/element/shell-repository/ELEMENT.md) |
+| `ConsoleMessenger<P, R>` | `Messenger<P, R>` | `org.hermi.shell.util` | See [shell-messenger](template/element/shell-messenger/ELEMENT.md) |
 
 These replace the inline `LocalFindUserClient` / `InMemorySaveUserRepository` / `ConsoleNotifyUserFoundMessenger` pattern shown in earlier documentation.
 
@@ -80,7 +80,7 @@ These replace the inline `LocalFindUserClient` / `InMemorySaveUserRepository` / 
 | InMemory Repository | `{ContractName}` or `InMemoryRepository<E, R>` | `InMemorySaveUserRepository` or `InMemoryRepository<>` |
 | Console Messenger | `{ContractName}` or `ConsoleMessenger<P, R>` | `ConsoleNotifyUserFoundMessenger` or `ConsoleMessenger<>` |
 
-## Phase 2 — Delivery Shells
+## Delivery Shells
 
 Delivery shells live in the production source tree and expose the use case through technology-specific entry points.
 
@@ -94,7 +94,7 @@ src/main/java/{org}/{resource}/{action}/shell/
 └── {Action}{Resource}CliShell.java           # CLI entry point
 ```
 
-### Service — Wire Adapters into the Use Case
+### Service — Wire Dependencies into the Use Case
 
 ```java
 @Service
@@ -166,13 +166,13 @@ public class FindUserConsumerShell {
 ## Forbidden Patterns
 
 - ❌ **No business logic** in any shell component — shells are wiring and delivery only
-- ❌ **No direct instantiation** of shell adapters in entry points — always delegate via Service
+- ❌ **No direct instantiation** of shell dependencies in entry points — always delegate via Service
 - ❌ **No use-case module imports** from delivery frameworks — Shell depends on use-case, not vice versa
-- ❌ **No mocking frameworks** in Phase 1 — use `org.hermi.shell.util` reusable utilities
+- ❌ **No mocking frameworks** in verification — use `org.hermi.shell.util` reusable utilities
 
 ## Complete Example
 
-### Phase 1 — MainShell with Reusable Utilities
+### Verification — MainShell with Reusable Utilities
 
 ```java
 // ==== Reusable Utilities (org.hermi.shell.util) ====
@@ -199,7 +199,7 @@ public class FindUserMainShell {
 }
 ```
 
-### Phase 2 — Production Delivery
+### Production Delivery
 
 ```java
 // ==== Service ====
@@ -257,6 +257,6 @@ public class FindUserConsumerShell {
 ## Related Elements
 
 - [use-case](template/element/use-case/ELEMENT.md) — the use case this shell verifies and delivers
-- [shell-client](template/element/shell-client/ELEMENT.md) — production client adapter wired into the service
-- [shell-repository](template/element/shell-repository/ELEMENT.md) — production repository adapter wired into the service
-- [shell-messenger](template/element/shell-messenger/ELEMENT.md) — production messenger adapter wired into the service
+- [shell-client](template/element/shell-client/ELEMENT.md) — client implementation wired into the service
+- [shell-repository](template/element/shell-repository/ELEMENT.md) — repository implementation wired into the service
+- [shell-messenger](template/element/shell-messenger/ELEMENT.md) — messenger implementation wired into the service

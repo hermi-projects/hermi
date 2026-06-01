@@ -1,6 +1,6 @@
 ---
 name: use-case-repository
-description: Defines a persistence contract for data storage. JIT-discovered when use case logic requires saving, updating, or retrieving data. Keywords: use case repository, persistence, data access, storage, save, retrieve.
+description: Defines an abstract persistence contract within the use case module. Use when a use case requires persisting or retrieving data. Keywords: use case repository, persistence, data access, storage, save, retrieve, abstract contract.
 metadata:
   class: "org.hermi.usecase.standard.Repository"
   phase: "use case"
@@ -11,45 +11,122 @@ metadata:
 
 ## Role & Design Intent
 
-**Use this element when `doExecute` reveals a need to persist or retrieve data.** A Use Case Repository is a JIT-discovered I/O contract representing a single data storage operation. It:
+**Use Case Repository is the abstract contract for data persistence within the use case module.** It defines the input (`Context`) and output (`Result`) types for a single storage operation, remaining technology-agnostic — no JPA, no SQL, no vendor imports.
 
-- Defines **one** persistence boundary (save a user, find an order)
-- Is generated **inline** in the use case source directory — not a separate module
-- Remains technology-agnostic until Phase 2 (JPA, JDBC, Mongo adapters)
-- Returns data that crosses INTO the use case — `Result` **MUST** be `Validatable`
+It handles:
+- Defining the I/O boundary for a persistence operation
+- Input validation (via `Validatable` on `Result`)
+- Inversion of control — use cases depend on this abstract class, not concrete implementations
+
+It does NOT handle:
+- Data storage and retrieval — use [shell-repository](template/element/shell-repository/ELEMENT.md)
+- Type conversion — use [shell-mapper](template/element/shell-mapper/ELEMENT.md)
+- Any vendor-specific logic
+
+## Required Inputs
+
+The following inputs are needed to generate a Use Case Repository:
+
+| Input | Description | Example |
+|---|---|---|
+| Technology | Persistence technology | `JPA` |
+| Resource | Business object | `User` |
+| Action | Operation name | `Save` |
+| Context Fields | Data to persist | `name: String, email: String` |
+| Result Fields | Data returned after persistence | `id: String` |
+
+## Output Specification
+
+When generating the code, please adhere to the following structure:
+
+1. **Abstract Class**: Extends `org.hermi.usecase.standard.Repository<Context, Result>`
+2. **Context record**: Input parameters flowing out to infrastructure
+3. **Result record**: Output data flowing into the use case, implementing `Validatable`
+4. **Vendor Implementation**: A concrete class that composes shell-repository + mapper to fulfill the contract
+5. **No implementation in abstract class**: Abstract class has no method bodies
 
 ## Generation
 
-The Repository lives alongside the use case that discovered it.
+### Abstract Contract
 
-### Directory
+#### Directory
 
 ```
 src/main/java/{org}/{resource}/{action}/usecase/
 └── {Action}{Resource}Repository.java
 ```
 
-### Contract Structure
+#### Code Skeleton
 
 ```java
-public abstract class SaveUserRepository extends Repository<SaveUserRepository.Context, SaveUserRepository.Result> {
-  public record Context(String name, String email) {}
-  public record Result(String id) implements Validatable {}
+public abstract class {Action}{Resource}Repository extends Repository<{Action}{Resource}Repository.Context, {Action}{Resource}Repository.Result> {
+  public record Context({contextFields}) {}
+  public record Result({resultFields}) implements Validatable {}
 }
 ```
 
-### Validatable Rules
-
 | Boundary | Validatable? | Why |
 |---|---|---|
-| `Context` (flows OUT to infra) | No | Data leaving the core |
+| `Context` (flows OUT to infra) | Optional | Data leaving the core |
 | `Result` (flows INTO the core) | **Yes** | Data entering the core must be validated |
 
-### Naming
+### Vendor Implementation
 
-`{Action}{Resource}Repository` — e.g., `SaveUserRepository`, `FindUserRepository`
+The concrete implementation wires a [shell-repository](template/element/shell-repository/ELEMENT.md) and [shell-mapper](template/element/shell-mapper/ELEMENT.md) together to fulfill the abstract contract:
+
+#### Directory
+
+```
+src/main/java/{org}/{resource}/{action}/usecase/
+├── {Action}{Resource}Repository.java                 # Abstract contract
+└── {Tech}{Action}{Resource}Repository.java           # Vendor-specific implementation
+```
+
+#### Code Skeleton
+
+```java
+@Component
+public class {Tech}{Action}{Resource}Repository extends {Action}{Resource}Repository {
+  private final {Tech}{Resource}Repository vendorRepo;
+  private final {Action}{Resource}Mapper mapper;
+
+  public {Tech}{Action}{Resource}Repository({Tech}{Resource}Repository vendorRepo,
+                                              {Action}{Resource}Mapper mapper) {
+    this.vendorRepo = vendorRepo;
+    this.mapper = mapper;
+  }
+
+  @Override
+  protected Result doExecute(Context context) {
+    var entity = mapper.toPayload(context);
+    var saved = vendorRepo.save(entity);
+    return mapper.toResult(saved);
+  }
+}
+```
+
+The implementation flow:
+
+```
+Context → [Mapper.toPayload] → entity → [Vendor Repository.save] → saved entity → [Mapper.toResult] → Result
+```
+
+## Naming
+
+| Component | Pattern | Example |
+|---|---|---|
+| Use Case Repository | `{Action}{Resource}Repository` | `SaveUserRepository` |
+| Vendor Implementation | `{Tech}{Action}{Resource}Repository` | `JpaSaveUserRepository` |
+
+## Forbidden Patterns
+
+- ❌ No vendor imports in abstract contract — must stay technology-agnostic
+- ❌ No JPA, SQL, or persistence annotations — no `@Entity`, `@Table`, `@Id`
+- ❌ No business logic in vendor implementation — it only delegates to mapper and shell-repository
+- ❌ No `Result` without `Validatable` — data entering the core must be validated
 
 ## Related Elements
 
 - [use-case](template/element/use-case/ELEMENT.md) — discovers and owns this repository
-- [shell-repository](template/element/shell-repository/ELEMENT.md) — Phase 2 wraps this contract with technology
+- [shell-repository](template/element/shell-repository/ELEMENT.md) — technology-specific implementation of this contract
+- [shell-mapper](template/element/shell-mapper/ELEMENT.md) — type conversion between domain and entity types

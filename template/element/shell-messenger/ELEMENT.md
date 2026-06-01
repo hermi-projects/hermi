@@ -1,6 +1,6 @@
 ---
 name: shell-messenger
-description: Provides technology-specific messaging or event adapters for notification and event publishing. Use when a use case requires sending notifications or publishing events. Keywords: shell messenger, kafka producer, event publisher, message broker, notification adapter, vendor messenger, console messenger.
+description: Provides technology-specific messengers for notification and event publishing. Use when a use case requires sending notifications or publishing events. Keywords: shell messenger, kafka producer, event publisher, message broker, notification adapter, vendor messenger, console messenger.
 metadata:
   class: "org.hermi.shell.Messenger"
   phase: "shell"
@@ -11,115 +11,99 @@ metadata:
 
 ## Role & Design Intent
 
-**Use this element in Phase 2 to provide the production implementation for a [use-case-messenger](template/element/use-case-messenger/ELEMENT.md).** The Shell Messenger materializes the abstract messaging contract with concrete technology. It follows a two-layer adapter architecture:
+**Vendor Messenger is the protocol-layer wrapper for messaging and event publishing.** It extends `org.hermi.shell.Messenger<P, R>` and is responsible only for message transmission — Kafka, JMS, SQS, or any other messaging protocol.
 
-- **Vendor Messenger** — raw technology I/O wrapper (Kafka producer). Extends `org.hermi.shell.Messenger`.
-- **Mapper** — converts between use-case domain types (`Context`, `Result`) and vendor-specific message types (`ProducerRecord`, `RecordMetadata`). Implements `org.hermi.shell.Mapper`.
-- **Production Implementation** — extends the use-case messenger contract (e.g., `NotifyUserFoundMessenger`) and delegates to a Vendor Messenger + Mapper. This is what gets injected into the use case.
+It handles:
+- Message publishing to brokers and queues
+- Serialization
+- Configuration binding (bootstrap servers, topic names)
 
-The Shell Messenger follows **Prefix Isolation**: every infrastructure class MUST have the technology name as its first word.
+It does NOT handle:
+- Business logic — vendor messengers are gateways only
+- Type conversion between domain and vendor types — use [shell-mapper](template/element/shell-mapper/ELEMENT.md)
+- Orchestration or composition — use [use-case-messenger](template/element/use-case-messenger/ELEMENT.md)
+
+## Required Inputs
+
+The following inputs are needed to generate a Vendor Messenger:
+
+| Input | Description | Example |
+|---|---|---|
+| Vendor | Messaging technology name | `Kafka` |
+| Resource | Business object | `User` |
+| Topic / Queue | Destination name | `user.notifications` |
+| Payload Type | Data sent to the broker | `ProducerRecord<String, String>` |
+| Response Type | Data received from the broker | `RecordMetadata` |
+| Config | Externalized configuration keys | `bootstrap-servers`, `acks` |
+
+## Output Specification
+
+When generating the code, please adhere to the following structure:
+
+1. **Class Definition**: Use the naming convention `{Vendor}{Resource}Messenger`.
+2. **Constructor**: Inject necessary configuration and dependencies.
+3. **Publish Method**: Implement the primary method to publish the message, strictly using the provided Payload/Response types.
+4. **No Logic**: Ensure the method body contains no business logic or data transformation code.
 
 ## Generation
+
+### Base Class Contract
+
+`org.hermi.shell.Messenger<P, R>` provides:
+- `publish(P payload)` — public API, triggers the full lifecycle
+- Audit lifecycle: `recordContext` → `doPublish` → `recordResult` / `recordError`
+- Subclass only needs to implement `doPublish(P payload)`
+
+The base class has two constructors:
+- `Messenger(PersistentAuditor<P, R>)` — for production auditing
+- `Messenger()` — uses `NoopPersistentAuditor` as default
+
+### Implementation Steps
+
+1. Extend `org.hermi.shell.Messenger<{PayloadType}, {ResponseType}>`
+2. Inject dependencies (KafkaTemplate, JMS client, configuration, etc.)
+3. Implement `doPublish` — send the message and return the broker's response
+4. Use `@Component` (or equivalent) to register as a Spring bean
+
+### Code Skeleton
+
+```java
+@Component
+public class {Vendor}{Resource}Messenger extends Messenger<{PayloadType}, {ResponseType}> {
+
+  public {Vendor}{Resource}Messenger({Dependencies} dependencies) {
+    // Use super() for NoopPersistentAuditor, or super(auditor) for production auditing
+  }
+
+  @Override
+  protected {ResponseType} doPublish({PayloadType} payload) {
+    // Protocol transmission only
+  }
+}
+```
 
 ### Directory
 
 ```
-src/main/java/{org}/{resource}/{action}/shell/messenger/
-├── KafkaNotifyUserFoundMessenger.java   # Production Implementation
-├── KafkaUserMapper.java                 # Vendor Mapper
-└── KafkaUserMessenger.java              # Vendor Messenger
+src/main/java/{org}/{resource}/shell/messenger/
+└── {Vendor}{Resource}Messenger.java
 ```
 
-### Contract Structure
-
-#### 1. Vendor Messenger — Technology I/O Base
-
-```java
-import org.hermi.shell.Messenger;
-
-@Component
-public class KafkaUserMessenger extends Messenger<ProducerRecord<String, String>, RecordMetadata> {
-  private final KafkaTemplate<String, String> kafkaTemplate;
-
-  @Autowired
-  public KafkaUserMessenger(KafkaTemplate<String, String> kafkaTemplate) {
-    super(null);
-    this.kafkaTemplate = kafkaTemplate;
-  }
-
-  @Override
-  protected RecordMetadata doPublish(ProducerRecord<String, String> payload) {
-    return kafkaTemplate.send(payload).get().getRecordMetadata();
-  }
-}
-```
-
-#### 2. Mapper — Type Conversion
-
-```java
-import org.hermi.shell.Mapper;
-
-@Component
-public class KafkaUserMapper implements Mapper<NotifyUserFoundMessenger.Context, NotifyUserFoundMessenger.Result, ProducerRecord<String, String>, RecordMetadata> {
-  @Override
-  public ProducerRecord<String, String> toPayload(NotifyUserFoundMessenger.Context context) {
-    return new ProducerRecord<>("user.notifications", context.message());
-  }
-
-  @Override
-  public Result toResult(RecordMetadata result) {
-    return new Result(result.toString());
-  }
-}
-```
-
-#### 3. Production Implementation — Use Case Contract Adapter
-
-```java
-@Component
-public class KafkaNotifyUserFoundMessenger extends NotifyUserFoundMessenger {
-  private final Messenger<ProducerRecord<String, String>, RecordMetadata> messenger;
-  private final Mapper<NotifyUserFoundMessenger.Context, NotifyUserFoundMessenger.Result, ProducerRecord<String, String>, RecordMetadata> mapper;
-
-  @Autowired
-  public KafkaNotifyUserFoundMessenger(
-      KafkaUserMessenger kafkaUserMessenger,
-      KafkaUserMapper kafkaUserMapper) {
-    this.messenger = kafkaUserMessenger;
-    this.mapper = kafkaUserMapper;
-  }
-
-  @Override
-  protected Result doExecute(Context context) {
-    ProducerRecord<String, String> record = mapper.toPayload(context);
-    RecordMetadata metadata = messenger.publish(record);
-    return mapper.toResult(metadata);
-  }
-}
-```
-
-### Validatable Rules
-
-| Boundary | Validatable? | Why |
-|---|---|---|
-| `Context` (received from use case) | No | Data already validated before entering the use case |
-| `Result` (returned to use case) | **Yes** (implicit) | Abstract contract declares `Result implements Validatable`, enforcement is in the base class |
-
-### Naming
+## Naming
 
 | Component | Pattern | Example |
 |---|---|---|
-| Production Implementation | `{Tech\|Vendor}{ActualContractName}` | `KafkaNotifyUserFoundMessenger` |
-| Vendor Messenger | `{Tech}{Resource}Messenger` | `KafkaUserMessenger` |
-| Mapper | `{Vendor}{Resource}Mapper` | `KafkaUserMapper` |
+| Vendor Messenger | `{Vendor}{Resource}Messenger` | `KafkaUserMessenger` |
 
-### Phase 1 Testing
+Prefix Isolation applies: the vendor/technology name MUST be the first word of the class name.
 
-For Phase 1 verification without infrastructure, use the reusable `org.hermi.shell.util.ConsoleMessenger` — a generic in-memory messenger backed by `ConcurrentHashMap` with a `NoopPersistentAuditor`:
+## Examples
+
+### ConsoleMessenger — Testing
+
+`org.hermi.shell.util.ConsoleMessenger` is a reusable `Messenger` implementation backed by `ConcurrentHashMap`. Use it for testing without infrastructure:
 
 ```java
-import org.hermi.shell.util.ConsoleMessenger;
-
 var messenger = new ConsoleMessenger<NotifyUserFoundMessenger.Context, NotifyUserFoundMessenger.Result>()
     .put(new NotifyUserFoundMessenger.Context("john@example.com", "User found"),
          new NotifyUserFoundMessenger.Result("msg-123"));
@@ -133,74 +117,42 @@ NotifyUserFoundMessenger.Result result = messenger.publish(
 | Class | `ConsoleMessenger<P, R> extends Messenger<P, R>` |
 | Package | `org.hermi.shell.util` |
 | Backing Store | `ConcurrentHashMap<P, R>` |
-| Auditor | `NoopPersistentAuditor` (no-op) |
+| Auditor | `NoopPersistentAuditor` (default) |
 | API | `put()`, `get()`, `remove()`, `contains()`, `clear()`, `size()` |
 
-## Forbidden Patterns
-
-- ❌ **No business logic** in Vendor Messenger or Production Implementation — they are gateways only
-- ❌ **No use-case domain types** leaking into Vendor Messenger (`Context`, `Result` must stay in Production Implementation)
-- ❌ **No synchronous blocking** in `doPublish` without timeout handling — messaging infrastructure may hang
-- ❌ **No direct Kafka/technology imports** in use-case module — Shell must be a separate module
-
-## Complete Example
+### Kafka — Production
 
 ```java
-// ==== 1. Vendor Messenger — Raw Kafka Producer ====
 @Component
 public class KafkaUserMessenger extends Messenger<ProducerRecord<String, String>, RecordMetadata> {
   private final KafkaTemplate<String, String> kafkaTemplate;
 
-  @Autowired
   public KafkaUserMessenger(KafkaTemplate<String, String> kafkaTemplate) {
-    super(null);
     this.kafkaTemplate = kafkaTemplate;
   }
 
   @Override
   protected RecordMetadata doPublish(ProducerRecord<String, String> payload) {
-    return kafkaTemplate.send(payload).get().getRecordMetadata();
-  }
-}
-
-// ==== 2. Mapper — Use Case ↔ Kafka Types ====
-@Component
-public class KafkaUserMapper implements Mapper<NotifyUserFoundMessenger.Context, NotifyUserFoundMessenger.Result, ProducerRecord<String, String>, RecordMetadata> {
-  @Override
-  public ProducerRecord<String, String> toPayload(NotifyUserFoundMessenger.Context context) {
-    return new ProducerRecord<>("user.notifications", context.email() + ": " + context.message());
-  }
-
-  @Override
-  public Result toResult(RecordMetadata result) {
-    return new Result(result.toString());
-  }
-}
-
-// ==== 3. Production Implementation — Use Case Contract Adapter ====
-@Component
-public class KafkaNotifyUserFoundMessenger extends NotifyUserFoundMessenger {
-  private final Messenger<ProducerRecord<String, String>, RecordMetadata> messenger;
-  private final Mapper<NotifyUserFoundMessenger.Context, NotifyUserFoundMessenger.Result, ProducerRecord<String, String>, RecordMetadata> mapper;
-
-  @Autowired
-  public KafkaNotifyUserFoundMessenger(
-      KafkaUserMessenger kafkaUserMessenger,
-      KafkaUserMapper kafkaUserMapper) {
-    this.messenger = kafkaUserMessenger;
-    this.mapper = kafkaUserMapper;
-  }
-
-  @Override
-  protected Result doExecute(Context context) {
-    ProducerRecord<String, String> record = mapper.toPayload(context);
-    RecordMetadata metadata = messenger.publish(record);
-    return mapper.toResult(metadata);
+    try {
+      return kafkaTemplate.send(payload).get(5, TimeUnit.SECONDS);
+    } catch (Exception e) {
+      throw new RuntimeException("Kafka publish failed for topic: " + payload.topic(), e);
+    }
   }
 }
 ```
 
+The base class catches any exception thrown by `doPublish`, records it via the auditor, and rethrows it — vendor messengers do not need try-catch in `doPublish` unless vendor-specific error wrapping is required.
+
+## Forbidden Patterns
+
+- ❌ No business logic — vendor messengers are gateways only
+- ❌ No type conversion — domain↔vendor mapping belongs in [shell-mapper](template/element/shell-mapper/ELEMENT.md)
+- ❌ No hardcoded configuration — all configurable values must be injected via constructor
+- ❌ No synchronous blocking without timeout handling — messaging infrastructure may hang
+- ❌ No vendor technology imports in use-case modules — shell must be a separate module
+
 ## Related Elements
 
-- [use-case](template/element/use-case/ELEMENT.md) — the use case this shell messenger supports
-- [use-case-messenger](template/element/use-case-messenger/ELEMENT.md) — abstract contract this shell messenger implements
+- [shell-mapper](template/element/shell-mapper/ELEMENT.md) — type conversion between domain and vendor types
+- [use-case-messenger](template/element/use-case-messenger/ELEMENT.md) — abstract messaging contract
