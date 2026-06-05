@@ -80,7 +80,6 @@ public abstract class DispatcherUseCase<C extends Validatable, R> extends UseCas
         return handler.execute(context);
       }
     }
-    throw new HandlerNotFoundException(
-        getSimpleClassName() + ": No handler found for context: " + context);
+    throw new HandlerNotFoundException(getClass().getSimpleName() + ": No handler found for context: " + context);
   }
 }
