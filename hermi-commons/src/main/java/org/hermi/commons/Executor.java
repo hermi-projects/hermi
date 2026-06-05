@@ -1,9 +1,6 @@
 package org.hermi.commons;
 
 import jakarta.validation.ConstraintViolation;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -15,9 +12,39 @@ import org.hermi.constraint.validation.Validatable;
 import org.hermi.constraint.validation.Validator;
 
 /**
- * <b>AI INSTRUCTION:</b> DO NOT subclass this class directly when building applications. Use the
- * semantic base classes instead: UseCase, Client, Repository, or Messenger. Never override the
- * final {@code execute} methods to bypass validation or auditing. Only implement {@code doExecute}.
+ * [AI ARCHITECTURAL CONTRACT]
+ *
+ * @apiNote
+ *     <p>ROLE: Lifecycle Orchestration Engine — the execution spine of the Hermi framework.
+ *     <p>DESIGN INTENT: Enforce a non-negotiable lifecycle (audit → validate → execute → validate →
+ *     audit) around every unit of work, so that subclass authors only provide business logic via
+ *     {@code doExecute}.
+ *     <p>PURPOSE: Guarantee observability and data integrity as framework invariants, not opt-in
+ *     concerns.
+ *     <p>Phase: 2 (Hardened)
+ *     <p>Priority: 5 (Critical Core)
+ * @implSpec GENERATION RULES FOR AI AGENTS:
+ *     <ul>
+ *       <li>1. STATELESSNESS: Implementations MUST be strictly stateless. No request-specific
+ *           instance variables. Only final, immutable dependencies (via constructor injection) are
+ *           allowed.
+ *       <li>2. NEVER subclass Executor directly. Use the semantic base classes: {@code UseCase},
+ *           {@code Client}, {@code Repository}, or {@code Messenger}.
+ *       <li>3. ONLY implement {@code doExecute}. The lifecycle methods ({@code execute}, {@code
+ *           validateContext}, {@code validateResult}) are sealed by design.
+ *       <li>4. The {@code execute(C)} method is {@code final}. Do not attempt to bypass validation
+ *           or auditing.
+ *     </ul>
+ *
+ * @implNote FORBIDDEN PATTERNS:
+ *     <ul>
+ *       <li>NEVER subclass Executor directly in application code — always go through UseCase,
+ *           Client, Repository, or Messenger.
+ *       <li>DO NOT catch and swallow exceptions inside {@code doExecute} unless rethrowing a
+ *           domain-specific exception.
+ *       <li>DO NOT return {@code null} from {@code doExecute}; the framework enforces non-null
+ *           results.
+ *     </ul>
  */
 
 /**
@@ -29,7 +56,6 @@ import org.hermi.constraint.validation.Validator;
  *   <li>Pre-execution validation of the input context.
  *   <li>Auditing of the execution lifecycle (logged via {@link LogAuditor} by default).
  *   <li>Post-execution validation of the returned result.
- *   <li>Generic type resolution for error reporting.
  *   <li>Convenience methods for conversion-based execution.
  * </ul>
  *
@@ -37,9 +63,6 @@ import org.hermi.constraint.validation.Validator;
  * @param <R> the type of the execution result
  */
 public abstract class Executor<C, R> {
-
-  private static final int CONTEXT_TYPE_INDEX = 0;
-  private static final int RESULT_TYPE_INDEX = 1;
 
   private final LogAuditor<C, R> logAuditor;
 
@@ -69,8 +92,8 @@ public abstract class Executor<C, R> {
    */
   public final R execute(C context) {
     UUID logId = logAuditor.recordContext(context);
-    validateContext(context);
     try {
+      validateContext(context);
       R result = doExecute(context);
       logAuditor.recordResult(logId, result);
       validateResult(result);
@@ -88,9 +111,10 @@ public abstract class Executor<C, R> {
    * @return the execution result
    * @throws NullPointerException if convertibleContext is null
    */
-  public R execute(Convertible<C> convertibleContext) {
+  public final R execute(Convertible<C> convertibleContext) {
     Objects.requireNonNull(
-        convertibleContext, getSimpleClassName() + ", convertible context cannot be null");
+        convertibleContext,
+        String.format("%s: convertible context cannot be null", getClass().getSimpleName()));
     return execute(convertibleContext.convert());
   }
 
@@ -103,9 +127,11 @@ public abstract class Executor<C, R> {
    * @return the execution result
    * @throws NullPointerException if source or converter is null
    */
-  public <S> R execute(S source, Converter<S, C> converter) {
-    Objects.requireNonNull(source, getSimpleClassName() + ", source cannot be null");
-    Objects.requireNonNull(converter, getSimpleClassName() + ", converter cannot be null");
+  public final <S> R execute(S source, Converter<S, C> converter) {
+    Objects.requireNonNull(
+        source, String.format("%s: source cannot be null", getClass().getSimpleName()));
+    Objects.requireNonNull(
+        converter, String.format("%s: converter cannot be null", getClass().getSimpleName()));
     return execute(converter.convert(source));
   }
 
@@ -116,16 +142,17 @@ public abstract class Executor<C, R> {
    * @throws NullPointerException if context is null
    * @throws InputValidationException if context is {@link Validatable} and fails validation
    */
-  protected void validateContext(C context) {
+  private void validateContext(C context) {
     Objects.requireNonNull(
-        context, getSimpleClassName() + ": Context, " + getContextTypeName() + ", cannot be null");
+        context, String.format("%s: Context cannot be null", getClass().getSimpleName()));
     if (!(context instanceof Validatable)) {
       return;
     }
     Set<ConstraintViolation<C>> violations = Validator.validate(context);
     if (!violations.isEmpty()) {
+      String typeName = context.getClass().getSimpleName();
       throw new InputValidationException(
-          getSimpleClassName() + ": Context, " + getContextTypeName() + ", is not valid",
+          String.format("%s: Context, %s, is not valid", getClass().getSimpleName(), typeName),
           violations);
     }
   }
@@ -137,83 +164,18 @@ public abstract class Executor<C, R> {
    * @throws NullPointerException if result is null
    * @throws InputValidationException if result is {@link Validatable} and fails validation
    */
-  protected void validateResult(R result) {
+  private void validateResult(R result) {
     Objects.requireNonNull(
-        result, getSimpleClassName() + ": Result, " + getResultTypeName() + ", cannot be null");
+        result, String.format("%s: Result cannot be null", getClass().getSimpleName()));
     if (!(result instanceof Validatable)) {
       return;
     }
     Set<ConstraintViolation<R>> violations = Validator.validate(result);
     if (!violations.isEmpty()) {
+      String typeName = result.getClass().getSimpleName();
       throw new InputValidationException(
-          getSimpleClassName() + ": Result, " + getResultTypeName() + ", is not valid", violations);
+          String.format("%s: Result, %s, is not valid", getClass().getSimpleName(), typeName),
+          violations);
     }
-  }
-
-  /**
-   * Gets the simple name of the context type for error reporting.
-   *
-   * @return context type name
-   */
-  protected String getContextTypeName() {
-    return getGenericTypeName(CONTEXT_TYPE_INDEX);
-  }
-
-  /**
-   * Gets the simple name of the result type for error reporting.
-   *
-   * @return result type name
-   */
-  protected String getResultTypeName() {
-    return getGenericTypeName(RESULT_TYPE_INDEX);
-  }
-
-  /**
-   * Gets the simple name of the current class.
-   *
-   * @return simple class name
-   */
-  protected String getSimpleClassName() {
-    return getClass().getSimpleName();
-  }
-
-  private String getGenericTypeName(int index) {
-    Type type = resolveGenericType(getClass(), index);
-    if (type == null) {
-      return Object.class.getSimpleName();
-    }
-    if (type instanceof Class<?> clazz) {
-      return clazz.getSimpleName();
-    }
-    return type.getTypeName();
-  }
-
-  private Type resolveGenericType(Class<?> clazz, int index) {
-    Type superclass = clazz.getGenericSuperclass();
-
-    if (superclass instanceof ParameterizedType pt) {
-      Type[] args = pt.getActualTypeArguments();
-      if (index < args.length) {
-        return unwrap(args[index]);
-      }
-    }
-
-    // Walk up the hierarchy
-    if (clazz.getSuperclass() != null) {
-      return resolveGenericType(clazz.getSuperclass(), index);
-    }
-
-    return Object.class;
-  }
-
-  private Type unwrap(Type type) {
-    if (type instanceof ParameterizedType pt) {
-      return pt.getRawType();
-    }
-    if (type instanceof TypeVariable<?> tv) {
-      Type[] bounds = tv.getBounds();
-      return bounds.length > 0 ? unwrap(bounds[0]) : Object.class;
-    }
-    return type;
   }
 }
