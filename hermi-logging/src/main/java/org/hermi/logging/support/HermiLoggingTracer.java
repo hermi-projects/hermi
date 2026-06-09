@@ -74,10 +74,12 @@ public class HermiLoggingTracer {
   private Object doTrace(ProceedingJoinPoint jp, String label, Class<?> targetClass)
       throws Throwable {
     Logger log = LoggerFactory.getLogger(targetClass);
-
-    log.atInfo().log("{} - STARTED", label);
     long start = System.nanoTime();
     try {
+      if (!log.isInfoEnabled()) {
+        return jp.proceed();
+      }
+      log.atInfo().log("{} - STARTED", label);
       Object result = jp.proceed();
       log.atInfo()
           .addKeyValue("duration", Duration.ofNanos(System.nanoTime() - start).toMillis())

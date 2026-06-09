@@ -44,6 +44,9 @@ public class LogAuditor<C, R> extends Auditor<C, R> {
   @Override
   protected UUID doRecordContext(C context) {
     UUID uuid = UUID.randomUUID();
+    if (!log.isInfoEnabled()) {
+      return uuid;
+    }
     log.atInfo()
         .addKeyValue(CONTEXT_ID, uuid)
         .addKeyValue(CONTEXT, MaskMapper.mask(context))
@@ -53,6 +56,9 @@ public class LogAuditor<C, R> extends Auditor<C, R> {
 
   @Override
   protected void doRecordResult(UUID uuid, R result) {
+    if (!log.isInfoEnabled()) {
+      return;
+    }
     log.atInfo()
         .addKeyValue(CONTEXT_ID, uuid)
         .addKeyValue(RESULT, MaskMapper.mask(result))
@@ -61,6 +67,9 @@ public class LogAuditor<C, R> extends Auditor<C, R> {
 
   @Override
   protected void doRecordError(UUID uuid, C context, Exception exception) {
+    if (!log.isErrorEnabled()) {
+      return;
+    }
     log.atError()
         .addKeyValue(CONTEXT_ID, uuid)
         .addKeyValue(CONTEXT, MaskMapper.mask(context))
