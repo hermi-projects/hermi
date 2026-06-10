@@ -17,6 +17,7 @@ import org.slf4j.MDC;
  *
  * <ul>
  *   <li>{@code executionId} — correlation id across STARTED/SUCCEEDED/FAILED (all events)
+ *   <li>{@code executor} — fully-qualified class name of the executor (all events)
  *   <li>{@code traceId}, {@code spanId} — distributed tracing identifiers from SLF4J MDC (all
  *       events)
  *   <li>{@code context} — masked context JSON (STARTED, FAILED)
@@ -57,9 +58,9 @@ public class LogAuditor<C, R> extends Auditor<C, R> {
     log.atInfo()
         .addKeyValue(EXECUTION_ID, uuid)
         .addKeyValue(EXECUTOR, executor)
-        .addKeyValue(CONTEXT, MaskMapper.mask(context))
         .addKeyValue(TRACE_ID, MDC.get(TRACE_ID))
         .addKeyValue(SPAN_ID, MDC.get(SPAN_ID))
+        .addKeyValue(CONTEXT, MaskMapper.mask(context))
         .log("{} execution started.", executorSimpleName);
     return uuid;
   }
@@ -72,9 +73,9 @@ public class LogAuditor<C, R> extends Auditor<C, R> {
     log.atInfo()
         .addKeyValue(EXECUTION_ID, uuid)
         .addKeyValue(EXECUTOR, executor)
-        .addKeyValue(RESULT, MaskMapper.mask(result))
         .addKeyValue(TRACE_ID, MDC.get(TRACE_ID))
         .addKeyValue(SPAN_ID, MDC.get(SPAN_ID))
+        .addKeyValue(RESULT, MaskMapper.mask(result))
         .log("{} execution succeeded.", executorSimpleName);
   }
 
@@ -86,11 +87,11 @@ public class LogAuditor<C, R> extends Auditor<C, R> {
     log.atError()
         .addKeyValue(EXECUTION_ID, uuid)
         .addKeyValue(EXECUTOR, executor)
+        .addKeyValue(TRACE_ID, MDC.get(TRACE_ID))
+        .addKeyValue(SPAN_ID, MDC.get(SPAN_ID))
         .addKeyValue(CONTEXT, MaskMapper.mask(context))
         .addKeyValue(EXCEPTION_CLASS, exception.getClass().getName())
         .addKeyValue(EXCEPTION_MESSAGE, exception.getMessage())
-        .addKeyValue(TRACE_ID, MDC.get(TRACE_ID))
-        .addKeyValue(SPAN_ID, MDC.get(SPAN_ID))
         .setCause(exception)
         .log("{} execution failed.", executorSimpleName);
   }
