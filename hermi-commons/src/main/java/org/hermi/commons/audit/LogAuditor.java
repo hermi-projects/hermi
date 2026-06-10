@@ -4,6 +4,7 @@ import java.util.UUID;
 import org.hermi.constraint.mask.MaskMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /**
  * Default {@link Auditor} that writes structured execution lifecycle events to the SLF4J debug log.
@@ -15,7 +16,9 @@ import org.slf4j.LoggerFactory;
  * LoggingEventCompositeJsonEncoder} renders as top-level JSON fields:
  *
  * <ul>
- *   <li>{@code uuid} — correlation id across STARTED/SUCCEEDED/FAILED (all events)
+ *   <li>{@code executionId} — correlation id across STARTED/SUCCEEDED/FAILED (all events)
+ *   <li>{@code traceId}, {@code spanId} — distributed tracing identifiers from SLF4J MDC (all
+ *       events)
  *   <li>{@code context} — masked context JSON (STARTED, FAILED)
  *   <li>{@code result} — masked result JSON (SUCCEEDED)
  *   <li>{@code exceptionClass}, {@code exceptionMessage} — error metadata (FAILED)
@@ -26,19 +29,23 @@ import org.slf4j.LoggerFactory;
  */
 public class LogAuditor<C, R> extends Auditor<C, R> {
 
-  private static final String CONTEXT_ID = "contextId";
+  private static final String EXECUTOR = "executor";
+  private static final String EXECUTION_ID = "executionId";
+  private static final String TRACE_ID = "traceId";
+  private static final String SPAN_ID = "spanId";
   private static final String CONTEXT = "context";
   private static final String RESULT = "result";
-
   private static final String EXCEPTION_CLASS = "exceptionClass";
   private static final String EXCEPTION_MESSAGE = "exceptionMessage";
 
   private final Logger log;
-  private final String executorClassName;
+  private final String executor;
+  private final String executorSimpleName;
 
   public LogAuditor(Class<?> executorClass) {
     this.log = LoggerFactory.getLogger(executorClass);
-    this.executorClassName = executorClass.getSimpleName();
+    this.executor = executorClass.getName();
+    this.executorSimpleName = executorClass.getSimpleName();
   }
 
   @Override
@@ -48,9 +55,12 @@ public class LogAuditor<C, R> extends Auditor<C, R> {
       return uuid;
     }
     log.atInfo()
-        .addKeyValue(CONTEXT_ID, uuid)
+        .addKeyValue(EXECUTION_ID, uuid)
+        .addKeyValue(EXECUTOR, executor)
         .addKeyValue(CONTEXT, MaskMapper.mask(context))
-        .log("{} execution started.", executorClassName);
+        .addKeyValue(TRACE_ID, MDC.get(TRACE_ID))
+        .addKeyValue(SPAN_ID, MDC.get(SPAN_ID))
+        .log("{} execution started.", executorSimpleName);
     return uuid;
   }
 
@@ -60,9 +70,12 @@ public class LogAuditor<C, R> extends Auditor<C, R> {
       return;
     }
     log.atInfo()
-        .addKeyValue(CONTEXT_ID, uuid)
+        .addKeyValue(EXECUTION_ID, uuid)
+        .addKeyValue(EXECUTOR, executor)
         .addKeyValue(RESULT, MaskMapper.mask(result))
-        .log("{} execution succeeded.", executorClassName);
+        .addKeyValue(TRACE_ID, MDC.get(TRACE_ID))
+        .addKeyValue(SPAN_ID, MDC.get(SPAN_ID))
+        .log("{} execution succeeded.", executorSimpleName);
   }
 
   @Override
@@ -71,11 +84,14 @@ public class LogAuditor<C, R> extends Auditor<C, R> {
       return;
     }
     log.atError()
-        .addKeyValue(CONTEXT_ID, uuid)
+        .addKeyValue(EXECUTION_ID, uuid)
+        .addKeyValue(EXECUTOR, executor)
         .addKeyValue(CONTEXT, MaskMapper.mask(context))
         .addKeyValue(EXCEPTION_CLASS, exception.getClass().getName())
         .addKeyValue(EXCEPTION_MESSAGE, exception.getMessage())
+        .addKeyValue(TRACE_ID, MDC.get(TRACE_ID))
+        .addKeyValue(SPAN_ID, MDC.get(SPAN_ID))
         .setCause(exception)
-        .log("{} execution failed.", executorClassName);
+        .log("{} execution failed.", executorSimpleName);
   }
 }
