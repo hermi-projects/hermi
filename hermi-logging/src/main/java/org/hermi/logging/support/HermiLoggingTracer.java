@@ -112,7 +112,7 @@ public class HermiLoggingTracer {
     String[] paramNames = sig.getParameterNames();
     for (int i = 0; i < args.length; i++) {
       String name = paramNames != null && i < paramNames.length ? paramNames[i] : "arg" + i;
-      el.setValue(name, args[i]);
+      el.defineBean(name, args[i]);
     }
 
     Matcher m = EL_PATTERN.matcher(message);
