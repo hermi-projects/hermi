@@ -459,7 +459,7 @@ PAYOFF:
 IGNORE IF: comments explain the "why" (rationales, business logic constraints) or document highly complex algorithms that cannot be simplified further.
 ```
 
-#### S30 — Duplicate Documentation
+#### S18 — Duplicate Documentation
 ```
 IF: the same comment or documentation appears in multiple locations (methods, classes, files)
 THEN: flag as WARNING
@@ -481,7 +481,7 @@ PAYOFF:
 IGNORE IF: the documentation explains version-specific behavior (e.g., performance characteristics under different conditions) and is intentionally duplicated for reference
 ```
 
-#### S18 — Data Class
+#### S19 — Data Class
 ```
 IF: a class consists entirely of fields (public or private with boilerplate getters/setters) and contains zero methods that operate on its own data
 THEN: flag as WARNING
@@ -506,7 +506,7 @@ IGNORE IF: The class is a DTO, API contract, or framework-required POJO that int
 ### Category 5: Couplers
 Excessive coupling between classes.
 
-#### S19 — Feature Envy
+#### S20 — Feature Envy
 ```
 IF: a method accesses data or calls methods from another class more than from its own class
 THEN: flag as WARNING
@@ -527,7 +527,7 @@ PAYOFF:
 IGNORE IF: the behavior is intentionally separated from the data to allow dynamic strategy/behavior swapping (e.g., Strategy, Visitor, or similar patterns)
 ```
 
-#### S20 — Message Chains
+#### S21 — Message Chains
 ```
 IF: code calls a chain of 3+ getters/methods: a.getB().getC().getD()
 THEN: flag as WARNING
@@ -547,7 +547,7 @@ PAYOFF:
 IGNORE IF: hiding the delegation would introduce Middle Man — overly aggressive hiding can make it hard to see where functionality lives
 ```
 
-#### S21 — Middle Man
+#### S22 — Middle Man
 ```
 IF: more than 50% of a class's public methods do nothing but delegate to another class
 THEN: flag as INFO
@@ -567,7 +567,7 @@ PAYOFF:
 IGNORE IF: the middle man serves a deliberate purpose — avoiding interclass dependencies (Proxy), adding cross-cutting behavior (Decorator), or as part of a deliberate design pattern
 ```
 
-#### S22 — Inappropriate Intimacy
+#### S23 — Inappropriate Intimacy
 ```
 IF: two classes access each other's private/internal fields or methods directly
 OR: two classes have bidirectional dependencies
@@ -587,7 +587,7 @@ PAYOFF:
   - Improves code organization and reduces coupling
   - Simplifies testing, maintenance, and reuse
 ```
-#### S23 — Incomplete Library Class
+#### S24 — Incomplete Library Class
 ```
 IF: a third-party library or framework class lacks a feature or method you need, and you cannot modify the library source
 THEN: flag as WARNING
@@ -612,7 +612,7 @@ IGNORE IF: the extension would be so extensive that writing a standalone replace
 ### Category 6: Readability
 How code reads at the body and expression level — naming, literals, conditionals, and formatting.
 
-#### S27 — Vertical Separation
+#### S25 — Vertical Separation
 ```
 IF: related methods (caller-callee pairs) are not kept close together in the file, or variable declarations are far from their first usage
 THEN: flag as WARNING
@@ -632,7 +632,7 @@ PAYOFF:
   - Encourages better method factoring — extraction becomes natural
 ```
 
-#### S28 — Contradictory Naming
+#### S26 — Contradictory Naming
 ```
 IF: a class, method, or variable is named in a way that misrepresents its behavior, scope, or responsibilities
 THEN: flag as WARNING
@@ -654,7 +654,7 @@ PAYOFF:
 IGNORE IF: the mismatch is within a private method and all call sites are within the same class, or the name follows a well-known idiom where the deviation is documented (rare)
 ```
 
-#### S29 — Obscure Code
+#### S27 — Obscure Code
 ```
 IF: code relies on deep nesting, complex conditional logic, or convoluted control flow that makes it difficult to understand without tracing
 THEN: flag as WARNING
@@ -681,7 +681,7 @@ PAYOFF:
 IGNORE IF: the logic is a standard algorithm that is widely known and concise, or the complexity is isolated within a private helper method
 ```
 
-#### S31 — Logging Intrusion
+#### S28 — Logging Intrusion
 ```
 IF: business logic methods contain logging statements interleaved with domain operations at a ratio of 2+ log lines per business operation, or log statements are placed inside loops that execute on every iteration
 THEN: flag as WARNING
@@ -704,7 +704,7 @@ PAYOFF:
 IGNORE IF: the log statements document critical audit/regulatory events and must appear inline for compliance traceability
 ```
 
-#### S33 — Magic Literals
+#### S29 — Magic Literals
 ```
 IF: a numeric, string, or boolean literal value appears directly in code and its meaning is not self-evident from context
 THEN: flag as CRITICAL
@@ -726,7 +726,7 @@ PAYOFF:
 IGNORE IF: the literal is self-explanatory (e.g., basic math `n * 2`, unit conversion `minutes / 60`, or standard API usage)
 ```
 
-#### S34 — Encapsulate Conditionals
+#### S30 — Encapsulate Conditionals
 ```
 IF: a method contains compound boolean expressions (two or more conditions joined by && or ||) inside a control flow statement (if, while, for), or a single boolean expression whose intent is not immediately obvious from the condition itself
 THEN: flag as WARNING
@@ -748,7 +748,7 @@ PAYOFF:
 IGNORE IF: the expression is trivially simple (e.g., `if (x == null)` or `if (count > 0)`) and extracting would add noise
 ```
 
-#### S35 — Avoid Negative Conditionals
+#### S31 — Avoid Negative Conditionals
 ```
 IF: a control flow statement (if, while, ternary) or boolean assignment contains a negated expression (`!isNotX`, `!shouldNotY`) where a positive alternative exists, or a method/field is named with a negative prefix (`isNotDisabled`, `shouldNotSkip`)
 THEN: flag as WARNING
@@ -771,10 +771,28 @@ PAYOFF:
 IGNORE IF: no positive alternative exists and the negation is idiomatic (e.g., `if (list.isEmpty())` is the positive form; `if (a != b)` has no meaningful positive alternative)
 ```
 
-### Category 7: Function Design
-Function signatures and design decisions that affect contract, testability, and correctness.
+#### S32 — Non-Compliant Naming
+```
+IF: the meaning of a name cannot be inferred from the name alone and requires reading a comment, the surrounding code, or knowing implicit context to understand what the identifier represents
+THEN: flag as WARNING
 
-#### S24 — Output Arguments
+WHY: Names are the primary communication tool in code. If a name does not reveal intent, every future reader must spend mental effort to decode it. This violates Clean Code's core chapter (Chapter 2: Meaningful Names) — a name should answer "what" and "why", not require the reader to piece it together.
+
+SIGNAL: For each name encountered, ask: "If I delete all comments, is this name still meaningful?" If the answer is no, the name does not reveal intent.
+
+FIX:
+  1. Rename to reveal intent — replace `int d; // elapsed time in days` with `int elapsedTimeInDays`
+  2. If the name describes mechanism rather than purpose, rename to the business intent — `fetchFromDb(id)` → `getCustomer(id)`
+  3. If the name is too generic (`data`, `info`, `val`), rename to describe what it specifically holds — `data` → `unprocessedOrderBatch`
+
+PAYOFF:
+  - Code becomes self-documenting — comments become optional rather than required
+  - Readers can understand intent without tracing control flow
+
+IGNORE IF: the name follows a well-known domain or team convention that makes the intent obvious to everyone in that context (e.g., `ctx` in a Spring handler method)
+```
+
+#### S33 — Output Arguments
 ```
 IF: a method mutates a parameter (collection, StringBuilder, array, or mutable object) to produce its result rather than returning a value
 THEN: flag as CRITICAL
@@ -795,7 +813,7 @@ PAYOFF:
 IGNORE IF: the pattern is explicitly documented as a fluent interface, or the language idiom expects it (e.g., `Collections.sort()` mutates in place by convention)
 ```
 
-#### S25 — Flag / Selector Arguments
+#### S34 — Flag / Selector Arguments
 ```
 IF: a method takes a boolean, string, enum, or int parameter whose primary purpose is to select between two or more distinct code paths or behaviors within the method
 THEN: flag as CRITICAL
@@ -818,7 +836,7 @@ PAYOFF:
 IGNORE IF: the method is a Factory, Builder, or Strategy resolver whose purpose IS to select an implementation; or a private helper where all call sites are visible in the same class
 ```
 
-#### S26 — Incorrect Behavior at Boundaries
+#### S35 — Incorrect Behavior at Boundaries
 ```
 IF: a method does not validate its inputs at the boundary (null checks, range checks, invariants), OR it returns null unexpectedly, OR it swallows exceptions instead of failing fast
 THEN: flag as CRITICAL
@@ -841,7 +859,7 @@ PAYOFF:
 IGNORE IF: the boundary is framework-generated code (e.g., serialization constructors, JPA entities) or performance-critical hot paths where every check is measured and accounted for
 ```
 
-#### S32 — Inappropriate Static
+#### S36 — Inappropriate Static
 ```
 IF: a public or protected method is declared static but uses only its parameters (no `this` state), and there is any scenario where polymorphic behavior or testability would be beneficial
 THEN: flag as WARNING
