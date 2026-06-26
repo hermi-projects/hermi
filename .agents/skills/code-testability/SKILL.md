@@ -838,11 +838,13 @@ IGNORE IF: the "leak" is a documented and intentional part of the contract (e.g.
 
 ## Severity Guide
 
-| Severity | Criteria | Examples |
+Three severity levels classify each finding. The criteria describe the decision rule; the rule IDs show the **default** assignment. Individual instances may be adjusted up or down based on local context (see INFO criteria below).
+
+| Severity | Criteria | Assigned Rules |
 |---|---|---|
-| **CRITICAL** | Makes isolated testing impossible. Every test path hits real infrastructure — regardless of whether that infrastructure is internal or external. | Hard-Coded Dependency, Static Side Effects, Service Locator, Global Mutable State, Hidden Time/Randomness, Mixed Logic and I/O, Framework-Entangled Logic, Swallowed Exception |
-| **WARNING** | Makes testing painful or flaky, or enables tests to interfere with each other. Code is testable but with excessive setup or risk. | Singleton Enforcement, Thread-Local Context, Mutable Injected Dependency, Buried Business Rule, Constructor Side Effect, Temporal Coupling, Non-Deterministic Concurrency, Implementation Testing, Excessive Collaborators, Leaky Abstraction |
-| **INFO** | Minor or speculative. May indicate a future problem but doesn't currently block testing. | Any WARNING-level rule where the impact is speculative or the class is small enough that the cost of fixing exceeds the benefit. |
+| **CRITICAL** | Makes isolated testing impossible. Every test path hits real infrastructure — regardless of whether that infrastructure is internal or external. The rule is a **structural design flaw**: code must change before any test can exist. | T-01 (Hard-Coded Dependency), T-02 (Static Side-Effect Call), T-03 (Service Locator), T-05 (Hidden Time and Randomness), T-07 (Global Mutable State), T-10 (Mixed Business Logic and I/O), T-11 (Framework-Entangled Business Logic), T-13 (Swallowed Exception) |
+| **WARNING** | Makes testing painful or flaky, or enables tests to interfere with each other. Code is technically testable but with excessive setup cost, flaky results, cross-test pollution, or brittleness under refactoring. | T-04 (Singleton with Private Constructor), T-06 (Non-Deterministic Concurrency), T-08 (Thread-Local / Ambient Context), T-09 (Mutable Injected Dependency), T-12 (Business Logic Hidden in Large Workflow), T-14 (Constructor Side Effect), T-15 (Temporal Coupling), T-16 (Implementation Testing / Over-Mocking), T-17 (Excessive Collaborators), T-18 (Leaky Abstraction) |
+| **INFO** | Minor or speculative. Does not currently block or meaningfully burden testing, but may indicate a future problem. | No fixed default. Any WARNING-level rule where the impact is negligible in context — e.g., a constructor side effect that is only a log line, a trivial temporal coupling in a two-method class. Apply as a **downward adjustment** from WARNING per instance. |
 
 ---
 
@@ -894,7 +896,7 @@ Before reporting findings, verify:
 
 1. **Rule ID matches** — The reported rule ID corresponds to the pattern actually found. Don't report T-01 (Hard-Coded Dependency) for a `new DiscountCalculator()` call that creates pure business logic.
 
-2. **Severity is calibrated** — CRITICAL means tests CANNOT be written without real infrastructure (internal or external). WARNING means tests are painful or flaky but possible. INFO means speculative.
+2. **Severity is calibrated** — CRITICAL (T-01, T-02, T-03, T-05, T-07, T-10, T-11, T-13) means tests CANNOT be written without real infrastructure — structural design flaw, code must change. WARNING (T-04, T-06, T-08, T-09, T-12, T-14, T-15, T-16, T-17, T-18) means tests are painful or flaky but possible. INFO means speculative — a WARNING instance where the impact is negligible in context.
 
 3. **IGNORE IF checked** — Each rule has an IGNORE IF clause. Verify the finding doesn't match the ignore condition before reporting.
 
