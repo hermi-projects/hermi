@@ -25,6 +25,48 @@ If no language reference exists for the target language, apply only the general 
 
 ---
 
+## Infrastructure Detection Checklist
+
+Infrastructure is **any code that talks to something outside the current process** — the I/O boundary. When scanning a codebase for testability anti-patterns (T-01, T-02, T-10), run through this checklist. If any of these appear hard-coded (`new`) or called as a static method inside business logic, flag as CRITICAL.
+
+This checklist is language-agnostic. The AI scanning the code should map each category to the concrete libraries, imports, and class names it finds in the project — don't rely on a pre-enumerated list of patterns.
+
+---
+
+1. **Databases & Persistence** — Connection pools, ORM sessions/contexts, query builders, migration tools, object/blob storage (S3, GCS, Azure Blob), search engines (Elasticsearch, Algolia, Meilisearch).
+
+2. **Networking & HTTP** — Outbound HTTP clients (REST, GraphQL, gRPC), service discovery, WebSocket clients, RPC stubs/channels.
+
+3. **Messaging & Event Streams** — Message producers/consumers (Kafka, RabbitMQ, SQS, Pub/Sub), event streams, job/task queues.
+
+4. **File & Storage Systems** — Local filesystem access (read/write via OS paths), cloud storage, FTP/SFTP clients, static file I/O utilities.
+
+5. **Email & Notifications** — SMTP clients, email APIs (SendGrid, Mailgun, SES), push notifications (FCM, APNs), SMS (Twilio), in-app real-time notifications (WebSocket, SSE).
+
+6. **Security & Identity** — External auth providers (Auth0, Okta, Keycloak, Cognito), OAuth/OIDC token validation, LDAP/Active Directory, secrets vaults (Vault, Secrets Manager), certificate management.
+
+7. **Observability** — Metrics collectors (StatsD, Prometheus push), tracing exporters (Jaeger, Zipkin, OpenTelemetry), error trackers (Sentry, Rollbar), remote logging backends.
+
+8. **Scheduling & Background Processing** — Job schedulers (Quartz), workflow engines (Temporal, Cadence, Step Functions), background job enqueuers.
+
+9. **Platform & Operations** — Feature flag services (LaunchDarkly, Unleash), remote configuration stores (Consul KV, Spring Cloud Config), circuit breakers/rate limiters created inline, container orchestration APIs (Kubernetes).
+
+10. **External Business Services** — Payment gateways (Stripe, PayPal, Braintree), tax APIs (Avalara, TaxJar), shipping/logistics APIs, geolocation (Google Maps, Mapbox), fraud detection, KYC/identity verification.
+
+---
+
+### Quick-Check: Is It Infrastructure?
+
+For any dependency, ask three questions. If the answer to **any** is yes, it's infrastructure — inject it, never hard-code with `new` or call as a static method.
+
+| Question | If Yes → |
+|---|---|
+| 1. Does it talk to something outside the current **process**? (database, network, filesystem, external service) | Infrastructure → Inject (T-01, T-02) |
+| 2. Does the same input ever produce **different output**? (time, randomness, external state) | Non-Determinism → Inject Clock/Provider (T-05) |
+| 3. Would a **test need to mock it** to run in isolation? | Infrastructure → Inject |
+
+---
+
 ## Mode Detection
 
 This skill operates in three modes. Determine the mode from the user's request:

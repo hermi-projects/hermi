@@ -16,43 +16,48 @@ When reviewing Java code, apply the rules in this file **in addition to** the ge
 
 ---
 
+## Infrastructure Detection Checklist (Java)
+
+This section supplements the language-agnostic [Infrastructure Detection Checklist](../SKILL.md#infrastructure-detection-checklist) in SKILL.md with representative Java examples. **Do not treat these as exhaustive lists** — use them to recognize the pattern, then identify the actual libraries present in the project's imports and dependencies.
+
+---
+
+1. **Databases & Persistence** — `java.sql.Connection`, `javax.sql.DataSource`, `jakarta.persistence.EntityManager`, `org.hibernate.Session`, `JdbcTemplate`, `MongoClient`, `Jedis`/`Lettuce`, `ElasticsearchClient`, `DynamoDbClient`, `S3Client`, `Flyway`, `Liquibase`.
+
+2. **Networking & HTTP** — `java.net.http.HttpClient`, `RestTemplate`, `WebClient`, `OkHttpClient`, `Retrofit`, `FeignClient` (creating instances directly), `io.grpc.ManagedChannel`, `WebSocketClient`.
+
+3. **Messaging & Event Streams** — `jakarta.jms.Connection`, `KafkaProducer`/`KafkaConsumer`, `KafkaTemplate`, `RabbitTemplate`, `SqsClient`/`SnsClient`, Google `Publisher`/`Subscriber`.
+
+4. **File & Storage Systems** — `java.io.File*`, `java.nio.file.Files` (static methods), `org.apache.commons.io.FileUtils`, `ChannelSftp`, `FTPClient`.
+
+5. **Email & Notifications** — `jakarta.mail.Session`/`Transport`, `JavaMailSender`, `SendGrid`, `MailgunClient`, `SesClient`, `FirebaseMessaging`, `Twilio`.
+
+6. **Security & Identity** — `AuthAPI`/`ManagementAPI` (Auth0), Okta `Client`, `Keycloak` admin client, `CognitoIdentityProviderClient`, `LdapContext`, `SecretsManagerClient`.
+
+7. **Observability** — `StatsDClient`, `MeterRegistry` (created inline), `OpenTelemetry` (created inline), `Tracer` (created inline), `SentryClient`, `Rollbar`.
+
+8. **Scheduling & Background Processing** — `org.quartz.Scheduler`, `TaskScheduler`, `WorkflowClient` (Temporal), `SfnClient` (Step Functions).
+
+9. **Platform & Operations** — `LDClient` (LaunchDarkly), `Unleash`, `ConfigClient`, `CircuitBreaker`/`RateLimiter` (created inline), `KubernetesClient`.
+
+10. **External Business Services** — `Stripe` client, `PayPalHttpClient`, `BraintreeGateway`, `AvaTaxClient`, `Shippo`, `GeoApiContext` (Google Maps), `SiftClient`.
+
+---
+
 ## Java-Specific Detection Patterns
-
-### Infrastructure Classes (for T-01 Hard-Coded Dependency)
-
-When `new` is called on any of these types inside business logic, flag as T-01 — CRITICAL:
-
-**JDK Standard Library:**
-- `java.net.URL`, `java.net.HttpURLConnection`
-- `java.net.http.HttpClient`, `java.net.http.HttpRequest`
-- `java.sql.Connection`, `java.sql.Statement`, `java.sql.ResultSet`
-- `java.io.FileInputStream`, `java.io.FileOutputStream`, `java.io.FileReader`, `java.io.FileWriter`
-- `java.nio.file.Files` (static methods, covered by T-02)
-- `java.util.Timer`, `java.util.Random`, `java.security.SecureRandom`
-- `javax.sql.DataSource` (should be injected, not created)
-
-**Spring Framework:**
-- `org.springframework.web.client.RestTemplate`
-- `org.springframework.web.reactive.function.client.WebClient`
-- `org.springframework.jdbc.core.JdbcTemplate`
-- `org.springframework.mail.javamail.JavaMailSender`
-
-**Jakarta EE / Javax:**
-- `javax.mail.Session`, `javax.mail.Transport`
-- `javax.jms.Connection`, `javax.jms.Session`, `javax.jms.MessageProducer`
-
-**Any class ending in:** `*Client`, `*Repository`, `*Gateway`, `*Sender`, `*Publisher`, `*Connector`, `*Adapter`
 
 ### Static Side-Effect Methods (for T-02)
 
-Flag calls to these static methods in business logic:
+Flag calls to these static methods in business logic — always CRITICAL:
 
 - `java.nio.file.Files.write()`, `.copy()`, `.move()`, `.delete()`, `.createFile()`, `.createDirectory()`
 - `java.nio.file.Files.readAllBytes()`, `.readAllLines()`, `.readString()`, `.lines()`
 - `System.getenv()`, `System.getProperty()` (also T-07)
 - `System.currentTimeMillis()`, `System.nanoTime()` (also T-05)
 - `Thread.sleep()` (also T-06)
-- `javax.mail.Transport.send()` (static overload)
+- `jakarta.mail.Transport.send()` (static overload)
+- `org.apache.commons.io.FileUtils.*` (all static methods)
+- `com.twilio.Twilio.init()` (static initializer with side effects)
 
 ### Service Locator Patterns (for T-03)
 
