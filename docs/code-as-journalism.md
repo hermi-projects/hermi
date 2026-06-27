@@ -14,28 +14,27 @@ Let’s look at how to implement this metaphor in production Java using an elega
 
 In journalism, articles follow the **Inverted Pyramid** structure. The most critical information is printed at the very top, while background details sit at the bottom.
 
-When we map this to a Java class, it breaks down into four clean, vertical sections:
+When we apply this narrative flow to file design, it breaks down into four clean, vertical sections:
 
 ```text
-┌───────────────────────────────────────────────────────────┐
-│  Section 1: The Headline     │ Class Name (0.1s intent)   │
-├──────────────────────────────┼────────────────────────────┤
-│  Section 2: The Background   │ Fields & Core Collaborators│
-├──────────────────────────────┼────────────────────────────┤
-│  Section 3: The Lead Story   │ Executive Summary          │
-├──────────────────────────────┼────────────────────────────┤
-│  Section 4: Secondary Body   │ Protected Milestone Steps  │
-└───────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│  Section 1: The Headline     │ High-Level Intent         │
+├──────────────────────────────┼───────────────────────────┤
+│  Section 2: The Background   │ Core Context & Relations  │
+├──────────────────────────────┼───────────────────────────┤
+│  Section 3: The Lead Story   │ Executive Summary         │
+├──────────────────────────────┼───────────────────────────┤
+│  Section 4: Secondary Body   │ Narrative Milestone Steps │
+└──────────────────────────────────────────────────────────┘
 
 ```
 
 ### Breaking Down the 4 Sections
 
-* **Section 1: The Headline:** Just like a front-page headline, this section must be bold, definitive, and announce the single sovereign purpose of the entire file in less than a second.
-* **Section 2: The Background:** This introduces the key characters, dependencies, or structural configurations required to make the upcoming story possible. It sets the baseline context before the narrative begins.
-* **Section 3: The Lead Story:** The absolute peak of the pyramid. This is a highly scannable, top-level summary of the entire scenario. It explains *what* the system accomplishes, written like a sequence of plain English milestones completely free of technical noise.
-* **Section 4: Secondary Body:** The lower-level milestone developments. This sits further down the file because it focuses on *how* those high-level milestones actually happen—handling individual step mechanics, parameter preparation, and routing downstream assignments.
-
+* **Section 1: The Headline:** Just like a front-page headline, this title must be bold and definitive. It announces the single, sovereign purpose of the entire file in less than a second.
+* **Section 2: The Background:** This section introduces the key characters, essential partnerships, or structural settings required to make the upcoming story possible. It sets the baseline context before the narrative begins.
+* **Section 3: The Lead Story (Executive Summary):** The absolute peak of the pyramid. This is a highly scannable, top-level summary of the entire scenario. It explains *what* the system accomplishes, written like a sequence of plain-language milestones completely free of technical noise.
+* **Section 4: Secondary Body:** The lower-level milestone developments. This sits further down because it focuses entirely on *how* those high-level milestones actually happen—handling individual mechanics, parameter preparation, and routing downstream assignments.
 ---
 
 Here is a complete, production-ready example of a Use Case class built entirely around this narrative flow:
@@ -152,3 +151,29 @@ Resilience mechanics like retries or error handling are handled entirely inside 
 Next time you are writing a Java class, apply the **Fold Test**: Press `Ctrl + Shift + -` in your IDE to collapse all methods to their signatures.
 
 Look at what remains visible. If your top-level public or protected methods still tell a cohesive, unbroken story about your business domain, you’ve written a great piece of journalism. If it reads like a machine manual, it's time to push those details down to the back page.
+
+
+
+In journalism, articles follow the **Inverted Pyramid** structure: the most critical information is delivered immediately at the top, while supporting context and fine details sit comfortably at the bottom.
+
+When we apply this narrative flow to file design, it breaks down into four clean, vertical sections:
+
+```text
+┌──────────────────────────────────────────────────────────┐
+│  Section 1: The Headline     │ High-Level Intent         │
+├──────────────────────────────┼───────────────────────────┤
+│  Section 2: The Background   │ Core Context & Relations  │
+├──────────────────────────────┼───────────────────────────┤
+│  Section 3: The Lead Story   │ Executive Summary         │
+├──────────────────────────────┼───────────────────────────┤
+│  Section 4: Secondary Body   │ Narrative Milestone Steps │
+└──────────────────────────────────────────────────────────┘
+
+```
+
+### Breaking Down the 4 Sections
+
+* **Section 1: The Headline:** Just like a front-page headline, this title must be bold and definitive. It announces the single, sovereign purpose of the entire file in less than a second.
+* **Section 2: The Background:** This section introduces the key characters, essential partnerships, or structural settings required to make the upcoming story possible. It sets the baseline context before the narrative begins.
+* **Section 3: The Lead Story (Executive Summary):** The absolute peak of the pyramid. This is a highly scannable, top-level summary of the entire scenario. It explains *what* the system accomplishes, written like a sequence of plain-language milestones completely free of technical noise.
+* **Section 4: Secondary Body:** The lower-level milestone developments. This sits further down because it focuses entirely on *how* those high-level milestones actually happen—handling individual mechanics, parameter preparation, and routing downstream assignments.
