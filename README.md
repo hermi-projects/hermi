@@ -248,9 +248,6 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
 #### Step 8: The Phase 1 Gate (Verification)
 With the orchestration complete, verify all boundary and edge cases. Unlike mocking frameworks which couple tests to implementation details, state-backed local adapters prove your logic handles real-world state transitions.
 
-> [!TIP]
-> Maintaining local abstractions (e.g., in-memory repositories) for every use case can feel heavy. The `hermi-shell` project provides pre-built, reusable local adapters and utilities to significantly reduce this boilerplate.
-
 ```java
 // 1. A stateful in-memory repository (Simple Implementation)
 class InMemorySaveUserRepository extends SaveUserRepository {
@@ -274,20 +271,20 @@ class ConsoleNotifyUserFoundMessenger extends NotifyUserFoundMessenger {
  
 // 3. A programmable local client
 class LocalFindUserClient extends FindUserClient {
-    private Result result = new Result("John Doe", "john@example.com");
-
-    public void setResult(Result result) { this.result = result; }
-
+    public final Map<Context, Result> store = new HashMap<>();
+    public LocalFindUserClient(){
+      store.put(new Context("123-45-6789"), new Result("John Doe", "john@example.com"));
+    }
     @Override
     protected Result doExecute(Context context) {
-        return result;
+        return store.get(context);
     }
 }
 ```
 ```java
 public class FindUserMainShell {
     public static void main(String[] args) {
-         var client = new LocalFindUserClient(); 
+        var client = new LocalFindUserClient(); 
         var repo = new InMemorySaveUserRepository();
         var messenger = new ConsoleNotifyUserFoundMessenger();
         
