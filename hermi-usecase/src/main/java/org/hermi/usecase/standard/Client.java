@@ -1,7 +1,6 @@
 package org.hermi.usecase.standard;
 
 import org.hermi.commons.Executor;
-import org.hermi.constraint.validation.Validatable;
 
 /**
  * [AI ARCHITECTURAL CONTRACT]
@@ -23,7 +22,6 @@ import org.hermi.constraint.validation.Validatable;
  *           etc.).
  *       <li>4. NAMING PROPHECY: Follow the {@code {Action}{Resource}Client} pattern (e.g., {@code
  *           FindUserClient}).
- *       <li>5. VALIDATION: The {@code Result} record MUST implement {@link Validatable}.
  *     </ul>
  *
  * @implNote FORBIDDEN PATTERNS:
@@ -36,7 +34,7 @@ import org.hermi.constraint.validation.Validatable;
  *     <pre>{@code
  * public abstract class FindUserClient extends Client<FindUserClient.Context, FindUserClient.Result> {
  *   public static record Context(String ssn) {}
- *   public static record Result(String name) implements Validatable {}
+ *   public static record Result(String name) {}
  * }
  * }</pre>
  */
@@ -45,16 +43,15 @@ import org.hermi.constraint.validation.Validatable;
  * Base class for all external service client contracts in the Hermi framework.
  *
  * @param <C> the type of the context
- * @param <R> the type of the result, which MUST implement {@link Validatable}
+ * @param <R> the type of the result
  */
-public abstract class Client<C, R extends Validatable> extends Executor<C, R> {
+public abstract class Client<C, R> extends Executor<C, R> {
   /**
    * Executes the external system calling with the client request and returns the response.
    *
    * <ul>
    *   <li><b>Use Case Layer (Phase 1)</b>: Defines the contract by extending this class and
-   *       specifying the input and output types. Only the output (which returns to the Use Case)
-   *       typically implements {@link Validatable Validatable}.
+   *       specifying the input and output types.
    *   <li><b>Shell Layer (Phase 2)</b>: Implements the real-world communication logic using
    *       specific technologies, prefixed with the technology name (e.g., {@code
    *       RestFindUserClient}).
@@ -65,7 +62,7 @@ public abstract class Client<C, R extends Validatable> extends Executor<C, R> {
    * <pre>{@code
    * public abstract class FindUserClient extends Client<FindUserClient.Context, FindUserClient.Result> {
    *   public static record Context(String ssn) {}
-   *   public static record Result(String name, String email) implements Validatable {}
+   *   public static record Result(String name, String email) {}
    * }
    * }</pre>
    *

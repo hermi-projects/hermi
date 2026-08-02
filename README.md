@@ -307,8 +307,17 @@ With Phase 1 complete and the core logic verified, build a technology-specific a
 
 Vendor Implementation, can be implemented as soon as we know the vendor
 ```java
-import org.hermi.shell.Client;
-import org.hermi.shell.Messenger;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import org.hermi.commons.Validatable;
+
+public class LexisNexisResponse implements Validatable {
+  @NotNull
+  @NotBlank
+  private String name;
+}
+```
+```java
 import org.hermi.shell.audit.PersistentAuditor;
 
 @Component
@@ -327,14 +336,33 @@ public class LexisNexisUserAuditor extends PersistentAuditor<LexisNexisPayload, 
     // Update audit DB with failure
   }
 }
+```
+```java
+@Configuration
+public class RestTemplateConfiguration {
 
+  @Bean("lexisNexisRestTemplate")
+  @Profile("!local")
+  public RestTemplate lexisNexisRestTemplate() {
+    return new RestTemplate();
+  }
+
+  @Bean("lexisNexisRestTemplate")
+  @Profile("local")
+  public RestTemplate localLexisNexisRestTemplate(RestTemplateBuilder builder, TokenProvider tokenProvider) {
+    return builder.basicAuthentication(tokenProvider.getToken(), "secret").build();
+  }
+}
+```
+```java
+import org.hermi.shell.Client;
 @Component
 public class LexisNexisUserClient extends Client<LexisNexisPayload, LexisNexisResponse> {
 
   private RestTemplate restTemplate;
 
   @Autowired
-  public LexisNexisUserClient(RestTemplate restTemplate, LexisNexisUserAuditor auditor) {
+  public LexisNexisUserClient(@Qualifier("lexisNexisRestTemplate") RestTemplate restTemplate, LexisNexisUserAuditor auditor) {
     super(auditor);
     this.restTemplate = restTemplate;
   }
@@ -346,6 +374,7 @@ public class LexisNexisUserClient extends Client<LexisNexisPayload, LexisNexisRe
 }
 ```
 ```java
+import org.hermi.shell.Messenger;
 @Component
 public class KafkaUserMessenger extends Messenger<ProducerRecord<String, String>, RecordMetadata> {
 

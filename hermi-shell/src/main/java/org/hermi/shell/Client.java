@@ -3,6 +3,7 @@ package org.hermi.shell;
 import java.util.Objects;
 import java.util.UUID;
 import org.hermi.commons.Executor;
+import org.hermi.constraint.validation.Validatable;
 import org.hermi.shell.audit.NoopPersistentAuditor;
 import org.hermi.shell.audit.PersistentAuditor;
 
@@ -40,7 +41,7 @@ import org.hermi.shell.audit.PersistentAuditor;
  * @param <P> payload type sent to the external system
  * @param <R> result type received from the external system
  */
-public abstract class Client<P, R> extends Executor<P, R> {
+public abstract class Client<P, R extends Validatable> extends Executor<P, R> {
 
   private final PersistentAuditor<P, R> persistentAuditor;
 

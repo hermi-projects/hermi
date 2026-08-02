@@ -1,6 +1,7 @@
 package org.hermi.shell.secure;
 
 import java.util.Objects;
+import org.hermi.constraint.validation.Validatable;
 import org.hermi.shell.Client;
 import org.hermi.shell.audit.PersistentAuditor;
 
@@ -52,7 +53,7 @@ import org.hermi.shell.audit.PersistentAuditor;
  * @param <P> payload type sent to the external system (pre-encryption)
  * @param <R> result type received from the external system (post-decryption)
  */
-public abstract class SecureClient<P, R> extends Client<P, R> {
+public abstract class SecureClient<P, R extends Validatable> extends Client<P, R> {
 
   private final Cryptor<P, R> cryptor;
 

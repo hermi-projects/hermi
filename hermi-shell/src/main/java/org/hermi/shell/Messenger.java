@@ -40,16 +40,21 @@ public abstract class Messenger<P, R> extends Executor<P, R> {
   private final PersistentAuditor<P, R> persistentAuditor;
 
   /**
-   * Constructs a Messenger with a {@link PersistentAuditor}. The built-in {@link
-   * org.hermi.commons.audit.LogAuditor} is always active for debug logging.
+   * Constructs a Messenger with a {@link PersistentAuditor}. The built-in {@link LogAuditor} is
+   * always active for debug logging.
    *
    * @param persistentAuditor the persistent auditor for compliance/production audit
    */
   protected Messenger(PersistentAuditor<P, R> persistentAuditor) {
     this.persistentAuditor =
-        Objects.requireNonNull(persistentAuditor, "PersistentAuditor is required");
+        Objects.requireNonNull(persistentAuditor, "PersistentAuditor is required.");
   }
 
+  /**
+   * Returns the default {@link NoopPersistentAuditor}, used when no specific auditor is provided.
+   *
+   * @return a {@link NoopPersistentAuditor} instance
+   */
   protected Messenger() {
     this(new NoopPersistentAuditor<>());
   }

@@ -1,7 +1,6 @@
 package org.hermi.usecase.standard;
 
 import org.hermi.commons.Executor;
-import org.hermi.constraint.validation.Validatable;
 
 /**
  * [AI ARCHITECTURAL CONTRACT]
@@ -23,7 +22,6 @@ import org.hermi.constraint.validation.Validatable;
  *           etc.).
  *       <li>4. NAMING PROPHECY: Follow the {@code {Notify}{Fact}Messenger} pattern (e.g., {@code
  *           NotifyUserFoundMessenger}).
- *       <li>5. VALIDATION: The {@code Result} record MUST implement {@link Validatable}.
  *     </ul>
  *
  * @implNote FORBIDDEN PATTERNS:
@@ -37,7 +35,7 @@ import org.hermi.constraint.validation.Validatable;
  *     <pre>{@code
  * public abstract class NotifyUserFoundMessenger extends Messenger<NotifyUserFoundMessenger.Context, NotifyUserFoundMessenger.Result> {
  *   public static record Context(String userId, String message) {}
- *   public static record Result(String messageId) implements Validatable {}
+ *   public static record Result(String messageId) {}
  * }
  * }</pre>
  */
@@ -46,9 +44,9 @@ import org.hermi.constraint.validation.Validatable;
  * Base class for all asynchronous messaging contracts in the Hermi framework.
  *
  * @param <C> the type of the context
- * @param <R> the type of the result, which MUST implement {@link Validatable}
+ * @param <R> the type of the result
  */
-public abstract class Messenger<C, R extends Validatable> extends Executor<C, R> {
+public abstract class Messenger<C, R> extends Executor<C, R> {
 
   /**
    * Sends the message to an external system and returns the response.
@@ -57,8 +55,7 @@ public abstract class Messenger<C, R extends Validatable> extends Executor<C, R>
    *
    * <ul>
    *   <li><b>Use Case Layer (Phase 1)</b>: Defines the contract by extending this class and
-   *       specifying the input and output types. Only the output (which returns to the Use Case)
-   *       typically implements {@link Validatable Validatable}.
+   *       specifying the input and output types.
    *   <li><b>Shell Layer (Phase 2)</b>: Implements the real-world communication logic using
    *       specific technologies, prefixed with the technology name (e.g., {@code
    *       KafkaNotifyUserFoundMessenger}).
@@ -69,7 +66,7 @@ public abstract class Messenger<C, R extends Validatable> extends Executor<C, R>
    * <pre>{@code
    * public abstract class NotifyUserFoundMessenger extends Messenger<NotifyUserFoundMessenger.Context, NotifyUserFoundMessenger.Result> {
    *   public static record Context(String userId, String message) {}
-   *   public static record Result(String messageId) implements Validatable {}
+   *   public static record Result(String messageId) {}
    * }
    * }</pre>
    *

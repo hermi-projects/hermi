@@ -1,7 +1,6 @@
 package org.hermi.usecase.standard;
 
 import org.hermi.commons.Executor;
-import org.hermi.constraint.validation.Validatable;
 
 /**
  * [AI ARCHITECTURAL CONTRACT]
@@ -23,7 +22,6 @@ import org.hermi.constraint.validation.Validatable;
  *           etc.).
  *       <li>4. NAMING PROPHECY: Follow the {@code {Action}{Resource}Repository} pattern (e.g.,
  *           {@code SaveUserRepository}).
- *       <li>5. VALIDATION: The {@code Result} record MUST implement {@link Validatable}.
  *     </ul>
  *
  * @implNote FORBIDDEN PATTERNS:
@@ -37,7 +35,7 @@ import org.hermi.constraint.validation.Validatable;
  *     <pre>{@code
  * public abstract class SaveUserRepository extends Repository<SaveUserRepository.Context, SaveUserRepository.Result> {
  *   public static record Context(String name, String email) {}
- *   public static record Result(String id) implements Validatable {}
+ *   public static record Result(String id) {}
  * }
  * }</pre>
  */
@@ -46,19 +44,16 @@ import org.hermi.constraint.validation.Validatable;
  * Base class for all data persistence contracts in the Hermi framework.
  *
  * @param <C> the type of the context
- * @param <R> the type of the result, which MUST implement {@link Validatable}
+ * @param <R> the type of the result
  */
-public abstract class Repository<C, R extends Validatable> extends Executor<C, R> {
+public abstract class Repository<C, R> extends Executor<C, R> {
 
   /**
    * Saves the repository request to an external data source and returns the response.
-   *
-   * <ul>
-   *   <li><b>Use Case Layer (Phase 1)</b>: Defines the contract by extending this class and
-   *       specifying the input and output types. Only the output (which returns to the Use Case)
-   *       typically implements {@link Validatable Validatable}.
-   *   <li><b>Shell Layer (Phase 2)</b>: Implements the real-world data access logic using specific
-   *       technologies, prefixed with the technology name (e.g., {@code JpaSaveUserRepository}).
+   * <li><b>Use Case Layer (Phase 1)</b>: Defines the contract by extending this class and
+   *     specifying the input and output types.
+   * <li><b>Shell Layer (Phase 2)</b>: Implements the real-world data access logic using specific
+   *     technologies, prefixed with the technology name (e.g., {@code JpaSaveUserRepository}).
    * </ul>
    *
    * <p>Example SaveUserRepository Contract in Use Case (Phase 1):
@@ -66,7 +61,7 @@ public abstract class Repository<C, R extends Validatable> extends Executor<C, R
    * <pre>{@code
    * public abstract class SaveUserRepository extends Repository<SaveUserRepository.Context, SaveUserRepository.Result> {
    *   public static record Context(String name, String email) {}
-   *   public static record Result(String id) implements Validatable {}
+   *   public static record Result(String id) {}
    * }
    * }</pre>
    *
