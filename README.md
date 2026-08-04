@@ -697,7 +697,7 @@ graph TD
     S_Main[FindUserMain] -->|executes| U_UseCase
 
     %% JUnit Shell
-    S_JUnit[FindUserTestShell] -->|verifies logic| U_UseCase
+    S_JUnit[FindUserTest] -->|verifies logic| U_UseCase
     
     %% API Shell
     S_Api[FindUserController] -->|handles request| U_UseCase
