@@ -58,6 +58,7 @@ In Hermi, **we build the 'whole' (The Blueprint) before the 'details' (The Imple
 ### Phase 1: Discovery & Verification (The Core)
 
 Phase 1 is about revealing and proving the system's behavior. We answer _"What"_ the system does using exclusively pure Java:
+
 0. **Identify the Business Intent**: Determine the `{Action}` (e.g., `Find`, `Create`, `Update`, `Delete`) and `{Resource}` (e.g., `User`, `Order`, `Payment`).
 1. **Establish the Boundary**: Define your `UseCase` contract (`Context` and `Result`).
 2. **Initialize Core Implementation**: Create a skeletal `DefaultUseCase` class.
