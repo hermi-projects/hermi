@@ -120,7 +120,7 @@ Establish the execution harness to enable continuous execution and debugging dur
 > AI can run with debug modle to get detailed input/output
 
 ```java
-public class FindUserMainShell {
+public class FindUserMain {
     public static void main(String[] args) {
         var useCase = new DefaultFindUserUseCase();
         
@@ -282,7 +282,7 @@ class LocalFindUserClient extends FindUserClient {
 }
 ```
 ```java
-public class FindUserMainShell {
+public class FindUserMain {
     public static void main(String[] args) {
         var client = new LocalFindUserClient(); 
         var repo = new InMemorySaveUserRepository();
@@ -535,11 +535,11 @@ public class FindUserService {
 ```java
 @RestController
 @RequestMapping("/users")
-public class FindUserApiShell {
+public class FindUserController {
     private final FindUserService findUserService;
 
     @Autowired
-    public FindUserApiShell(FindUserService findUserService) {
+    public FindUserController(FindUserService findUserService) {
         this.findUserService = findUserService;
     }
 
@@ -554,11 +554,11 @@ Alternatively, for event-driven architectures, you can expose the Use Case via a
 
 ```java
 @Component
-public class FindUserConsumerShell {
+public class FindUserConsumer {
     private final FindUserService findUserService;
 
     @Autowired
-    public FindUserConsumerShell(FindUserService findUserService) {
+    public FindUserConsumer(FindUserService findUserService) {
         this.findUserService = findUserService;
     }
 
@@ -594,7 +594,7 @@ Pure Java, technology-neutral business logic.
 | **I/O: Repository** | `{Action}{Resource}Repository` | `SaveUserRepository` (Initiating Action) |
 | **I/O: Messenger** | **`Notify{Fact}Messenger`** | `NotifyUserFoundMessenger` (Initiating Action) |
 | **Inner Model** | `{Resource}` | `User` (Scoped specifically to the UseCase) |
-| **Main Shell** | `{Action}{Resource}MainShell` | `FindUserMainShell` |
+| **Main Shell** | `{Action}{Resource}Main` | `FindUserMain` |
 | **Local Implementation** | `{Local\|InMemory\|Console}{ContractName}` | `LocalFindUserClient`, `InMemorySaveUserRepository`, `ConsoleNotifyUserFoundMessenger` |
 
 ### 2. Phase 2: Shell Layer (Infrastructure)
@@ -605,7 +605,7 @@ Technology-specific implementations (e.g., Spring, JDBC, Kafka).
 | **Project Structure** | `{project}-{framework}-{type}-shell` | `cdn-spring-boot-api-shell` |
 | **Package Structure** | `{org}.{resource}.{action}.shell` | `org.hermi.user.find.shell` |
 | **Production Implementation** | `{Tech\|Vendor}{ActualContractName}` | `JpaSaveUserRepository`, `KafkaNotifyUserFoundMessenger`, `LexisNexisFindUserClient` |
-| **Entry Point** | `{Action}{Resource}{Type}Shell` | `FindUserApiShell`, `FindUserConsumerShell` |
+| **Entry Point** | `{Action}{Resource}{Type}` | `FindUserController`, `FindUserConsumer` |
 | **Vendor Client** | `{Vendor}{Resource}Client` | `LexisNexisUserClient` |
 | **Vendor Messenger** | `{Tech}{Resource}Messenger` | `KafkaUserMessenger` |
 | **Vendor Repository** | `{Jpa}{Resource}Repository` | `JpaUserRepository` |
@@ -665,7 +665,7 @@ hermi-user (Parent)
 │   │   ├── FindUserUseCaseConponentTest.java         (Use Case Conponent Test)
 │   │   └── FindUserUseCaseUnitTest.java              (Use Case Unit Test)
 │   └── src/test/java/org/hermi/user/find/shell
-│       ├── FindUserMainShell.java                    (Main Shell Runner)
+│       ├── FindUserMain.java                    (Main Shell Runner)
 │       ├── LocalFindUserClient.java                  (Local Adapter)
 │       ├── InMemorySaveUserRepository.java           (Local Adapter)
 │       └── ConsoleNotifyUserFoundMessenger.java      (Local Adapter)
@@ -673,10 +673,10 @@ hermi-user (Parent)
 └── hermi-spring-shell (Phase 2 Layer: Framework)
     ├── pom.xml
     └── src/main/java/org/hermi/user/find/shell
-        ├── FindUserApiShell.java                     (Spring RestController)
-        ├── FindUserConsumerShell.java                (Spring KafkaConsumer)
+        ├── FindUserController.java                   (Spring RestController)
+        ├── FindUserConsumer.java                     (Spring KafkaConsumer)
         ├── FindUserService.java                      (Spring Service)
-        ├── client
+        ├── client/ln
         │    ├── LexisNexisFindUserClient.java        (Production Implementation)
         │    ├── LexisNexisUserMapper.java            (Vendor Mapper)
         │    ├── LexisNexisUserAuditor.java           (Vendor Auditor)
@@ -694,22 +694,22 @@ Class Diagram
 ```mermaid
 graph TD
     %% Main Shell
-    S_Main[FindUserMainShell] -->|executes| U_UseCase
+    S_Main[FindUserMain] -->|executes| U_UseCase
 
     %% JUnit Shell
     S_JUnit[FindUserTestShell] -->|verifies logic| U_UseCase
     
     %% API Shell
-    S_Api[FindUserApiShell] -->|handles request| U_UseCase
+    S_Api[FindUserController] -->|handles request| U_UseCase
 
     %% Consumer Shell
-    S_Consumer[FindUserConsumerShell] -->|handles event| U_UseCase
+    S_Consumer[FindUserConsumer] -->|handles event| U_UseCase
 
     %% AI Shell
-    S_Ai[FindUserAiShell] -->|handles AI request| U_UseCase
+    S_Ai[FindUserMcp] -->|handles AI request| U_UseCase
 
     %% CLI Shell
-    S_Cli[FindUserCliShell] -->|handles command| U_UseCase
+    S_Cli[FindUserCli] -->|handles command| U_UseCase
 
     %% Use Case Interface -> Default Implementation
     U_UseCase[FindUserUseCase] -->|implemented by| U_Default[DefaultFindUserUseCase]
