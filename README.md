@@ -140,7 +140,7 @@ When the core logic requires external data retrieval, do not implement a protoco
 // Define the required client contract:
 public abstract class FindUserClient extends Client<FindUserClient.Context, FindUserClient.Result> {
     public record Context(String ssn) {}
-    public record Result(String name, String email) implements Validatable {}
+    public record Result(String name, String email) {}
 }
 ```
 
@@ -172,7 +172,7 @@ When the logic requires data persistence, define a repository contract.
 // Define the required repository contract:
 public abstract class SaveUserRepository extends Repository<SaveUserRepository.Context, SaveUserRepository.Result> {
     public record Context(String name, String email) {}
-    public record Result(String id) implements Validatable {}
+    public record Result(String id) {}
 }
 ```
 
@@ -208,7 +208,7 @@ If an outbound event is required upon completion, define a messenger contract an
 // Define the required messenger contract:
 public abstract class NotifyUserFoundMessenger extends Messenger<NotifyUserFoundMessenger.Context, NotifyUserFoundMessenger.Result> {
     public record Context(String email, String message) {}
-    public record Result(String messageId) implements Validatable {}
+    public record Result(String messageId) {}
 }
 ```
 
@@ -558,16 +558,24 @@ Alternatively, for event-driven architectures, you can expose the Use Case via a
 @Component
 public class FindUserConsumer {
     private final FindUserService findUserService;
+    private final PersistentAuditor<String, String> persistentAuditor;
 
     @Autowired
-    public FindUserConsumer(FindUserService findUserService) {
-        this.findUserService = findUserService;
+    public FindUserConsumer(FindUserService findUserService, PersistentAuditor<String, String> persistentAuditor) {
+      this.findUserService = findUserService;
+      this.persistentAuditor = persistentAuditor;
     }
 
     @KafkaListener(topics = "user.find.requests", groupId = "user-service-group")
     public void consume(String ssn) {
+      UUID trackingId = persistentAuditor.recordContext(ssn);
+      try{
         FindUserUseCase.Context context = new FindUserUseCase.Context(ssn);
-        findUserService.findUser(context);
+        FindUserUseCase.Result result = findUserService.findUser(context);
+        persistentAuditor.recordResult(trackingId, result.id);
+      }catch(Exception e){
+        persistentAuditor.recordError(trackingId, ssn, e);
+      }
     }
 }
 ```
