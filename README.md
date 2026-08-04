@@ -627,21 +627,20 @@ If you need a new action, you define a new class. Avoid "Utility", "Manager", or
 
 ## 6. Validation Rules
 
-To protect the **Protocol Integrity** (defined in Section 1) of the application, data crossing boundaries into the Use Case is heavily policed. All entries must be explicitly validated.
+To protect the system, validation is restricted strictly to data crossing the boundary from outside our team. This includes:
+1. Data entering Use Cases or Handlers from upstream clients/controllers.
+2. Data entering our boundary from third-party external vendors via Shell Client responses.
+
+Internal components and abstractions (such as Use Case Client/Repository/Messenger contracts, Repositories, and Messengers) do not require auto-validation.
 
 > [!NOTE]
-> **Validation Philosophy**: In the Hermi Framework, backend input validation acts as a strict contract enforcement. If a validation error is triggered, it serves as an explicit signal to the upstream developer that their client (e.g., a Web UI or Mobile App) is missing necessary validation logic. By failing fast, the framework forces developers to add missing validations directly to the user interface, improving the end-user experience via instant client-side feedback rather than relying on network round-trips.
+> **Validation Philosophy**: In the Hermi Framework, backend input validation acts as a strict contract enforcement for data entering from outside our team. If a validation error is triggered, it serves as an explicit signal to the upstream developer/external vendor interface that the incoming data is missing necessary structure or validation. By failing fast, the framework ensures protocol integrity at all ingress boundaries.
 
 | Boundary | Interface | Requirement |
 | :--- | :--- | :--- |
 | **Entering Use Case** | `UseCase.Context` | `implements Validatable` (Mandatory) |
-| **Entering Use Case** | `Client.Result` | `implements Validatable` (Mandatory) |
-| **Entering Use Case** | `Repository.Result` | `implements Validatable` (Mandatory) |
-| **Entering Use Case** | `Messenger.Result` | `implements Validatable` (Mandatory) |
-| **Leaving Use Case** | `UseCase.Result` | Optional |
-| **Leaving Use Case** | `Client.Context` | Optional |
-| **Leaving Use Case** | `Repository.Context` | Optional |
-| **Leaving Use Case** | `Messenger.Context` | Optional |
+| **Entering Shell (from Vendor)** | `Client.Result` (in `hermi-shell`) | `implements Validatable` (Mandatory) |
+| **Internal** | `Client`/`Repository`/`Messenger` (in `hermi-usecase`), `Repository`/`Messenger` (in `hermi-shell`) | `implements Validatable` (Optional) |
 
 
 ## 7. Project Structure
@@ -757,6 +756,3 @@ graph TD
     class A_VendorMapper,A_RepoMapper,A_MessengerMapper s_api
     class A_ClientAuditor,A_MessengerAuditor s_api
 ```
-
-AI提示：
-文件行数超过300，要功能分区
