@@ -665,7 +665,7 @@ hermi-user (Parent)
 │   │   ├── FindUserUseCaseConponentTest.java         (Use Case Conponent Test)
 │   │   └── FindUserUseCaseUnitTest.java              (Use Case Unit Test)
 │   └── src/test/java/org/hermi/user/find/shell
-│       ├── FindUserMain.java                    (Main Shell Runner)
+│       ├── FindUserMain.java                         (Main Shell Runner)
 │       ├── LocalFindUserClient.java                  (Local Adapter)
 │       ├── InMemorySaveUserRepository.java           (Local Adapter)
 │       └── ConsoleNotifyUserFoundMessenger.java      (Local Adapter)
@@ -675,7 +675,7 @@ hermi-user (Parent)
     └── src/main/java/org/hermi/user/find/shell
         ├── FindUserController.java                   (Spring RestController)
         ├── FindUserConsumer.java                     (Spring KafkaConsumer)
-        ├── FindUserService.java                      (Spring Service)
+        ├── FindUserService.java                      (Spring Transactional Service)
         ├── client/ln
         │    ├── LexisNexisFindUserClient.java        (Production Implementation)
         │    ├── LexisNexisUserMapper.java            (Vendor Mapper)
