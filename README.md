@@ -737,7 +737,7 @@ graph TD
     U_Messenger -->|production implementation| A_ProdMessenger[KafkaNotifyUserFoundMessenger]
     A_ProdMessenger -->|uses| A_VendorMessenger[KafkaUserMessenger]
     A_ProdMessenger -->|uses| A_MessengerMapper[KafkaUserMapper]
-    A_VendorMessenger -->|uses| A_MessengerAuditor[NoOpPersistentAuditor]
+    A_VendorMessenger -->|uses| A_MessengerAuditor[NoopPersistentAuditor]
 
     %% Styling
     classDef s_local fill:#FFFFFF,color:#000000,stroke:#000000,stroke-width:1px
