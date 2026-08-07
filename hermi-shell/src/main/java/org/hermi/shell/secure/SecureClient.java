@@ -1,9 +1,9 @@
 package org.hermi.shell.secure;
 
 import java.util.Objects;
+import org.hermi.commons.audit.Auditor;
 import org.hermi.constraint.validation.Validatable;
 import org.hermi.shell.Client;
-import org.hermi.shell.audit.PersistentAuditor;
 
 /**
  * [AI ARCHITECTURAL CONTRACT]
@@ -63,9 +63,9 @@ public abstract class SecureClient<P, R extends Validatable> extends Client<P, R
    * @param auditor the auditor to trace and persist interactions
    * @param cryptor the cryptor to seal and unseal payloads
    */
-  protected SecureClient(PersistentAuditor<P, R> auditor, Cryptor<P, R> cryptor) {
-    super(auditor);
-    this.cryptor = Objects.requireNonNull(cryptor, "Cryptor is required for SecureClient");
+  protected SecureClient(Auditor<P, R> auditor, Cryptor<P, R> cryptor) {
+    this(cryptor);
+    this.setAuditor(auditor);
   }
 
   protected SecureClient(Cryptor<P, R> cryptor) {

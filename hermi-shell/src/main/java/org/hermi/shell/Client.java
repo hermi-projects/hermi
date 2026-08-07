@@ -1,11 +1,9 @@
 package org.hermi.shell;
 
-import java.util.Objects;
-import java.util.UUID;
 import org.hermi.commons.Executor;
+import org.hermi.commons.audit.Auditor;
 import org.hermi.constraint.validation.Validatable;
-import org.hermi.shell.audit.NoopPersistentAuditor;
-import org.hermi.shell.audit.PersistentAuditor;
+import org.hermi.shell.secure.Cryptor;
 
 /**
  * <b>AI INSTRUCTION:</b> When subclassing, ONLY override {@code doExchange}. Do NOT add telemetry,
@@ -28,10 +26,9 @@ import org.hermi.shell.audit.PersistentAuditor;
  *     return restTemplate.postForObject("/api/users", req, LexisNexisResponse.class);
  *   }
  * }
- * }</pre>
- */
-
-/**
+ *
+ *
+ * /**
  * Base class for vendor-specific technical clients (Protocol layer).
  *
  * <p><b>AI-Friendly Architecture</b>: In Phase 2 implementation, a concrete client (e.g.,
@@ -42,24 +39,6 @@ import org.hermi.shell.audit.PersistentAuditor;
  * @param <R> result type received from the external system
  */
 public abstract class Client<P, R extends Validatable> extends Executor<P, R> {
-
-  private final PersistentAuditor<P, R> persistentAuditor;
-
-  /**
-   * Constructs a Client with a {@link PersistentAuditor}. The built-in {@link
-   * org.hermi.commons.audit.LogAuditor} is always active for debug logging.
-   *
-   * @param persistentAuditor the persistent auditor for compliance/production audit
-   */
-  protected Client(PersistentAuditor<P, R> persistentAuditor) {
-    this.persistentAuditor =
-        Objects.requireNonNull(persistentAuditor, "PersistentAuditor is required");
-  }
-
-  protected Client() {
-    this(new NoopPersistentAuditor<>());
-  }
-
   /**
    * Implementation hook for executing the underlying external protocol (e.g., REST, SOAP, gRPC).
    *
@@ -80,14 +59,6 @@ public abstract class Client<P, R extends Validatable> extends Executor<P, R> {
    */
   @Override
   protected final R doExecute(P payload) {
-    UUID auditId = persistentAuditor.recordContext(payload);
-    try {
-      R result = this.doExchange(payload);
-      persistentAuditor.recordResult(auditId, result);
-      return result;
-    } catch (Exception e) {
-      persistentAuditor.recordError(auditId, payload, e);
-      throw e;
-    }
+    return this.doExchange(payload);
   }
 }

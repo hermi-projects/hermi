@@ -1,10 +1,7 @@
 package org.hermi.shell;
 
-import java.util.Objects;
-import java.util.UUID;
 import org.hermi.commons.Executor;
-import org.hermi.shell.audit.NoopPersistentAuditor;
-import org.hermi.shell.audit.PersistentAuditor;
+import org.hermi.commons.audit.Auditor;
 
 /**
  * <b>AI INSTRUCTION:</b> When subclassing, ONLY override {@code doPublish}. Do NOT add telemetry or
@@ -37,28 +34,6 @@ import org.hermi.shell.audit.PersistentAuditor;
  */
 public abstract class Messenger<P, R> extends Executor<P, R> {
 
-  private final PersistentAuditor<P, R> persistentAuditor;
-
-  /**
-   * Constructs a Messenger with a {@link PersistentAuditor}. The built-in {@link LogAuditor} is
-   * always active for debug logging.
-   *
-   * @param persistentAuditor the persistent auditor for compliance/production audit
-   */
-  protected Messenger(PersistentAuditor<P, R> persistentAuditor) {
-    this.persistentAuditor =
-        Objects.requireNonNull(persistentAuditor, "PersistentAuditor is required.");
-  }
-
-  /**
-   * Returns the default {@link NoopPersistentAuditor}, used when no specific auditor is provided.
-   *
-   * @return a {@link NoopPersistentAuditor} instance
-   */
-  protected Messenger() {
-    this(new NoopPersistentAuditor<>());
-  }
-
   /**
    * Implementation hook for executing the underlying messaging protocol (e.g., Kafka, JMS, SQS).
    * Transactional Outbox Pattern
@@ -80,14 +55,6 @@ public abstract class Messenger<P, R> extends Executor<P, R> {
 
   @Override
   protected final R doExecute(P payload) {
-    UUID auditId = persistentAuditor.recordContext(payload);
-    try {
-      R result = doPublish(payload);
-      persistentAuditor.recordResult(auditId, result);
-      return result;
-    } catch (Exception e) {
-      persistentAuditor.recordError(auditId, payload, e);
-      throw e;
-    }
+    return doPublish(payload);
   }
 }

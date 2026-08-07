@@ -317,21 +317,25 @@ public class LexisNexisResponse implements Validatable {
 }
 ```
 ```java
-import org.hermi.shell.audit.PersistentAuditor;
+import org.hermi.commons.audit.Auditor;
 
 @Component
-public class LexisNexisUserAuditor extends PersistentAuditor<LexisNexisPayload, LexisNexisResponse> {
+public class LexisNexisUserAuditor extends Auditor<LexisNexisPayload, LexisNexisResponse> {
+  private LogAuditor logAuditor = new LogAuditor<LexisNexisPayload, LexisNexisResponse>(LexisNexisUserClient.class);
   @Override
   protected UUID doRecordContext(LexisNexisPayload payload) {
+    UUID trackingId = logAuditor.recordContext(payload);
     // Save to audit DB
-    return UUID.randomUUID();
+    return trackingId;
   }
   @Override
   protected void doRecordResult(UUID trackingId, LexisNexisResponse response) {
+    this.logAuditor.recordResult(trackingId, response);
     // Update audit DB with output
   }
   @Override
   protected void doRecordError(UUID trackingId, LexisNexisPayload payload, Exception exception) {
+    this.logAuditor.recordError(trackingId, payload, exception);
     // Update audit DB with failure
   }
 }
@@ -362,7 +366,7 @@ public class LexisNexisUserClient extends Client<LexisNexisPayload, LexisNexisRe
 
   @Autowired
   public LexisNexisUserClient(@Qualifier("lexisNexisRestTemplate") RestTemplate restTemplate, LexisNexisUserAuditor auditor) {
-    super(auditor);
+    this.setAuditor(auditor);
     this.restTemplate = restTemplate;
   }
 

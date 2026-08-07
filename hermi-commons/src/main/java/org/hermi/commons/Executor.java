@@ -4,6 +4,7 @@ import jakarta.validation.ConstraintViolation;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import org.hermi.commons.audit.Auditor;
 import org.hermi.commons.audit.LogAuditor;
 import org.hermi.commons.conversion.Converter;
 import org.hermi.commons.conversion.Convertible;
@@ -64,11 +65,11 @@ import org.hermi.constraint.validation.Validator;
  */
 public abstract class Executor<C, R> {
 
-  private final LogAuditor<C, R> logAuditor;
+  private Auditor<C, R> auditor = new LogAuditor<>(getClass());
 
-  /** Creates an Executor with a {@link LogAuditor} for debug logging. */
-  protected Executor() {
-    this.logAuditor = new LogAuditor<>(getClass());
+  protected void setAuditor(Auditor<C, R> auditor){
+    Objects.requireNonNull(auditor, "Auditor cannot be null");
+    this.auditor = auditor;
   }
 
   /**
@@ -91,15 +92,15 @@ public abstract class Executor<C, R> {
    * @throws NullPointerException if the context or result is null
    */
   public final R execute(C context) {
-    UUID logId = logAuditor.recordContext(context);
+    UUID trackingId = auditor.recordContext(context);
     try {
       validateContext(context);
       R result = doExecute(context);
-      logAuditor.recordResult(logId, result);
+      auditor.recordResult(trackingId, result);
       validateResult(result);
       return result;
     } catch (Exception e) {
-      logAuditor.recordError(logId, context, e);
+      auditor.recordError(trackingId, context, e);
       throw e;
     }
   }
