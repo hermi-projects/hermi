@@ -1,6 +1,8 @@
 package org.hermi.usecase.standard;
 
 import org.hermi.commons.Executor;
+import org.hermi.commons.audit.Auditor;
+import org.hermi.commons.audit.NoopAuditor;
 
 /**
  * [AI ARCHITECTURAL CONTRACT]
@@ -47,6 +49,13 @@ import org.hermi.commons.Executor;
  * @param <R> the type of the result
  */
 public abstract class Repository<C, R> extends Executor<C, R> {
+  protected Repository() {
+    super(new NoopAuditor<>());
+  }
+
+  protected Repository(Auditor<C, R> auditor) {
+    super(auditor);
+  }
 
   /**
    * Saves the repository request to an external data source and returns the response.

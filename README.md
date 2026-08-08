@@ -93,6 +93,8 @@ Everything starts with defining the exact context (`Context`) and result (`Resul
 > `Validatable` is not just a marker. The framework's base `execute()` method automatically invokes validation on any `Validatable` context before ever delegating to your `doExecute()` core logic. Your business logic is guaranteed to receive safe data.
 
 ```java
+import org.hermi.usecase.standard.UseCase;
+
 public abstract class FindUserUseCase extends UseCase<FindUserUseCase.Context, FindUserUseCase.Result> {
     public static record Context(@NotNull @NotBlank String ssn) implements Validatable {}
     public static record Result(String name, String email) {}
@@ -137,6 +139,7 @@ public class FindUserMain {
 When the core logic requires external data retrieval, do not implement a protocol-specific client (e.g., HTTP). Instead, define a pure Java contract tailored precisely to the required data.
 
 ```java
+import org.hermi.usecase.standard.Client;
 // Define the required client contract:
 public abstract class FindUserClient extends Client<FindUserClient.Context, FindUserClient.Result> {
     public record Context(String ssn) {}
@@ -169,6 +172,7 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
 When the logic requires data persistence, define a repository contract.
 
 ```java
+import org.hermi.usecase.standard.Repository;
 // Define the required repository contract:
 public abstract class SaveUserRepository extends Repository<SaveUserRepository.Context, SaveUserRepository.Result> {
     public record Context(String name, String email) {}
@@ -205,6 +209,7 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
 If an outbound event is required upon completion, define a messenger contract and finalize the orchestration.
 
 ```java
+import org.hermi.usecase.standard.Messenger;
 // Define the required messenger contract:
 public abstract class NotifyUserFoundMessenger extends Messenger<NotifyUserFoundMessenger.Context, NotifyUserFoundMessenger.Result> {
     public record Context(String email, String message) {}
@@ -308,7 +313,7 @@ Vendor Implementation, can be implemented as soon as we know the vendor
 ```java
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import org.hermi.commons.Validatable;
+import org.hermi.constraint.validation.Validatable;
 
 public class LexisNexisResponse implements Validatable {
   @NotNull
@@ -365,8 +370,8 @@ public class LexisNexisUserClient extends Client<LexisNexisPayload, LexisNexisRe
   private RestTemplate restTemplate;
 
   @Autowired
-  public LexisNexisUserClient(@Qualifier("lexisNexisRestTemplate") RestTemplate restTemplate, LexisNexisUserAuditor auditor) {
-    this.setAuditor(auditor);
+  public LexisNexisUserClient(@Qualifier("lexisNexisRestTemplate") RestTemplate restTemplate, LexisNexisUserAuditor lexisNexisUserAuditor) {
+    super(lexisNexisUserAuditor);
     this.restTemplate = restTemplate;
   }
 
@@ -385,7 +390,7 @@ public class KafkaUserMessenger extends Messenger<ProducerRecord<String, String>
 
   @Autowired
   public KafkaUserMessenger(KafkaTemplate<String, String> kafkaTemplate) {
-    super(null);
+    super();
     this.kafkaTemplate = kafkaTemplate;
   }
 
@@ -559,27 +564,39 @@ public class FindUserController {
 Alternatively, for event-driven architectures, you can expose the Use Case via a message-driven entry point. In this example, a Spring `@KafkaListener` processes requests from an inbound topic by delegating to the `FindUserService`.
 
 ```java
+import org.hermi.constraint.validation.Validatable;
+public class Event implements Validatable {
+  public String ssn;
+}
+```
+```java
 @Component
-public class FindUserConsumer {
+public class FindUserConsumerAuditor extends PersistentAuditor<Event, String>{
+  //Save the record of other party to DB before convert them to use case context.
+}
+```
+```java
+import org.hermi.shell.Consumer;
+@Component
+public class FindUserConsumer extends Consumer<Event, String>{
     private final FindUserService findUserService;
-    private final PersistentAuditor<String, String> persistentAuditor;
 
     @Autowired
-    public FindUserConsumer(FindUserService findUserService, PersistentAuditor<String, String> persistentAuditor) {
+    public FindUserConsumer(FindUserService findUserService, FindUserConsumerAuditor findUserConsumerAuditor) {
+      super(findUserConsumerAuditor);
       this.findUserService = findUserService;
-      this.persistentAuditor = persistentAuditor;
     }
 
     @KafkaListener(topics = "user.find.requests", groupId = "user-service-group")
-    public void consume(String ssn) {
-      UUID trackingId = persistentAuditor.recordContext(ssn);
-      try{
-        FindUserUseCase.Context context = new FindUserUseCase.Context(ssn);
-        FindUserUseCase.Result result = findUserService.findUser(context);
-        persistentAuditor.recordResult(trackingId, result.id);
-      }catch(Exception e){
-        persistentAuditor.recordError(trackingId, ssn, e);
-      }
+    public void consume(Event event) {
+      execute(event);
+    }
+    
+    @Override
+    protected String doExecute(Event event){
+      FindUserUseCase.Context context = new FindUserUseCase.Context(event.ssn);
+      FindUserUseCase.Result result = findUserService.findUser(context);
+      return result.id;
     }
 }
 ```

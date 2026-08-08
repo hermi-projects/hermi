@@ -1,5 +1,6 @@
 package org.hermi.usecase.dispatcher;
 
+import org.hermi.commons.audit.NoopAuditor;
 import org.hermi.constraint.validation.Validatable;
 import org.hermi.usecase.standard.UseCase;
 
@@ -27,6 +28,10 @@ import org.hermi.usecase.standard.UseCase;
  * @param <R> the type of the result
  */
 public abstract class Handler<C extends Validatable, R> extends UseCase<C, R> {
+  protected Handler() {
+    super(new NoopAuditor<>());
+  }
+
   /**
    * Evaluates if this handler supports the given context.
    *

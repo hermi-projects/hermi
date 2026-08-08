@@ -65,11 +65,14 @@ import org.hermi.constraint.validation.Validator;
  */
 public abstract class Executor<C, R> {
 
-  private Auditor<C, R> auditor = new LogAuditor<>(getClass());
+  private final Auditor<C, R> auditor;
 
-  protected void setAuditor(Auditor<C, R> auditor){
-    Objects.requireNonNull(auditor, "Auditor cannot be null");
-    this.auditor = auditor;
+  protected Executor() {
+    this.auditor = new LogAuditor<>(getClass());
+  }
+
+  protected Executor(Auditor<C, R> auditor) {
+    this.auditor = Objects.requireNonNull(auditor, "Auditor cannot be null");
   }
 
   /**

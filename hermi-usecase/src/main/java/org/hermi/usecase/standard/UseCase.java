@@ -1,6 +1,7 @@
 package org.hermi.usecase.standard;
 
 import org.hermi.commons.Executor;
+import org.hermi.commons.audit.Auditor;
 import org.hermi.constraint.validation.Validatable;
 
 /**
@@ -67,6 +68,13 @@ import org.hermi.constraint.validation.Validatable;
  * @param <R> the type of the result
  */
 public abstract class UseCase<C extends Validatable, R> extends Executor<C, R> {
+  protected UseCase() {
+    super();
+  }
+
+  protected UseCase(Auditor<C, R> auditor) {
+    super(auditor);
+  }
 
   /**
    * Executes the business logic of the use case.

@@ -64,8 +64,8 @@ public abstract class SecureClient<P, R extends Validatable> extends Client<P, R
    * @param cryptor the cryptor to seal and unseal payloads
    */
   protected SecureClient(Auditor<P, R> auditor, Cryptor<P, R> cryptor) {
-    this(cryptor);
-    this.setAuditor(auditor);
+    super(auditor);
+    this.cryptor = Objects.requireNonNull(cryptor, "Cryptor is required for SecureClient");
   }
 
   protected SecureClient(Cryptor<P, R> cryptor) {

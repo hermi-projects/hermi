@@ -1,15 +1,12 @@
 package org.hermi.shell;
 
 import org.hermi.commons.Executor;
-import org.hermi.commons.audit.Auditor;
+import org.hermi.commons.audit.PersistentAuditor;
 import org.hermi.constraint.validation.Validatable;
-import org.hermi.shell.secure.Cryptor;
 
 /**
  * <b>AI INSTRUCTION:</b> When subclassing, ONLY override {@code doExchange}. Do NOT add telemetry,
- * try-catch logging, or data translation logic that belongs to the Mapper or Auditor. Always pass a
- * {@link PersistentAuditor} to the constructor — use {@link
- * org.hermi.shell.audit.NoOpPersistentAuditor} for Phase 1 validation.
+ * try-catch logging, or data translation logic that belongs to the Mapper or Auditor.
  *
  * <p><b>Example AI Generation:</b>
  *
@@ -39,6 +36,14 @@ import org.hermi.shell.secure.Cryptor;
  * @param <R> result type received from the external system
  */
 public abstract class Client<P, R extends Validatable> extends Executor<P, R> {
+  protected Client() {
+    super();
+  }
+
+  protected Client(PersistentAuditor<P, R> auditor) {
+    super(auditor);
+  }
+
   /**
    * Implementation hook for executing the underlying external protocol (e.g., REST, SOAP, gRPC).
    *

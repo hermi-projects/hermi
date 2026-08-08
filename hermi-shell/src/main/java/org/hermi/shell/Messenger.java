@@ -1,7 +1,7 @@
 package org.hermi.shell;
 
 import org.hermi.commons.Executor;
-import org.hermi.commons.audit.Auditor;
+import org.hermi.commons.audit.PersistentAuditor;
 
 /**
  * <b>AI INSTRUCTION:</b> When subclassing, ONLY override {@code doPublish}. Do NOT add telemetry or
@@ -19,6 +19,8 @@ import org.hermi.commons.audit.Auditor;
  *   }
  *   protected RecordMetadata doPublish(ProducerRecord msg) { return kafkaTemplate.send(msg).get(); }
  * }
+ *
+ * import org.hermi.commons.audit.Auditor;
  * }</pre>
  */
 
@@ -32,29 +34,36 @@ import org.hermi.commons.audit.Auditor;
  * @param <P> payload type sent to the external system
  * @param <R> result type received from the external system
  */
-public abstract class Messenger<P, R> extends Executor<P, R> {
+public abstract class Messenger<M, R> extends Executor<M, R> {
+  protected Messenger() {
+    super();
+  }
+
+  protected Messenger(PersistentAuditor<M, R> auditor) {
+    super(auditor);
+  }
 
   /**
    * Implementation hook for executing the underlying messaging protocol (e.g., Kafka, JMS, SQS).
    * Transactional Outbox Pattern
    *
-   * @param payload the payload to publish to the external system
+   * @param message the message to publish to the external system
    * @return the result received from the external system
    */
-  protected abstract R doPublish(P payload);
+  protected abstract R doPublish(M message);
 
   /**
    * Publishes the message with full auditing lifecycle protection.
    *
-   * @param payload the payload to publish to the external system
+   * @param message the message to publish to the external system
    * @return the result received from the external system
    */
-  public final R publish(P payload) {
-    return execute(payload);
+  public final R publish(M message) {
+    return execute(message);
   }
 
   @Override
-  protected final R doExecute(P payload) {
-    return doPublish(payload);
+  protected final R doExecute(M message) {
+    return doPublish(message);
   }
 }
