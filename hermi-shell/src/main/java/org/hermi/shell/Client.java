@@ -1,7 +1,6 @@
 package org.hermi.shell;
 
 import org.hermi.commons.Executor;
-import org.hermi.commons.audit.PersistentAuditor;
 import org.hermi.constraint.validation.Validatable;
 
 /**
@@ -38,10 +37,6 @@ import org.hermi.constraint.validation.Validatable;
 public abstract class Client<P, R extends Validatable> extends Executor<P, R> {
   protected Client() {
     super();
-  }
-
-  protected Client(PersistentAuditor<P, R> auditor) {
-    super(auditor);
   }
 
   /**

@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.UUID;
 import org.hermi.commons.audit.Auditor;
 import org.hermi.commons.audit.LogAuditor;
+import org.hermi.commons.audit.NoopAuditor;
 import org.hermi.commons.conversion.Converter;
 import org.hermi.commons.conversion.Convertible;
 import org.hermi.constraint.validation.InputValidationException;
@@ -65,14 +66,32 @@ import org.hermi.constraint.validation.Validator;
  */
 public abstract class Executor<C, R> {
 
-  private final Auditor<C, R> auditor;
+  private Auditor<C, R> auditor = new NoopAuditor<>();
 
-  protected Executor() {
-    this.auditor = new LogAuditor<>(getClass());
+  /**
+   * Sets the auditor for this executor.
+   *
+   * <p>Call this during initialization to replace the default {@link NoopAuditor} with a custom
+   * implementation (e.g. {@link org.hermi.commons.audit.LogAuditor} or {@link
+   * org.hermi.commons.audit.PersistentAuditor}).
+   *
+   * @param auditor the auditor to use (must not be null)
+   * @throws NullPointerException if auditor is null
+   */
+  protected void setAuditor(Auditor<C, R> auditor) {
+    this.auditor = Objects.requireNonNull(auditor, "Auditor cannot be null");
   }
 
-  protected Executor(Auditor<C, R> auditor) {
-    this.auditor = Objects.requireNonNull(auditor, "Auditor cannot be null");
+  /**
+   * Indicates whether input context and output result validation should be performed.
+   *
+   * <p>Override this method and return {@code false} to skip validation when it is handled
+   * externally or is unnecessary for the use case.
+   *
+   * @return {@code true} by default
+   */
+  protected boolean shouldValidate() {
+    return true;
   }
 
   /**
@@ -149,7 +168,7 @@ public abstract class Executor<C, R> {
   private void validateContext(C context) {
     Objects.requireNonNull(
         context, String.format("%s: Context cannot be null", getClass().getSimpleName()));
-    if (!(context instanceof Validatable)) {
+    if (!shouldValidate() || !(context instanceof Validatable)) {
       return;
     }
     Set<ConstraintViolation<C>> violations = Validator.validate(context);
@@ -171,7 +190,7 @@ public abstract class Executor<C, R> {
   private void validateResult(R result) {
     Objects.requireNonNull(
         result, String.format("%s: Result cannot be null", getClass().getSimpleName()));
-    if (!(result instanceof Validatable)) {
+    if (!shouldValidate() || !(result instanceof Validatable)) {
       return;
     }
     Set<ConstraintViolation<R>> violations = Validator.validate(result);

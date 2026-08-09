@@ -1,8 +1,6 @@
 package org.hermi.usecase.standard;
 
 import org.hermi.commons.Executor;
-import org.hermi.commons.audit.Auditor;
-import org.hermi.commons.audit.NoopAuditor;
 
 /**
  * [AI ARCHITECTURAL CONTRACT]
@@ -49,13 +47,6 @@ import org.hermi.commons.audit.NoopAuditor;
  * @param <R> the type of the result
  */
 public abstract class Messenger<C, R> extends Executor<C, R> {
-  protected Messenger() {
-    super(new NoopAuditor<>());
-  }
-
-  protected Messenger(Auditor<C, R> auditor) {
-    super(auditor);
-  }
 
   /**
    * Sends the message to an external system and returns the response.

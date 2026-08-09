@@ -28,10 +28,6 @@ import org.hermi.usecase.standard.UseCase;
  * @param <R> the type of the result
  */
 public abstract class Handler<C extends Validatable, R> extends UseCase<C, R> {
-  protected Handler() {
-    super(new NoopAuditor<>());
-  }
-
   /**
    * Evaluates if this handler supports the given context.
    *
@@ -39,4 +35,13 @@ public abstract class Handler<C extends Validatable, R> extends UseCase<C, R> {
    * @return {@code true} if this handler can process the context, {@code false} otherwise
    */
   public abstract boolean supports(C context);
+
+  protected Handler() {
+    super(new NoopAuditor<>());
+  }
+
+  @Override
+  protected boolean shouldValidate() {
+    return false;
+  }
 }

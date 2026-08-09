@@ -1,7 +1,6 @@
 package org.hermi.shell;
 
 import org.hermi.commons.Executor;
-import org.hermi.commons.audit.PersistentAuditor;
 
 /**
  * <b>AI INSTRUCTION:</b> When subclassing, ONLY override {@code doPublish}. Do NOT add telemetry or
@@ -35,14 +34,6 @@ import org.hermi.commons.audit.PersistentAuditor;
  * @param <R> result type received from the external system
  */
 public abstract class Messenger<M, R> extends Executor<M, R> {
-  protected Messenger() {
-    super();
-  }
-
-  protected Messenger(PersistentAuditor<M, R> auditor) {
-    super(auditor);
-  }
-
   /**
    * Implementation hook for executing the underlying messaging protocol (e.g., Kafka, JMS, SQS).
    * Transactional Outbox Pattern

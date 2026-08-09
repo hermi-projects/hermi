@@ -2,6 +2,7 @@ package org.hermi.usecase.standard;
 
 import org.hermi.commons.Executor;
 import org.hermi.commons.audit.Auditor;
+import org.hermi.commons.audit.LogAuditor;
 import org.hermi.constraint.validation.Validatable;
 
 /**
@@ -69,11 +70,11 @@ import org.hermi.constraint.validation.Validatable;
  */
 public abstract class UseCase<C extends Validatable, R> extends Executor<C, R> {
   protected UseCase() {
-    super();
+    setAuditor(new LogAuditor<>(getClass()));
   }
 
   protected UseCase(Auditor<C, R> auditor) {
-    super(auditor);
+    setAuditor(auditor);
   }
 
   /**

@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import java.util.UUID;
+import org.hermi.commons.audit.Auditor;
 import org.hermi.commons.conversion.Converter;
 import org.hermi.commons.conversion.Convertible;
 import org.hermi.constraint.validation.InputValidationException;
@@ -157,5 +159,65 @@ class ExecutorTest {
     assertThatThrownBy(() -> executor.execute(123, null))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("converter cannot be null");
+  }
+
+  // setAuditor tests
+
+  static class SpyAuditor<C, R> extends Auditor<C, R> {
+    boolean contextRecorded;
+
+    @Override
+    protected UUID doRecordContext(C context) {
+      contextRecorded = true;
+      return UUID.randomUUID();
+    }
+
+    @Override
+    protected void doRecordResult(UUID trackingId, R result) {}
+
+    @Override
+    protected void doRecordError(UUID trackingId, C context, Exception exception) {}
+  }
+
+  @Test
+  void shouldUseCustomAuditor() {
+    NormalExecutor executor = new NormalExecutor();
+    SpyAuditor<ValidContext, ValidResult> spy = new SpyAuditor<>();
+    executor.setAuditor(spy);
+    executor.execute(new ValidContext("test"));
+    assertThat(spy.contextRecorded).isTrue();
+  }
+
+  @Test
+  void shouldThrowWhenSettingNullAuditor() {
+    NormalExecutor executor = new NormalExecutor();
+    assertThatThrownBy(() -> executor.setAuditor(null))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessageContaining("Auditor cannot be null");
+  }
+
+  // shouldValidate override tests
+
+  static class ValidationDisabledExecutor extends NormalExecutor {
+    @Override
+    protected boolean shouldValidate() {
+      return false;
+    }
+  }
+
+  @Test
+  void shouldSkipContextValidationWhenDisabled() {
+    ValidationDisabledExecutor executor = new ValidationDisabledExecutor();
+    // Blank string would normally fail @NotBlank validation
+    ValidResult result = executor.execute(new ValidContext("  "));
+    assertThat(result.output).isEqualTo("Processed   ");
+  }
+
+  @Test
+  void shouldSkipResultValidationWhenDisabled() {
+    ValidationDisabledExecutor executor = new ValidationDisabledExecutor();
+    // null-result would normally throw NPE for null result
+    ValidResult result = executor.execute(new ValidContext("null-result"));
+    assertThat(result).isNull();
   }
 }

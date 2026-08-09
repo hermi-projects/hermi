@@ -1,8 +1,6 @@
 package org.hermi.usecase.standard;
 
 import org.hermi.commons.Executor;
-import org.hermi.commons.audit.Auditor;
-import org.hermi.commons.audit.NoopAuditor;
 
 /**
  * [AI ARCHITECTURAL CONTRACT]
@@ -48,14 +46,6 @@ import org.hermi.commons.audit.NoopAuditor;
  * @param <R> the type of the result
  */
 public abstract class Client<C, R> extends Executor<C, R> {
-  protected Client() {
-    super(new NoopAuditor<>());
-  }
-
-  protected Client(Auditor<C, R> auditor) {
-    super(auditor);
-  }
-
   /**
    * Executes the external system calling with the client request and returns the response.
    *
