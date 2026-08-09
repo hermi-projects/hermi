@@ -1,110 +1,79 @@
-# AI Agent Guidelines (Powered by Hermi Framework)
+**This project uses Hermi** — an Intent-Driven Architecture (IDA) framework. All new features
+MUST follow the two-phase structure below. Do not invent alternative patterns.
 
-## 1. Project Overview & Architecture
-**Context**: You are an AI Agent developing a business application that uses the Hermi Framework as its foundational architecture. Do not attempt to modify the Hermi library itself.
-**Architecture**: Intent-Driven Architecture (IDA)
-**Purpose**: Ensure strict separation between Pure Domain Logic (Phase 1: Use Cases) and Infrastructure/Delivery concerns (Phase 2: Shell).
+Business logic lives in **Phase 1** (pure Java, no frameworks). Infrastructure lives in
+**Phase 2** (Spring, Kafka, etc.). Every component is an `Executor` with a single `execute()`
+entry point.
 
-### Hermi Library Dependencies
-When configuring your project's `pom.xml` or `build.gradle`, you MUST respect these module boundaries:
-- **Phase 1 (Core Domain) Modules**: You are ONLY allowed to import `<groupId>org.hermi</groupId> <artifactId>hermi-use-case</artifactId>` for development and `<artifactId>hermi-shell</artifactId>` for local test.
-- **Phase 2 (Shell Infra) Modules**: You may import `<groupId>org.hermi</groupId> <artifactId>hermi-shell</artifactId>` and `<artifactId>hermi-logging</artifactId>`.
+Use the decision table to find the right class for your scenario. Open the class to
+read its `[AI ARCHITECTURAL CONTRACT]` Javadoc for full generation rules.
 
-### Project Structure (Strict Layering)
-When generating files, you MUST respect the physical boundary between Phase 1 and Phase 2 by adhering to this exact folder structure and naming pattern mapping:
+## Decision Table
 
-```text
-parent-module
-├── {project}-{action}-{resource}-use-case (Phase 1 Layer: Pure Java)
-│   ├── src/main/java/{org}/{resource}/{action}/usecase
-│   │   ├── {Action}{Resource}UseCase.java           (e.g., FindUserUseCase)
-│   │   ├── Default{Action}{Resource}UseCase.java    (e.g., DefaultFindUserUseCase)
-│   │   ├── {Action}{Resource}Client.java            (e.g., FindUserClient)
-│   │   ├── {Action}{Resource}Repository.java        (e.g., SaveUserRepository)
-│   │   └── Notify{Fact}Messenger.java               (e.g., NotifyUserFoundMessenger)
-│   └── src/test/java/{org}/{resource}/{action}/shell
-│       ├── {Action}{Resource}MainShell.java         (e.g., FindUserMainShell)
-│       ├── Local{Action}{Resource}Client.java       (e.g., LocalFindUserClient)
-│       └── InMemory{Action}{Resource}Repository.java(e.g., InMemorySaveUserRepository)
-└── {project}-{framework}-{type}-shell (Phase 2 Layer: Framework)
-    └── src/main/java/{org}/{resource}/{action}/shell
-        ├── {Action}{Resource}ApiShell.java          (e.g., FindUserApiShell)
-        ├── {Action}{Resource}ConsumerShell.java     (e.g., FindUserConsumerShell)
-        ├── {Action}{Resource}Service.java           (e.g., FindUserService)
-        ├── client
-        │   ├── {Tech}{Action}{Resource}Client.java  (e.g., LexisNexisFindUserClient)
-        │   ├── {Vendor}{Resource}Client.java        (e.g., LexisNexisUserClient)
-        │   └── {Vendor}{Resource}Mapper.java        (e.g., LexisNexisUserMapper)
-        └── repository
-            ├── {Tech}{Action}{Resource}Repository.java (e.g., JdbcSaveUserRepository)
-            ├── {Vendor}{Resource}Mapper.java        (e.g., JdbcUserMapper)
-            └── {Jpa}{Resource}Repository.java       (e.g., JpaUserRepository)
+| I need to… | Phase | Class | Package |
+|------------|-------|-------|---------|-------|
+| Define a business use case | 1 | `UseCase` | `org.hermi.usecase.standard` |
+| Route to one of many handlers | 1 | `Handler` | `org.hermi.usecase.dispatcher` |
+| Call an external API (contract) | 1 | `Client` | `org.hermi.usecase.standard` |
+| Persist data (contract) | 1 | `Repository` | `org.hermi.usecase.standard` |
+| Send outbound notification (contract) | 1 | `Messenger` | `org.hermi.usecase.standard` |
+| Implement a REST/gRPC client | 2 | `Client` | `org.hermi.shell` |
+| Implement a message producer (Kafka, JMS) | 2 | `Messenger` | `org.hermi.shell` |
+| Consume inbound events (Kafka, JMS, SQS) | 2 | `Consumer` | `org.hermi.shell` |
+| Encrypt payloads for vendor calls | 2 | `SecureClient` | `org.hermi.shell.secure` |
+| Wire a use case into a generic shell | 2 | `Controller` | `org.hermi.shell` |
+| Translate domain ↔ vendor schemas | 2 | `Mapper` | `org.hermi.shell` |
+| Audit execution lifecycle to a DB | 2 | `PersistentAuditor` | `org.hermi.commons.audit` |
+| Skip auditing entirely (default) | — | `NoopAuditor` | `org.hermi.commons.audit` |
+| Log execution to SLF4J | — | `LogAuditor` | `org.hermi.commons.audit` |
+
+## Iron Rules
+
+These apply across all classes. They are not obvious from any single Javadoc.
+
+1. **Phase 1 knows nothing of Phase 2.** Use Case modules import `hermi-usecase` only — no Spring, no Kafka, no JDBC.
+2. **Contracts use pure Java records.** `Client.Context`, `Repository.Context`, `Messenger.Context` MUST use only `String`, `UUID`, `BigDecimal`, etc. No technology types.
+3. **Data crossing boundaries MUST be `Validatable`.** `UseCase.Context` and `shell.Client.Result` must implement `Validatable`.
+4. **Never subclass `Executor` directly.** Always go through a named base class: `UseCase`, `Client`, `Repository`, `Messenger`, `Handler`, `Consumer`, `Controller`, or `SecureClient`.
+5. **Never mock in Phase 1 tests.** Use stateful local adapters (e.g., `InMemorySaveUserRepository`).
+6. **Naming is structural.** `{Action}{Resource}UseCase`, `Default{Action}{Resource}UseCase`, `{Tech}{ContractName}`.
+7. **Hermi Workflow** Must understand `The Discovery Lifecycle` on [Hermi](README.md) .
+
+## Project Structure
+
+New Hermi projects follow this layout. Phase 1 modules contain only pure Java — no framework
+dependencies. Phase 2 modules wire the contracts to specific technologies (Spring, Kafka, etc.).
+
 ```
-*(**Rule**: File lines should not exceed 300 lines. Use functional partitioning if files grow too large.)*
-## 2. ALLOWED SCOPE
-
-When generating new functionality, the primary architectural components **MUST** be a subclass or implementation of the base contracts listed in the grid below. DO NOT invent new global services or managers. 
-
-*(**Exemptions (Classes that do not require a Hermi Base Class)**: 
-1. **Framework Entry Points**: (e.g., Spring `@RestController`, `@KafkaListener`) - act purely as protocol boundaries.
-2. **Configuration & Wiring**: (e.g., `@Configuration`, `@Bean`) - strictly for dependency injection and framework setup.
-3. **Data Carriers**: (e.g., JPA `@Entity`, JSON DTOs, pure Java `record`) - MUST be anemic (contain NO business logic).
-4. **Custom Exceptions**: (e.g., `DomainException`) - for business or technical error signaling.
-5. **Helper/Utility Classes**: (e.g., parsers, formatters) - MUST be stateless, contain NO I/O, and be strictly scoped/private to a specific Use Case or Adapter.)*
-
-Before writing code for any of these, you MUST explicitly ask the user for the "Required Information" listed in the grid below.
-
-| Layer | Name | Class Full Name | Description | Required Information to Implement | Key Constraints |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Use Case (Phase 1)** | `UseCase` | `org.hermi.usecase.standard.UseCase` | Pure Domain Logic Sovereign (Contains Business Rules & Stateless Workflow) | 1. Core Workflow & Business Rules<br>2. Context Schema<br>3. Result Schema<br>4. Required I/O Contracts<br>5. Domain Exceptions | **Stateless**. Must encapsulate purely **Business Rules**. **NO** infra types. MUST catch infra exceptions and throw Domain Exceptions. |
-| **Use Case (Phase 1)** | `DispatcherUseCase` | `org.hermi.usecase.standard.DispatcherUseCase` | Routes domain logic based on event/action types | 1. Routing Logic<br>2. Context Schema<br>3. Result Schema | **Stateless**. **NO** infrastructure types. |
-| **Use Case (Phase 1)** | `Client` | `org.hermi.usecase.standard.Client` | Contract for external service capability | 1. Target Capability<br>2. Context Schema<br>3. Result Schema and constrains | **Stateless**. **NO** Tech Bleed (no HttpHeaders). **Pure Java** records only. |
-| **Use Case (Phase 1)** | `Messenger` | `org.hermi.usecase.standard.Messenger` | Contract for asynchronous event dispatch | 1. Target Event/Action<br>2. Context Schema<br>3. Result Schema and constrains | **Stateless**. **NO** broker types (no ProducerRecord). **Pure Java** records only. |
-| **Use Case (Phase 1)** | `Repository` | `org.hermi.usecase.standard.Repository` | Contract for domain data persistence | 1. Target Action (Save/Find)<br>2. Context Schema<br>3. Result Schema and constrains | **Stateless**. **NO** JPA/JDBC types. **NO** business logic inside. **Pure Java** records only. |
-| **Shell (Phase 2)** | `Client` | `org.hermi.shell.Client` | Technical HTTP/RPC protocol executor | 1. Endpoint URL<br>2. HTTP Method<br>3. Auth<br>4. Headers<br>5. Request Schema<br>6. Response Schema<br>7. Error Format | ONLY override `doExchange`. **NO** try-catch telemetry. **NO** data translation. |
-| **Shell (Phase 2)** | `Messenger` | `org.hermi.shell.Messenger` | Technical broker/topic messaging executor | 1. Destination (Topic)<br>2. Message Headers<br>3. Message Payload Schema | ONLY override `doPublish`. **NO** try-catch telemetry. |
-| **Shell (Phase 2)** | `Mapper` | `org.hermi.shell.Mapper` | Anti-Corruption Translation Gateway | 1. Domain Schema<br>2. Vendor Schema<br>3. Field-level Mapping Rules | PURE TRANSLATION. **NO** I/O calls. **NO** branching logic. **NO** exceptions thrown. |
-| **Shell (Phase 2)** | `SecureClient` | `org.hermi.shell.secure.SecureClient` | Protocol executor with payload encryption | 1. Standard Client Info<br>2. Specific PII fields requiring encryption | ONLY override `doExchange`. **NO** telemetry. MUST invoke Cryptor. |
-| **Shell (Phase 2)** | `PersistentAuditor` | `org.hermi.shell.audit.PersistentAuditor` | Observability and compliance logger | 1. Audit Log Destination<br>2. Audit Event Schema | MUST NOT block main business threads unnecessarily. |
-| **Shell (Phase 2)** | `Cryptor` | `org.hermi.shell.secure.Cryptor` | Field-level encryption/decryption handler | 1. Encryption Algorithm<br>2. Key Management details | **Stateless**. MUST be deterministic. |
-| **Shell (Phase 2)** | `LocalClient` | `org.hermi.shell.util.LocalClient` | Local adapter for Phase 1 Use Case testing/validation | 1. Mock state fields to define | **NOT for Production**. State must be local. NO external dependencies. |
-| **Shell (Phase 2)** | `InMemoryRepository` | `org.hermi.shell.util.InMemoryRepository` | Local adapter for Phase 1 Use Case testing/validation | 1. Java Collection type (Map/List) to use | **NOT for Production**. State must use standard Collections. NO DB. |
-| **Shell (Phase 2)** | `ConsoleMessenger` | `org.hermi.shell.util.ConsoleMessenger` | Local adapter for Phase 1 Use Case testing/validation | 1. Output string format | **NOT for Production**. PURE WIRING to System.out. NO broker. |
-
-## 3. Escalation Protocol
-If a task requires an integration pattern that does not cleanly fit into the Whitelist above (e.g., a GraphQL fetcher, a WebSocket broadcaster, a cron-job trigger):
-1. Do NOT invent new patterns or implement `Executor` directly.
-2. Explicitly ask the human Architect to define a new foundational Base Class contract before you proceed.
-
-## 4. Code Style & Documentation
-- **AI-Native Javadoc Headers**: All core components must use a single, unified `/** ... */` Javadoc block, but strictly segmented using specific headers (`@apiNote`, `@implSpec`).
-- **Statelessness**: All implementations MUST be strictly stateless. Only final, immutable dependencies (via constructor injection) are allowed.
-
-### Naming Conventions (Crucial)
-- **Structure**: Methods MUST follow `verb + noun` or `verb + preposition + noun`. Always use **lowerCamelCase** for methods and variables.
-- **Verb Vocabulary**:
-  - **Remote/Heavy Data**: Use `fetch...` (e.g., `fetchUserProfile`).
-  - **Database/Complex Queries**: Use `find...` or `query...`.
-  - **In-Memory/Lightweight Getter**: Use `get...`.
-  - **Boolean Returns**: MUST start with `is...`, `has...`, `can...`, or `should...`.
-  - **Data Conversion**: Use `to...`, `parse...`, or `as...`.
-
-## 5. The Three Iron Rules (Global Disciplines)
-1. **Anti-Mocking Rule**: NO Mocking Frameworks (Mockito, PowerMock) are allowed in Phase 1 (Use Case Core) tests. You MUST use stateful `LocalAdapters` (e.g., `InMemoryRepository`) to prove logic against real state transitions.
-2. **Dependency Anti-Bleed Rule**: Phase 1 (Core) `pom.xml` or `build.gradle` MUST NOT contain any Spring, Database, Kafka, or network-related dependencies.
-3. **Validation Protocol**: Any data crossing the Use Case boundary (e.g., `UseCase.Context`, `Client.Result`) MUST explicitly `implements Validatable`.
-
-## 6. Architectural Wiring (Production Adapters)
-When implementing a Phase 1 Contract (e.g., `FindUserClient`) for Production, you MUST use the strict **Adapter Pattern**:
-1. Extend the custom Phase 1 Contract.
-2. Inject the Phase 2 Vendor Executor (e.g., `LexisNexisUserClient`) and the Phase 2 `Mapper`.
-3. The overridden method must ONLY perform pure wiring: `mapper.toPayload()` -> `vendorClient.execute()` -> `mapper.toResult()`. NO business logic.
-
-## 7. Security & Observability
-- **PII/Sensitive Data**: Must be processed through a **Cryptor** component before storage or transmission.
-- **Observability**: All client interactions must be logged via an **PersistentAuditor** component.
-
-## 8. Implementation Data Guardrails (Pre-Flight Checks)
-Before writing any implementation code for the allowed contracts, you MUST STOP and explicitly ASK the human for the exact data points listed in the **"Required Information to Implement"** column of the `ALLOWED SCOPE` grid (Section 2). 
-
-Do NOT assume or hallucinate any external URLs, broker topics, or domain schemas. Wait for the human to provide the complete checklist before generating code.
+your-project/
+├── use-cases/{project}-{action}-{resource}-use-case/    # Phase 1: Pure Java (no frameworks)
+│   ├── pom.xml                                 #   depends on hermi-usecase only
+│   ├── src/main/java/{org}/{resource}/{action}/usecase/
+│   │   ├── {Action}{Resource}UseCase.java      #   Contract: Context + Result
+│   │   ├── Default{Action}{Resource}UseCase.java # Implementation: orchestration
+│   │   ├── {Action}{Resource}Client.java       #   JIT-discovered API contract
+│   │   ├── {Action}{Resource}Repository.java   #   JIT-discovered persistence contract
+│   │   └── Notify{Fact}Messenger.java          #   JIT-discovered notification contract
+│   └── src/test/java/{org}/{resource}/{action}/shell/
+│       ├── {Action}{Resource}Main.java         #   Main Shell (Phase 1 verification)
+│       ├── Local{Action}{Resource}Client.java  #   Stateful local adapter
+│       └── InMemory{Action}{Resource}Repo.java #   Stateful local adapter
+│
+└── {project}-{framework}-{type}-shell/         # Phase 2: Infrastructure
+    ├── pom.xml                                 #   depends on hermi-shell, Spring, etc.
+    └── src/main/java/{org}/{resource}/{action}/shell/
+        ├── {Action}{Resource}Controller.java   #   REST entry point
+        ├── {Action}{Resource}Consumer.java     #   Kafka/JMS entry point
+        ├── {Action}{Resource}Service.java      #   Transactional service (optional)
+        ├── client/
+        │   ├── {Tech}{Action}{Resource}Client.java  # Production adapter
+        │   ├── {Vendor}{Resource}Client.java   #   Vendor protocol executor
+        │   └── {Vendor}{Resource}Mapper.java   #   Domain ↔ vendor translation
+        ├── repository/
+        │   ├── {Tech}{Action}{Resource}Repo.java    # Production adapter
+        │   └── {Vendor}{Resource}Mapper.java   #   Domain ↔ entity translation
+        └── messenger/
+            ├── {Tech}Notify{Fact}Messenger.java      # Production adapter
+            ├── {Vendor}{Resource}Messenger.java #   Vendor protocol executor
+            └── {Vendor}{Resource}Mapper.java   #   Domain ↔ payload translation
+```
