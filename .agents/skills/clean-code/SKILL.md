@@ -49,3 +49,21 @@ Your response must strictly match this structure:
 ```[language]
 # Clean, robust, and readable code
 ```
+
+---
+
+## 🤖 Automated Audit (Agent Pipeline)
+
+For automated, hallucination-resistant audits, invoke the two-agent pipeline. The **Finder** scans with high recall — flag everything. The **Verifier** re-reads the cited code independently and either CONFIRMS or DISMISSES each candidate.
+
+| Agent | File | Role |
+|---|---|---|
+| Finder | [clean-code-finder](../../../.claude/agents/clean-code-finder.md) | Scan all pillars, flag everything suspicious |
+| Verifier | [clean-code-verifier](../../../.claude/agents/clean-code-verifier.md) | Re-read cited code, CONFIRM or DISMISS each candidate |
+
+### Orchestration
+
+1. Call `clean-code-finder` agent with the target files. It reads `references/` for the pillar list, audits the code, and returns structured JSON (`files_audited`, `candidates[]`).
+2. Pass the Finder's output to `clean-code-verifier` agent. It reads `references/` for weights, re-reads each cited line, and returns a verified report (`findings[]` with `CONFIRMED`/`DISMISSED` verdicts, `finder_coverage`, `summary` with `score`).
+3. Format the Verifier's report for the user.
+
