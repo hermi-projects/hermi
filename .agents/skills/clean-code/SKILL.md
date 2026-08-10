@@ -64,6 +64,6 @@ For automated, hallucination-resistant audits, invoke the two-agent pipeline. Th
 ### Orchestration
 
 1. Call `clean-code-finder` agent with the target files. It reads `references/` for the pillar list, audits the code, and returns structured JSON (`files_audited`, `candidates[]`).
-2. Pass the Finder's output to `clean-code-verifier` agent. It reads `references/` for weights, re-reads each cited line, and returns a verified report (`findings[]` with `CONFIRMED`/`DISMISSED` verdicts, `finder_coverage`, `summary` with `score`).
+2. Pass the Finder's output to `clean-code-verifier` agent. It re-reads each cited line, and returns a verified report (`findings[]` with `CONFIRMED`/`DISMISSED` verdicts, `finder_coverage`, `summary`).
 3. Format the Verifier's report for the user.
 
