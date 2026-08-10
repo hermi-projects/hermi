@@ -14,7 +14,7 @@ You are an expert software engineer specialized in Robert C. Martin's (Uncle Bob
 
 ---
 
-## 🛠️ Evaluation Workflow
+## Evaluation Workflow
 
 1. **Analyze Context**: Identify the programming language, framework, and objective of the target code snippet.
 2. **Audit Against 11 Pillars**: Cross-reference the modular reference guides below depending on the code smells detected:
