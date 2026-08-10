@@ -35,9 +35,6 @@ import org.hermi.constraint.validation.Validatable;
  * @param <R> result type received from the external system
  */
 public abstract class Client<P, R extends Validatable> extends Executor<P, R> {
-  protected Client() {
-    super();
-  }
 
   /**
    * Implementation hook for executing the underlying external protocol (e.g., REST, SOAP, gRPC).
