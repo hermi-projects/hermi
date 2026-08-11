@@ -120,14 +120,13 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
 #### Step 3: The Execution Harness: Pure Java Main Shell
 Establish the execution harness to enable continuous execution and debugging during development. By using a standard `public static void main` method, we completely avoid external framework dependencies (like JUnit) in Phase 1, keeping the core purely Java.
 
-> [!TIP]
-> AI can run with debug modle to get detailed input/output
-
 ```java
+import java.nio.file.Path;
+import org.hermi.commons.audit.FileAuditor;
+
 public class FindUserMain {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         var useCase = new DefaultFindUserUseCase();
-        
         // Execute this locally to verify the logic
         var result = useCase.execute(new FindUserUseCase.Context("123-456-789"));
         System.out.println("Result: " + result);
@@ -260,6 +259,10 @@ With the orchestration complete, verify all boundary and edge cases. Unlike mock
 class InMemorySaveUserRepository extends SaveUserRepository {
     public final Map<String, String> db = new HashMap<>(); // Standard Java Map for state
 
+    public InMemorySaveUserRepository() {
+        setAuditor(new FileAuditor<>(SaveUserRepository.class, Path.of("target/hermi-execution.jsonl")));
+    }
+
     @Override
     protected Result doExecute(Context context) {
         db.put(context.email(), context.name());
@@ -269,6 +272,10 @@ class InMemorySaveUserRepository extends SaveUserRepository {
  
 // 2. A simple console-tracing messenger
 class ConsoleNotifyUserFoundMessenger extends NotifyUserFoundMessenger {
+    public ConsoleNotifyUserFoundMessenger() {
+        setAuditor(new FileAuditor<>(NotifyUserFoundMessenger.class, Path.of("target/hermi-execution.jsonl")));
+    }
+
     @Override
     protected Result doExecute(Context context) {
         System.out.println("[Notification] To: " + context.email() + ", Msg: " + context.message());
@@ -281,6 +288,7 @@ class LocalFindUserClient extends FindUserClient {
     public final Map<Context, Result> store = new HashMap<>();
     public LocalFindUserClient(){
       store.put(new Context("123-45-6789"), new Result("John Doe", "john@example.com"));
+      setAuditor(new FileAuditor<>(FindUserClient.class, Path.of("target/hermi-execution.jsonl")));
     }
     @Override
     protected Result doExecute(Context context) {
@@ -289,13 +297,17 @@ class LocalFindUserClient extends FindUserClient {
 }
 ```
 ```java
+import java.nio.file.Path;
+import org.hermi.commons.audit.FileAuditor;
+
 public class FindUserMain {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         var client = new LocalFindUserClient(); 
         var repo = new InMemorySaveUserRepository();
         var messenger = new ConsoleNotifyUserFoundMessenger();
         
         var useCase = new DefaultFindUserUseCase(client, repo, messenger);
+        useCase.setAuditor(new FileAuditor<>(FindUserUseCase.class, Path.of("target/hermi-execution.jsonl")));
         var result = useCase.execute(new FindUserUseCase.Context("123-45-6789"));
         
         if (result == null) throw new AssertionError("Result cannot be null");
@@ -303,6 +315,12 @@ public class FindUserMain {
     }
 }
 ```
+> [!TIP]
+> **Why FileAuditor?** AI agents debug by reading output — but unstructured console
+> text requires parsing. FileAuditor writes one JSON line per execution event
+> (STARTED/SUCCEEDED/FAILED) to a single file, with masked sensitive fields.
+> The agent reads one file, sees the full call tree in execution order, and
+> debugs without guessing what happened.
 
 ### Phase 2: Building the Shell (Example: Spring Boot)
 

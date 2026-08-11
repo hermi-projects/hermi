@@ -78,7 +78,7 @@ public abstract class Executor<C, R> {
    * @param auditor the auditor to use (must not be null)
    * @throws NullPointerException if auditor is null
    */
-  protected void setAuditor(Auditor<C, R> auditor) {
+  public void setAuditor(Auditor<C, R> auditor) {
     this.auditor = Objects.requireNonNull(auditor, "Auditor cannot be null");
   }
 
