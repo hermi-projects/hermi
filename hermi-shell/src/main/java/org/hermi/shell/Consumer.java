@@ -2,6 +2,7 @@ package org.hermi.shell;
 
 import org.hermi.commons.Executor;
 import org.hermi.commons.audit.Auditor;
+import org.hermi.commons.audit.LogAuditor;
 import org.hermi.commons.validation.JakartaValidator;
 
 /**
@@ -102,6 +103,7 @@ public abstract class Consumer<E, R> extends Executor<E, R> {
 
   protected Consumer() {
     setResultValidator(new JakartaValidator());
+    setAuditor(new LogAuditor<>(getClass()));
   }
 
   protected Consumer(Auditor<E, R> auditor) {
