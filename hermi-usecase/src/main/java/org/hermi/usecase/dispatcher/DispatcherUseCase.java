@@ -2,7 +2,6 @@ package org.hermi.usecase.dispatcher;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.hermi.commons.audit.Auditor;
 import org.hermi.usecase.standard.UseCase;
 
 /**
@@ -67,11 +66,6 @@ public abstract class DispatcherUseCase<C, R> extends UseCase<C, R> {
     this(List.of(handlers));
   }
 
-  @SafeVarargs
-  protected DispatcherUseCase(Auditor<C, R> auditor, Handler<C, R>... handlers) {
-    this(List.of(handlers), auditor);
-  }
-
   /**
    * Constructs a DispatcherUseCase with a list of handlers.
    *
@@ -79,17 +73,6 @@ public abstract class DispatcherUseCase<C, R> extends UseCase<C, R> {
    */
   protected DispatcherUseCase(List<Handler<C, R>> handlers) {
     super();
-    this.handlers = new ArrayList<>();
-    this.handlers.addAll(handlers);
-  }
-
-  /**
-   * Constructs a DispatcherUseCase with an auditor.
-   *
-   * @param auditor the auditor to use
-   */
-  protected DispatcherUseCase(List<Handler<C, R>> handlers, Auditor<C, R> auditor) {
-    super(auditor);
     this.handlers = new ArrayList<>();
     this.handlers.addAll(handlers);
   }
