@@ -1,7 +1,8 @@
 package org.hermi.shell;
 
 import org.hermi.commons.Executor;
-import org.hermi.constraint.validation.Validatable;
+import org.hermi.commons.audit.Auditor;
+import org.hermi.commons.validation.JakartaValidator;
 
 /**
  * [AI ARCHITECTURAL CONTRACT]
@@ -97,7 +98,16 @@ import org.hermi.constraint.validation.Validatable;
  * @param <E> the inbound event type — MUST implement {@link Validatable}
  * @param <R> the result type returned after processing
  */
-public abstract class Consumer<E extends Validatable, R> extends Executor<E, R> {
+public abstract class Consumer<E, R> extends Executor<E, R> {
+
+  protected Consumer() {
+    setResultValidator(new JakartaValidator());
+  }
+
+  protected Consumer(Auditor<E, R> auditor) {
+    setAuditor(auditor);
+    setResultValidator(new JakartaValidator());
+  }
 
   /**
    * Entry point invoked by the messaging framework when an event arrives.

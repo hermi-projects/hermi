@@ -3,93 +3,55 @@ package org.hermi.usecase.standard;
 import org.hermi.commons.Executor;
 
 /**
- * [AI ARCHITECTURAL CONTRACT]
+ * <b>AI INSTRUCTION:</b> WHAT: Defines a technology-neutral contract for calling an external
+ * system. Specifies input ({@code Context}) and output ({@code Result}) using plain Java types
+ * only. WHY: Decouple domain intent from integration complexity. The use case expresses WHAT it
+ * needs (e.g., "find user by SSN") without knowing HOW (REST vs gRPC vs GraphQL). WHO: Defined by
+ * Use Case layer as an abstract contract. Called by {@code doExecute} in a use case. Implemented by
+ * Shell layer with technology-specific adapters (e.g., {@code RestFindUserClient}). WHEN: Phase 1:
+ * define the contract skeleton (Context/Result records only). Phase 2: implement real communication
+ * logic with the chosen technology. WHERE: Use Case layer — contract definition only. The
+ * implementation lives in Shell layer, prefixed with the technology name (e.g., {@code Rest},
+ * {@code Grpc}, {@code Soap}). HOW: Extend with nested static {@code Context} and {@code Result}
+ * records. Records use ONLY plain Java types ({@code String}, {@code UUID}, {@code BigDecimal}).
+ * Name the contract {@code {Action}{Resource}Client}. Phase 1 {@code doExecute} returns {@code
+ * null}; Phase 2 adapters implement real logic.
  *
- * @apiNote
- *     <p>ROLE: Secure External Transporter.
- *     <p>DESIGN INTENT: Decouple domain intent from external integration complexities (REST, gRPC).
- *     <p>PURPOSE: Provide a technology-neutral interface for external system interactions.
- *     <p>Phase: 1 (Contract Discovery)
- *     <p>Priority: 4 (Critical Core)
- * @implSpec GENERATION RULES FOR AI AGENTS:
- *     <ul>
- *       <li>1. STATELESSNESS: Implementations MUST be strictly stateless. No request-specific
- *           instance variables. Only final, immutable dependencies (via constructor injection) are
- *           allowed.
- *       <li>2. NO TECH BLEED: NEVER use technology-specific types (e.g., RestTemplate, HttpHeaders)
- *           in contract records.
- *       <li>3. PURE JAVA TYPES: Records MUST use ONLY plain Java types (String, UUID, BigDecimal,
- *           etc.).
- *       <li>4. NAMING PROPHECY: Follow the {@code {Action}{Resource}Client} pattern (e.g., {@code
- *           FindUserClient}).
- *     </ul>
+ * <p>DO NOT add: - implementation logic in Phase 1 (contract definition only) - technology-specific
+ * types ({@code RestTemplate}, {@code HttpHeaders}, gRPC stubs) in records - try-catch, logging, or
+ * null checks (handled by {@link org.hermi.commons.Executor} base class) - business logic (Client
+ * is a gateway, not a domain service)
  *
- * @implNote FORBIDDEN PATTERNS:
- *     <ul>
- *       <li>DO NOT add implementation logic to classes extending this contract in Phase 1.
- *       <li>NEVER leak infrastructure-specific metadata into the domain context.
- *     </ul>
+ * <p><b>Example AI Generation:</b>
  *
- * @example
- *     <pre>{@code
+ * <pre>{@code
+ * // CORRECT: Extends Client with nested static Context/Result records, pure Java types only
  * public abstract class FindUserClient extends Client<FindUserClient.Context, FindUserClient.Result> {
  *   public static record Context(String ssn) {}
- *   public static record Result(String name) {}
+ *   public static record Result(String name, String email) {}
  * }
+ * // WRONG: FindUserClientImpl, FindUserApiClient — do NOT use these names
+ * // WRONG: Do NOT add RestTemplate, HttpHeaders, or any HTTP types in records
  * }</pre>
  */
 
+/** External System Gateway: technology-neutral contract for outbound API calls. */
+
 /**
- * Base class for all external service client contracts in the Hermi framework.
+ * Base class for all external service client contracts in the Hermi framework. Extends {@link
+ * org.hermi.commons.Executor} to provide a technology-neutral interface for external system
+ * interactions (REST, gRPC, GraphQL).
  *
- * @param <C> the type of the context
- * @param <R> the type of the result
+ * @param <C> the type of the context (use plain Java types only)
+ * @param <R> the type of the result (use plain Java types only)
  */
 public abstract class Client<C, R> extends Executor<C, R> {
   /**
-   * Executes the external system calling with the client request and returns the response.
+   * Executes the external system call.
    *
-   * <ul>
-   *   <li><b>Use Case Layer (Phase 1)</b>: Defines the contract by extending this class and
-   *       specifying the input and output types.
-   *   <li><b>Shell Layer (Phase 2)</b>: Implements the real-world communication logic using
-   *       specific technologies, prefixed with the technology name (e.g., {@code
-   *       RestFindUserClient}).
-   * </ul>
-   *
-   * <p>Example Use Case Layer (Phase 1):
-   *
-   * <pre>{@code
-   * public abstract class FindUserClient extends Client<FindUserClient.Context, FindUserClient.Result> {
-   *   public static record Context(String ssn) {}
-   *   public static record Result(String name, String email) {}
-   * }
-   * }</pre>
-   *
-   * <p>Example Shell Layer (Phase 2):
-   *
-   * <pre>{@code
-   * @Component
-   * public class LexisNexisFindUserClient extends FindUserClient {
-   *
-   *   private final org.hermi.shell.Client<ApiRequest, ApiResponse> vendorClient;
-   *   private final Mapper<Context, Result, ApiRequest, ApiResponse> mapper;
-   *
-   *   public LexisNexisFindUserClient(
-   *       org.hermi.shell.Client<ApiRequest, ApiResponse> vendorClient,
-   *       Mapper<Context, Result, ApiRequest, ApiResponse> mapper) {
-   *     this.vendorClient = vendorClient;
-   *     this.mapper = mapper;
-   *   }
-   *
-   *   @Override
-   *   protected Result doExecute(Context context) {
-   *     ApiRequest apiRequest = mapper.toPayload(context);
-   *     ApiResponse apiResponse = vendorClient.exchange(apiRequest);
-   *     return mapper.toResult(apiResponse);
-   *   }
-   * }
-   * }</pre>
+   * <p>Phase 1 (Use Case Layer): Define the contract by extending this class with Context/Result
+   * records. Phase 2 (Shell Layer): Implement the real communication logic using specific
+   * technologies (e.g., {@code RestFindUserClient}, {@code GrpcFindUserClient}).
    *
    * @param context the client request context
    * @return the client response result

@@ -2,34 +2,59 @@ package org.hermi.usecase.dispatcher;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.hermi.constraint.validation.Validatable;
+import org.hermi.commons.audit.Auditor;
 import org.hermi.usecase.standard.UseCase;
 
 /**
- * <b>AI INSTRUCTION:</b> When subclassing DispatcherUseCase, do NOT override {@code doExecute}.
- * Register {@link Handler} implementations via the constructor. This pattern is for routing a
- * single Context to the correct Handler based on condition.
+ * <b>AI INSTRUCTION:</b> WHAT: Routes a single Context to the first matching {@link Handler} based
+ * on {@link Handler#supports(Validatable)}. A specialized {@link UseCase} for conditional branching
+ * that replaces if-else chains with a pluggable handler registry. WHY:
+ * Strategy/Chain-of-Responsibility pattern — each Handler encapsulates its own routing condition
+ * and business logic. New branches are added by registering a new Handler, not by editing
+ * doExecute. WHO: Extended by concrete dispatchers (e.g., {@code DefaultPaymentDispatcher}). Calls
+ * registered {@link Handler} instances in registration order — first match wins. WHEN: Handlers are
+ * registered at construction time via the constructor. {@link #register(Handler)} allows dynamic
+ * addition but MUST be called before {@code execute()}. Subclasses MUST NOT override {@code
+ * doExecute} — the routing loop is already implemented. WHERE: Use Case layer — dispatcher
+ * sub-package. A sibling pattern to the standard {@link UseCase}, for scenarios where one context
+ * maps to one of many handlers. HOW: Extend {@code DispatcherUseCase<C, R>}. Register handlers via
+ * constructor. Each {@link Handler} implements {@code supports(C)} (routing condition) and {@code
+ * doExecute(C)} (branch logic). Missing handler throws {@link HandlerNotFoundException}.
+ *
+ * <p>DO NOT add: - override doExecute (routing logic is already implemented in the base class) -
+ * try-catch around handler execution (exception boundary is in UseCase.execute()) - null checks on
+ * handler list (constructor ensures non-null) - default/fallback handler logic (missing handler
+ * MUST throw HandlerNotFoundException)
  *
  * <p><b>Example AI Generation:</b>
  *
  * <pre>{@code
+ * // CORRECT: Extends DispatcherUseCase, registers handlers via constructor, does NOT override doExecute
  * public class DefaultPaymentDispatcher extends DispatcherUseCase<PaymentContext, PaymentResult> {
- *   public DefaultPaymentDispatcher(List<Handler<PaymentContext, PaymentResult>> handlers) {
- *     super(handlers);
+ *   public DefaultPaymentDispatcher(CreditCardHandler credit, ACHHandler ach) {
+ *     super(credit, ach);
  *   }
  * }
+ * // WRONG: PaymentDispatcherImpl, PaymentRoutingService — do NOT use these names
+ * // WRONG: Do NOT override doExecute or add fallback/default routing logic
  * }</pre>
  */
 
-/** Pattern definition for Conditional Routing. */
+/**
+ * Conditional Routing: dispatches a Context to the first matching {@link Handler} based on {@code
+ * supports()}.
+ */
 
 /**
- * A specialized Use Case pattern that routes execution to a specific {@link Handler}.
+ * A specialized Use Case pattern that routes execution to a specific {@link Handler}. Iterates
+ * through registered handlers and delegates to the first one whose {@link
+ * Handler#supports(Validatable)} method returns {@code true}. Throws {@link
+ * HandlerNotFoundException} if no handler matches.
  *
- * @param <C> the type of the context
+ * @param <C> the type of the context, which MUST implement {@link Validatable}
  * @param <R> the type of the result
  */
-public abstract class DispatcherUseCase<C extends Validatable, R> extends UseCase<C, R> {
+public abstract class DispatcherUseCase<C, R> extends UseCase<C, R> {
   private final List<Handler<C, R>> handlers;
 
   /**
@@ -37,9 +62,14 @@ public abstract class DispatcherUseCase<C extends Validatable, R> extends UseCas
    *
    * @param handlers the handlers to register
    */
-  @SuppressWarnings("unchecked")
-  public DispatcherUseCase(Handler<C, R>... handlers) {
+  @SafeVarargs
+  protected DispatcherUseCase(Handler<C, R>... handlers) {
     this(List.of(handlers));
+  }
+
+  @SafeVarargs
+  protected DispatcherUseCase(Auditor<C, R> auditor, Handler<C, R>... handlers) {
+    this(List.of(handlers), auditor);
   }
 
   /**
@@ -47,26 +77,28 @@ public abstract class DispatcherUseCase<C extends Validatable, R> extends UseCas
    *
    * @param handlers the list of handlers
    */
-  public DispatcherUseCase(List<Handler<C, R>> handlers) {
+  protected DispatcherUseCase(List<Handler<C, R>> handlers) {
     super();
     this.handlers = new ArrayList<>();
     this.handlers.addAll(handlers);
   }
 
   /**
-   * Dynamically registers a new handler to this dispatcher.
+   * Constructs a DispatcherUseCase with an auditor.
    *
-   * @param handler the handler to add
+   * @param auditor the auditor to use
    */
-  public void register(Handler<C, R> handler) {
-    this.handlers.add(handler);
+  protected DispatcherUseCase(List<Handler<C, R>> handlers, Auditor<C, R> auditor) {
+    super(auditor);
+    this.handlers = new ArrayList<>();
+    this.handlers.addAll(handlers);
   }
 
   /**
    * Routes the context to the first supported handler and executes it.
    *
    * @param context the context to process
-   * @return the result from the processing handler
+   * @return the result from the matching handler
    * @throws HandlerNotFoundException if no registered handler supports the context
    */
   @Override

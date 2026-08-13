@@ -3,97 +3,55 @@ package org.hermi.usecase.standard;
 import org.hermi.commons.Executor;
 
 /**
- * [AI ARCHITECTURAL CONTRACT]
+ * <b>AI INSTRUCTION:</b> WHAT: Defines a technology-neutral contract for asynchronous outbound
+ * notification. Specifies input ({@code Context}) and output ({@code Result}) using plain Java
+ * types only. WHY: Decouple domain logic from messaging protocols. The use case announces facts
+ * (e.g., "user was found") without knowing whether the transport is Kafka, RabbitMQ, or Email. WHO:
+ * Defined by Use Case layer as an abstract contract. Called by {@code doExecute} in a use case.
+ * Implemented by Shell layer with technology-specific adapters (e.g., {@code
+ * KafkaNotifyUserFoundMessenger}). WHEN: Phase 1: define the contract skeleton (Context/Result
+ * records only). Phase 2: implement real messaging logic with the chosen broker or protocol. WHERE:
+ * Use Case layer — contract definition only. The implementation lives in Shell layer, prefixed with
+ * the technology name (e.g., {@code Kafka}, {@code Rabbit}, {@code Email}). HOW: Extend with nested
+ * static {@code Context} and {@code Result} records. Records use ONLY plain Java types ({@code
+ * String}, {@code UUID}, {@code BigDecimal}). Name the contract {@code Notify{Fact}Messenger}.
+ * Phase 1 {@code doExecute} returns {@code null}; Phase 2 adapters implement real logic.
  *
- * @apiNote
- *     <p>ROLE: Asynchronous Event Dispatcher.
- *     <p>DESIGN INTENT: Decouple domain logic from messaging protocols (Kafka, RabbitMQ, Email).
- *     <p>PURPOSE: Provide a technology-neutral interface for asynchronous outbound communication.
- *     <p>Phase: 1 (Contract Discovery)
- *     <p>Priority: 4 (Critical Core)
- * @implSpec GENERATION RULES FOR AI AGENTS:
- *     <ul>
- *       <li>1. STATELESSNESS: Implementations MUST be strictly stateless. No request-specific
- *           instance variables. Only final, immutable dependencies (via constructor injection) are
- *           allowed.
- *       <li>2. NO BROKER TYPES: NEVER use broker-specific types (e.g., ProducerRecord, Message) in
- *           contract records.
- *       <li>3. PURE JAVA TYPES: Records MUST use ONLY plain Java types (String, UUID, BigDecimal,
- *           etc.).
- *       <li>4. NAMING PROPHECY: Follow the {@code {Notify}{Fact}Messenger} pattern (e.g., {@code
- *           NotifyUserFoundMessenger}).
- *     </ul>
+ * <p>DO NOT add: - broker-specific types ({@code ProducerRecord}, {@code Message}) in
+ * Context/Result records - implementation logic in Phase 1 (contract definition only) - try-catch,
+ * logging, or null checks (handled by {@link org.hermi.commons.Executor} base class) - business
+ * logic (Messenger is a notification gateway, not a domain service)
  *
- * @implNote FORBIDDEN PATTERNS:
- *     <ul>
- *       <li>DO NOT leak infrastructure-specific metadata (headers, partitions) into the domain
- *           context.
- *       <li>NEVER add implementation logic in Phase 1; only define the I/O records.
- *     </ul>
+ * <p><b>Example AI Generation:</b>
  *
- * @example
- *     <pre>{@code
+ * <pre>{@code
+ * // CORRECT: Extends Messenger with nested static Context/Result records, pure Java types only
  * public abstract class NotifyUserFoundMessenger extends Messenger<NotifyUserFoundMessenger.Context, NotifyUserFoundMessenger.Result> {
  *   public static record Context(String userId, String message) {}
  *   public static record Result(String messageId) {}
  * }
+ * // WRONG: NotifyUserFoundMessengerImpl, UserNotificationService — do NOT use these names
+ * // WRONG: Do NOT add ProducerRecord, Message, or any broker types in records
  * }</pre>
  */
 
+/** Asynchronous Notification Gateway: technology-neutral contract for outbound messaging. */
+
 /**
- * Base class for all asynchronous messaging contracts in the Hermi framework.
+ * Base class for all asynchronous messaging contracts in the Hermi framework. Extends {@link
+ * org.hermi.commons.Executor} to provide a technology-neutral interface for asynchronous outbound
+ * communication (Kafka, RabbitMQ, Email).
  *
- * @param <C> the type of the context
- * @param <R> the type of the result
+ * @param <C> the type of the context (use plain Java types only)
+ * @param <R> the type of the result (use plain Java types only)
  */
 public abstract class Messenger<C, R> extends Executor<C, R> {
-
   /**
-   * Sends the message to an external system and returns the response.
+   * Sends the message to an external system.
    *
-   * <p>This method following a two-layer architectural pattern:
-   *
-   * <ul>
-   *   <li><b>Use Case Layer (Phase 1)</b>: Defines the contract by extending this class and
-   *       specifying the input and output types.
-   *   <li><b>Shell Layer (Phase 2)</b>: Implements the real-world communication logic using
-   *       specific technologies, prefixed with the technology name (e.g., {@code
-   *       KafkaNotifyUserFoundMessenger}).
-   * </ul>
-   *
-   * <p>Example NotifyUserFoundMessenger Contract in Use Case Layer (Phase 1):
-   *
-   * <pre>{@code
-   * public abstract class NotifyUserFoundMessenger extends Messenger<NotifyUserFoundMessenger.Context, NotifyUserFoundMessenger.Result> {
-   *   public static record Context(String userId, String message) {}
-   *   public static record Result(String messageId) {}
-   * }
-   * }</pre>
-   *
-   * <p>Example KafkaNotifyUserFoundMessenger Implementation in Shell Layer (Phase 2):
-   *
-   * <pre>{@code
-   * @Component
-   * public class KafkaNotifyUserFoundMessenger extends NotifyUserFoundMessenger {
-   *
-   *   private final org.hermi.shell.Messenger<ProducerRecord<String, String>, RecordMetadata> vendorMessenger;
-   *   private final Mapper<Context, Result, ProducerRecord<String, String>, RecordMetadata> mapper;
-   *
-   *   public KafkaNotifyUserFoundMessenger(
-   *       org.hermi.shell.Messenger<ProducerRecord<String, String>, RecordMetadata> vendorMessenger,
-   *       Mapper<Context, Result, ProducerRecord<String, String>, RecordMetadata> mapper) {
-   *     this.vendorMessenger = vendorMessenger;
-   *     this.mapper = mapper;
-   *   }
-   *
-   *   @Override
-   *   protected Result doExecute(Context context) {
-   *     ProducerRecord<String, String> record = mapper.toPayload(context);
-   *     RecordMetadata metadata = vendorMessenger.publish(record);
-   *     return mapper.toResult(metadata);
-   *   }
-   * }
-   * }</pre>
+   * <p>Phase 1 (Use Case Layer): Define the contract by extending this class with Context/Result
+   * records. Phase 2 (Shell Layer): Implement the real messaging logic using specific technologies
+   * (e.g., {@code KafkaNotifyUserFoundMessenger}, {@code EmailNotifyUserFoundMessenger}).
    *
    * @param context the message request context
    * @return the message response result

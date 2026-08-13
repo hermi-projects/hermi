@@ -3,91 +3,56 @@ package org.hermi.usecase.standard;
 import org.hermi.commons.Executor;
 
 /**
- * [AI ARCHITECTURAL CONTRACT]
+ * <b>AI INSTRUCTION:</b> WHAT: Defines a technology-neutral contract for data persistence.
+ * Specifies input ({@code Context}) and output ({@code Result}) using plain Java types only. WHY:
+ * Decouple business logic from storage technology. The use case saves data without knowing whether
+ * the backend is SQL, NoSQL, or a flat file. WHO: Defined by Use Case layer as an abstract
+ * contract. Called by {@code doExecute} in a use case. Implemented by Shell layer with
+ * technology-specific adapters (e.g., {@code JpaSaveUserRepository}). WHEN: Phase 1: define the
+ * contract skeleton (Context/Result records only). Phase 2: implement real data access with the
+ * chosen persistence technology. WHERE: Use Case layer — contract definition only. The
+ * implementation lives in Shell layer, prefixed with the technology name (e.g., {@code Jpa}, {@code
+ * Jdbc}, {@code Mongo}). HOW: Extend with nested static {@code Context} and {@code Result} records.
+ * Records use ONLY plain Java types ({@code String}, {@code UUID}, {@code BigDecimal}). Name the
+ * contract {@code {Action}{Resource}Repository}. Phase 1 {@code doExecute} returns {@code null};
+ * Phase 2 adapters implement real logic.
  *
- * @apiNote
- *     <p>ROLE: Domain Persistence Interface.
- *     <p>DESIGN INTENT: Decouple business logic from state storage details (SQL, NoSQL, File).
- *     <p>PURPOSE: Provide a technology-neutral interface for data access and persistence.
- *     <p>Phase: 1 (Contract Discovery)
- *     <p>Priority: 4 (Critical Core)
- * @implSpec GENERATION RULES FOR AI AGENTS:
- *     <ul>
- *       <li>1. STATELESSNESS: Implementations MUST be strictly stateless. No request-specific
- *           instance variables. Only final, immutable dependencies (via constructor injection) are
- *           allowed.
- *       <li>2. NO INFRASTRUCTURE TYPES: NEVER use JPA, Hibernate, or JDBC types in contract
- *           records.
- *       <li>3. PURE JAVA TYPES: Records MUST use ONLY plain Java types (String, UUID, BigDecimal,
- *           etc.).
- *       <li>4. NAMING PROPHECY: Follow the {@code {Action}{Resource}Repository} pattern (e.g.,
- *           {@code SaveUserRepository}).
- *     </ul>
+ * <p>DO NOT add: - business logic (Repository is a gateway to the persistence store, not a domain
+ * service) - JPA, Hibernate, or JDBC types in Context/Result records - implementation logic in
+ * Phase 1 (contract definition only) - try-catch, logging, or null checks (handled by {@link
+ * org.hermi.commons.Executor} base class)
  *
- * @implNote FORBIDDEN PATTERNS:
- *     <ul>
- *       <li>NEVER add business logic to the Repository; it is only a gateway to the persistence
- *           store.
- *       <li>DO NOT add implementation logic in Phase 1; only define the I/O records.
- *     </ul>
+ * <p><b>Example AI Generation:</b>
  *
- * @example
- *     <pre>{@code
+ * <pre>{@code
+ * // CORRECT: Extends Repository with nested static Context/Result records, pure Java types only
  * public abstract class SaveUserRepository extends Repository<SaveUserRepository.Context, SaveUserRepository.Result> {
  *   public static record Context(String name, String email) {}
  *   public static record Result(String id) {}
  * }
+ * // WRONG: SaveUserRepositoryImpl, UserDao — do NOT use these names
+ * // WRONG: Do NOT add @Entity, @Table, JPA annotations, or JDBC types in records
  * }</pre>
  */
 
+/** Domain Persistence Gateway: technology-neutral contract for data access. */
+
 /**
- * Base class for all data persistence contracts in the Hermi framework.
+ * Base class for all data persistence contracts in the Hermi framework. Extends {@link
+ * org.hermi.commons.Executor} to provide a technology-neutral interface for data access and
+ * persistence (SQL, NoSQL, file storage).
  *
- * @param <C> the type of the context
- * @param <R> the type of the result
+ * @param <C> the type of the context (use plain Java types only)
+ * @param <R> the type of the result (use plain Java types only)
  */
 public abstract class Repository<C, R> extends Executor<C, R> {
 
   /**
-   * Saves the repository request to an external data source and returns the response.
-   * <li><b>Use Case Layer (Phase 1)</b>: Defines the contract by extending this class and
-   *     specifying the input and output types.
-   * <li><b>Shell Layer (Phase 2)</b>: Implements the real-world data access logic using specific
-   *     technologies, prefixed with the technology name (e.g., {@code JpaSaveUserRepository}).
-   * </ul>
+   * Persists data to the external data source.
    *
-   * <p>Example SaveUserRepository Contract in Use Case (Phase 1):
-   *
-   * <pre>{@code
-   * public abstract class SaveUserRepository extends Repository<SaveUserRepository.Context, SaveUserRepository.Result> {
-   *   public static record Context(String name, String email) {}
-   *   public static record Result(String id) {}
-   * }
-   * }</pre>
-   *
-   * <p>Example SaveUserRepository Implementation in Shell Layer (Phase 2):
-   *
-   * <pre>{@code
-   * @Component
-   * public class JpaSaveUserRepository extends SaveUserRepository {
-   *
-   *   private final UserJpaRepository jpaRepository;
-   *   private final Mapper<Context, Result, UserEntity, UserEntity> mapper;
-   *
-   *   public JpaSaveUserRepository(UserJpaRepository jpaRepository,
-   *       Mapper<Context, Result, UserEntity, UserEntity> mapper) {
-   *     this.jpaRepository = jpaRepository;
-   *     this.mapper = mapper;
-   *   }
-   *
-   *   @Override
-   *   protected Result doExecute(Context context) {
-   *     UserEntity entity = mapper.toPayload(context);
-   *     UserEntity savedEntity = jpaRepository.save(entity);
-   *     return mapper.toResult(savedEntity);
-   *   }
-   * }
-   * }</pre>
+   * <p>Phase 1 (Use Case Layer): Define the contract by extending this class with Context/Result
+   * records. Phase 2 (Shell Layer): Implement the real data access logic using specific
+   * technologies (e.g., {@code JpaSaveUserRepository}, {@code JdbcSaveUserRepository}).
    *
    * @param context the repository request context
    * @return the repository response result

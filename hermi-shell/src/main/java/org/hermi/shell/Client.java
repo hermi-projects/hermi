@@ -1,7 +1,8 @@
 package org.hermi.shell;
 
 import org.hermi.commons.Executor;
-import org.hermi.constraint.validation.Validatable;
+import org.hermi.commons.audit.Auditor;
+import org.hermi.commons.validation.JakartaValidator;
 
 /**
  * <b>AI INSTRUCTION:</b> When subclassing, ONLY override {@code doExchange}. Do NOT add telemetry,
@@ -34,7 +35,15 @@ import org.hermi.constraint.validation.Validatable;
  * @param <P> payload type sent to the external system
  * @param <R> result type received from the external system
  */
-public abstract class Client<P, R extends Validatable> extends Executor<P, R> {
+public abstract class Client<P, R> extends Executor<P, R> {
+  protected Client() {
+    setResultValidator(new JakartaValidator());
+  }
+
+  protected Client(Auditor<P, R> auditor) {
+    setResultValidator(new JakartaValidator());
+    setAuditor(auditor);
+  }
 
   /**
    * Implementation hook for executing the underlying external protocol (e.g., REST, SOAP, gRPC).

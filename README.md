@@ -26,7 +26,7 @@ By enforcing a strict boundary between execution intent and infrastructure deliv
 The framework is built on a single, uncompromising principle: **The Use Case is the Sovereign of the domain.** Everything else — databases, APIs, message brokers — is subordinate. We maintain this sovereignty through **The Three Pillars of Integrity**:
 
 1. **Boundary Integrity**: Strict physical separation via Maven modules. The Use Case is pure Java and knows absolutely nothing of the infrastructure; Localized domain models (**Scoped Models**) ensure the Core remains independent and evolves without friction.
-2. **Protocol Integrity**: Mandatory validation on every boundary crossing. Data entering the Core via `Context` or returning as a `Result` is strictly policed by the `Validatable` contract. 
+2. **Protocol Integrity**: Mandatory validation on every boundary crossing. Data entering the Core via `Context` or returning as a `Result` is strictly policed by Jakarta Bean Validation constraints. 
 3. **Semantic Integrity**: Rigid naming conventions (**Action-Resource**, **Notify-Fact**) and Just-In-Time (JIT) contract discovery ensure the code is a precise mirror of the business intention, preventing technical "bleed" into the mental model.
 
 **Key Tenets:**
@@ -86,17 +86,14 @@ Find a User by SSN
 #### Step 1: Establish the Boundary
 Everything starts with defining the exact context (`Context`) and result (`Result`) representing the Use Case.
 
-> [!WARNING]
-> Data entering the Use Case boundary **MUST** implement the `Validatable` interface.
-
 > [!NOTE]
-> `Validatable` is not just a marker. The framework's base `execute()` method automatically invokes validation on any `Validatable` context before ever delegating to your `doExecute()` core logic. Your business logic is guaranteed to receive safe data.
+> The framework's base `execute()` method automatically invokes Jakarta validation on the context before ever delegating to your `doExecute()` core logic. Your business logic is guaranteed to receive safe data.
 
 ```java
 import org.hermi.usecase.standard.UseCase;
 
 public abstract class FindUserUseCase extends UseCase<FindUserUseCase.Context, FindUserUseCase.Result> {
-    public static record Context(@NotNull @NotBlank String ssn) implements Validatable {}
+    public static record Context(@NotNull @NotBlank String ssn) {}
     public static record Result(String name, String email) {}
 }
 ```
@@ -331,9 +328,8 @@ Vendor Implementation, can be implemented as soon as we know the vendor
 ```java
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import org.hermi.constraint.validation.Validatable;
 
-public class LexisNexisResponse implements Validatable {
+public class LexisNexisResponse {
   @NotNull
   @NotBlank
   private String name;
@@ -582,8 +578,7 @@ public class FindUserController {
 Alternatively, for event-driven architectures, you can expose the Use Case via a message-driven entry point. In this example, a Spring `@KafkaListener` processes requests from an inbound topic by delegating to the `FindUserService`.
 
 ```java
-import org.hermi.constraint.validation.Validatable;
-public class Event implements Validatable {
+public class Event {
   public String ssn;
 }
 ```
@@ -687,9 +682,9 @@ Internal components and abstractions (such as Use Case Client/Repository/Messeng
 
 | Boundary | Interface | Requirement |
 | :--- | :--- | :--- |
-| **Entering Use Case** | `UseCase.Context` | `implements Validatable` (Mandatory) |
-| **Entering Shell (from Vendor)** | `Client.Result` (in `hermi-shell`) | `implements Validatable` (Mandatory) |
-| **Internal** | `Client`/`Repository`/`Messenger` (in `hermi-usecase`), `Repository`/`Messenger` (in `hermi-shell`) | `implements Validatable` (Optional) |
+| **Entering Use Case** | `UseCase.Context` | Jakarta Bean Validation constraints (Mandatory) |
+| **Entering Shell (from Vendor)** | `Client.Result` (in `hermi-shell`) | Jakarta Bean Validation constraints (Mandatory) |
+| **Internal** | `Client`/`Repository`/`Messenger` (in `hermi-usecase`), `Repository`/`Messenger` (in `hermi-shell`) | Jakarta Bean Validation constraints (Optional) |
 
 
 ## 7. Project Structure

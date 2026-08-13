@@ -32,7 +32,7 @@ import org.hermi.constraint.mask.MaskMapper;
  * output survives a crash mid-run. The file is released when the JVM exits — no explicit close is
  * needed.
  */
-public class FileAuditor<C, R> extends PersistentAuditor<C, R> {
+public class FileAuditor<C, R> extends Auditor<C, R> {
 
   private static final ObjectMapper JSON = new ObjectMapper();
 

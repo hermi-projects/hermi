@@ -1,17 +1,14 @@
 package org.hermi.commons;
 
-import jakarta.validation.ConstraintViolation;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 import org.hermi.commons.audit.Auditor;
 import org.hermi.commons.audit.LogAuditor;
 import org.hermi.commons.audit.NoopAuditor;
 import org.hermi.commons.conversion.Converter;
 import org.hermi.commons.conversion.Convertible;
-import org.hermi.constraint.validation.InputValidationException;
-import org.hermi.constraint.validation.Validatable;
-import org.hermi.constraint.validation.Validator;
+import org.hermi.commons.validation.NoopValidator;
+import org.hermi.commons.validation.Validator;
 
 /**
  * [AI ARCHITECTURAL CONTRACT]
@@ -67,6 +64,8 @@ import org.hermi.constraint.validation.Validator;
 public abstract class Executor<C, R> {
 
   private Auditor<C, R> auditor = new NoopAuditor<>();
+  private Validator contextValidator = new NoopValidator();
+  private Validator resultValidator = new NoopValidator();
 
   /**
    * Sets the auditor for this executor.
@@ -82,16 +81,14 @@ public abstract class Executor<C, R> {
     this.auditor = Objects.requireNonNull(auditor, "Auditor cannot be null");
   }
 
-  /**
-   * Indicates whether input context and output result validation should be performed.
-   *
-   * <p>Override this method and return {@code false} to skip validation when it is handled
-   * externally or is unnecessary for the use case.
-   *
-   * @return {@code true} by default
-   */
-  protected boolean shouldValidate() {
-    return true;
+  public void setContextValidator(Validator contextValidator) {
+    this.contextValidator =
+        Objects.requireNonNull(contextValidator, "Context validator cannot be null");
+  }
+
+  public void setResultValidator(Validator resultValidator) {
+    this.resultValidator =
+        Objects.requireNonNull(resultValidator, "Result validator cannot be null");
   }
 
   /**
@@ -116,10 +113,10 @@ public abstract class Executor<C, R> {
   public final R execute(C context) {
     UUID trackingId = auditor.recordContext(context);
     try {
-      validateContext(context);
+      contextValidator.validate(context);
       R result = doExecute(context);
       auditor.recordResult(trackingId, result);
-      validateResult(result);
+      resultValidator.validate(result);
       return result;
     } catch (Exception e) {
       auditor.recordError(trackingId, context, e);
@@ -156,49 +153,5 @@ public abstract class Executor<C, R> {
     Objects.requireNonNull(
         converter, String.format("%s: converter cannot be null", getClass().getSimpleName()));
     return execute(converter.convert(source));
-  }
-
-  /**
-   * Validates the input context.
-   *
-   * @param context the context to validate
-   * @throws NullPointerException if context is null
-   * @throws InputValidationException if context is {@link Validatable} and fails validation
-   */
-  private void validateContext(C context) {
-    Objects.requireNonNull(
-        context, String.format("%s: Context cannot be null", getClass().getSimpleName()));
-    if (!shouldValidate() || !(context instanceof Validatable)) {
-      return;
-    }
-    Set<ConstraintViolation<C>> violations = Validator.validate(context);
-    if (!violations.isEmpty()) {
-      String typeName = context.getClass().getSimpleName();
-      throw new InputValidationException(
-          String.format("%s: Context, %s, is not valid", getClass().getSimpleName(), typeName),
-          violations);
-    }
-  }
-
-  /**
-   * Validates the execution result.
-   *
-   * @param result the result to validate
-   * @throws NullPointerException if result is null
-   * @throws InputValidationException if result is {@link Validatable} and fails validation
-   */
-  private void validateResult(R result) {
-    Objects.requireNonNull(
-        result, String.format("%s: Result cannot be null", getClass().getSimpleName()));
-    if (!shouldValidate() || !(result instanceof Validatable)) {
-      return;
-    }
-    Set<ConstraintViolation<R>> violations = Validator.validate(result);
-    if (!violations.isEmpty()) {
-      String typeName = result.getClass().getSimpleName();
-      throw new InputValidationException(
-          String.format("%s: Result, %s, is not valid", getClass().getSimpleName(), typeName),
-          violations);
-    }
   }
 }
