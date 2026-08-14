@@ -93,8 +93,8 @@ Everything starts with defining the exact context (`Context`) and result (`Resul
 import org.hermi.usecase.standard.UseCase;
 
 public abstract class FindUserUseCase extends UseCase<FindUserUseCase.Context, FindUserUseCase.Result> {
-    public static record Context(@NotNull @NotBlank String ssn) {}
-    public static record Result(String name, String email) {}
+  public static record Context(@NotNull @NotBlank String ssn) {}
+  public static record Result(String name, String email) {}
 }
 ```
 
@@ -106,11 +106,11 @@ Establish the core Use Case implementation. Initially, it simply defines a local
 public record User(String ssn, String name, String email) {}
 
 public class DefaultFindUserUseCase extends FindUserUseCase {
-    @Override
-    protected Result doExecute(Context context) {
-        // Business logic goes here
-        return new Result(null, null);
-    }
+  @Override
+  protected Result doExecute(Context context) {
+    // Business logic goes here
+    return new Result(null, null);
+  }
 }
 ```
 
@@ -122,12 +122,12 @@ import java.nio.file.Path;
 import org.hermi.commons.audit.FileAuditor;
 
 public class FindUserMain {
-    public static void main(String[] args) throws Exception {
-        var useCase = new DefaultFindUserUseCase();
-        // Execute this locally to verify the logic
-        var result = useCase.execute(new FindUserUseCase.Context("123-456-789"));
-        System.out.println("Result: " + result);
-    }
+  public static void main(String[] args) throws Exception {
+    var useCase = new DefaultFindUserUseCase();
+    // Execute this locally to verify the logic
+    var result = useCase.execute(new FindUserUseCase.Context("123-456-789"));
+    System.out.println("Result: " + result);~
+  }
 }
 ```
 
@@ -138,8 +138,8 @@ When the core logic requires external data retrieval, do not implement a protoco
 import org.hermi.usecase.standard.Client;
 // Define the required client contract:
 public abstract class FindUserClient extends Client<FindUserClient.Context, FindUserClient.Result> {
-    public record Context(String ssn) {}
-    public record Result(String name, String email) {}
+  public record Context(String ssn) {}
+  public record Result(String name, String email) {}
 }
 ```
 
@@ -147,20 +147,20 @@ Inject this contract into the Use Case to process the external data:
 
 ```java
 public class DefaultFindUserUseCase extends FindUserUseCase {
-    private final FindUserClient findUserClient;
+  private final FindUserClient findUserClient;
 
-    public DefaultFindUserUseCase(FindUserClient findUserClient) {
-        this.findUserClient = findUserClient;
-    }
+  public DefaultFindUserUseCase(FindUserClient findUserClient) {
+    this.findUserClient = findUserClient;
+  }
 
-    @Override
-    protected Result doExecute(Context context) {
-        // 1. Fetch user data via the client contract
-        var apiResult = findUserClient.execute(new FindUserClient.Context(context.ssn()));
-        var user = new User(context.ssn(), apiResult.name(), apiResult.email());
-        
-        return new Result(user.name(), user.email());
-    }
+  @Override
+  protected Result doExecute(Context context) {
+    // 1. Fetch user data via the client contract
+    var apiResult = findUserClient.execute(new FindUserClient.Context(context.ssn()));
+    var user = new User(context.ssn(), apiResult.name(), apiResult.email());
+    
+    return new Result(user.name(), user.email());
+  }
 }
 ```
 
@@ -171,8 +171,8 @@ When the logic requires data persistence, define a repository contract.
 import org.hermi.usecase.standard.Repository;
 // Define the required repository contract:
 public abstract class SaveUserRepository extends Repository<SaveUserRepository.Context, SaveUserRepository.Result> {
-    public record Context(String name, String email) {}
-    public record Result(String id) {}
+  public record Context(String name, String email) {}
+  public record Result(String id) {}
 }
 ```
 
@@ -180,24 +180,24 @@ Update the Use Case orchestration to implement the persistence flow:
 
 ```java
 public class DefaultFindUserUseCase extends FindUserUseCase {
-    private final FindUserClient findUserClient;
-    private final SaveUserRepository saveUserRepository;
+  private final FindUserClient findUserClient;
+  private final SaveUserRepository saveUserRepository;
 
-    public DefaultFindUserUseCase(FindUserClient findUserClient, SaveUserRepository saveUserRepository) {
-        this.findUserClient = findUserClient;
-        this.saveUserRepository = saveUserRepository;
-    }
+  public DefaultFindUserUseCase(FindUserClient findUserClient, SaveUserRepository saveUserRepository) {
+    this.findUserClient = findUserClient;
+    this.saveUserRepository = saveUserRepository;
+  }
 
-    @Override
-    protected Result doExecute(Context context) {
-        var apiResult = findUserClient.execute(new FindUserClient.Context(context.ssn()));
-        var user = new User(context.ssn(), apiResult.name(), apiResult.email());
-        
-        // 2. Save the user via the repository contract
-        saveUserRepository.execute(new SaveUserRepository.Context(user.name(), user.email()));
-        
-        return new Result(user.name(), user.email());
-    }
+  @Override
+  protected Result doExecute(Context context) {
+    var apiResult = findUserClient.execute(new FindUserClient.Context(context.ssn()));
+    var user = new User(context.ssn(), apiResult.name(), apiResult.email());
+    
+    // 2. Save the user via the repository contract
+    saveUserRepository.execute(new SaveUserRepository.Context(user.name(), user.email()));
+    
+    return new Result(user.name(), user.email());
+  }
 }
 ```
 
@@ -218,33 +218,33 @@ Once the individual I/O intents are discovered, the Use Case orchestration is fi
 
 ```java
 public class DefaultFindUserUseCase extends FindUserUseCase {
-    private final FindUserClient findUserClient;
-    private final SaveUserRepository saveUserRepository;
-    private final NotifyUserFoundMessenger messenger;
+  private final FindUserClient findUserClient;
+  private final SaveUserRepository saveUserRepository;
+  private final NotifyUserFoundMessenger messenger;
 
-    public DefaultFindUserUseCase(FindUserClient findUserClient, 
-                                  SaveUserRepository saveUserRepository, 
-                                  NotifyUserFoundMessenger messenger) {
-        this.findUserClient = findUserClient;
-        this.saveUserRepository = saveUserRepository;
-        this.messenger = messenger;
-    }
+  public DefaultFindUserUseCase(FindUserClient findUserClient, 
+                                SaveUserRepository saveUserRepository, 
+                                NotifyUserFoundMessenger messenger) {
+    this.findUserClient = findUserClient;
+    this.saveUserRepository = saveUserRepository;
+    this.messenger = messenger;
+  }
 
-    @Override
-    protected Result doExecute(Context context) {
-        // 1. Fetch user data
-        var apiResult = findUserClient.execute(new FindUserClient.Context(context.ssn()));
-        var user = new User(context.ssn(), apiResult.name(), apiResult.email());
-        
-        // 2. Save user
-        saveUserRepository.execute(new SaveUserRepository.Context(user.name(), user.email()));
-        
-        // 3. Send notification
-        var notificationContext = new NotifyUserFoundMessenger.Context(user.email(), "User found: " + user.name());
-        messenger.execute(notificationContext);
-        
-        return new Result(user.name(), user.email());
-    }
+  @Override
+  protected Result doExecute(Context context) {
+    // 1. Fetch user data
+    var apiResult = findUserClient.execute(new FindUserClient.Context(context.ssn()));
+    var user = new User(context.ssn(), apiResult.name(), apiResult.email());
+    
+    // 2. Save user
+    saveUserRepository.execute(new SaveUserRepository.Context(user.name(), user.email()));
+    
+    // 3. Send notification
+    var notificationContext = new NotifyUserFoundMessenger.Context(user.email(), "User found: " + user.name());
+    messenger.execute(notificationContext);
+    
+    return new Result(user.name(), user.email());
+  }
 }
 ```
 
@@ -254,43 +254,43 @@ With the orchestration complete, verify all boundary and edge cases. Unlike mock
 ```java
 // 1. A stateful in-memory repository (Simple Implementation)
 class InMemorySaveUserRepository extends SaveUserRepository {
-    public final Map<String, String> db = new HashMap<>(); // Standard Java Map for state
+  public final Map<String, String> db = new HashMap<>(); // Standard Java Map for state
 
-    public InMemorySaveUserRepository() {
-        setAuditor(new FileAuditor<>(SaveUserRepository.class, Path.of("target/hermi-execution.jsonl")));
-    }
+  public InMemorySaveUserRepository(Path path) {
+    setAuditor(new FileAuditor<>(SaveUserRepository.class, path));
+  }
 
-    @Override
-    protected Result doExecute(Context context) {
-        db.put(context.email(), context.name());
-        return new Result("id-001");
-    }
+  @Override
+  protected Result doExecute(Context context) {
+    db.put(context.email(), context.name());
+    return new Result("id-001");
+  }
 }
  
 // 2. A simple console-tracing messenger
 class ConsoleNotifyUserFoundMessenger extends NotifyUserFoundMessenger {
-    public ConsoleNotifyUserFoundMessenger() {
-        setAuditor(new FileAuditor<>(NotifyUserFoundMessenger.class, Path.of("target/hermi-execution.jsonl")));
-    }
+  public ConsoleNotifyUserFoundMessenger(Path path) {
+    setAuditor(new FileAuditor<>(NotifyUserFoundMessenger.class, path));
+  }
 
-    @Override
-    protected Result doExecute(Context context) {
-        System.out.println("[Notification] To: " + context.email() + ", Msg: " + context.message());
-        return new Result("msg-123");
-    }
+  @Override
+  protected Result doExecute(Context context) {
+    System.out.println("[Notification] To: " + context.email() + ", Msg: " + context.message());
+    return new Result("msg-123");
+  }
 }
  
 // 3. A programmable local client
 class LocalFindUserClient extends FindUserClient {
-    public final Map<Context, Result> store = new HashMap<>();
-    public LocalFindUserClient(){
-      store.put(new Context("123-45-6789"), new Result("John Doe", "john@example.com"));
-      setAuditor(new FileAuditor<>(FindUserClient.class, Path.of("target/hermi-execution.jsonl")));
-    }
-    @Override
-    protected Result doExecute(Context context) {
-        return store.get(context);
-    }
+  public final Map<Context, Result> store = new HashMap<>();
+  public LocalFindUserClient(Path path){
+    store.put(new Context("123-45-6789"), new Result("John Doe", "john@example.com"));
+    setAuditor(new FileAuditor<>(FindUserClient.class, path));
+  }
+  @Override
+  protected Result doExecute(Context context) {
+    return store.get(context);
+  }
 }
 ```
 ```java
@@ -298,18 +298,19 @@ import java.nio.file.Path;
 import org.hermi.commons.audit.FileAuditor;
 
 public class FindUserMain {
-    public static void main(String[] args) throws Exception {
-        var client = new LocalFindUserClient(); 
-        var repo = new InMemorySaveUserRepository();
-        var messenger = new ConsoleNotifyUserFoundMessenger();
-        
-        var useCase = new DefaultFindUserUseCase(client, repo, messenger);
-        useCase.setAuditor(new FileAuditor<>(FindUserUseCase.class, Path.of("target/hermi-execution.jsonl")));
-        var result = useCase.execute(new FindUserUseCase.Context("123-45-6789"));
-        
-        if (result == null) throw new AssertionError("Result cannot be null");
-        System.out.println("✅ Happy Path Verified: " + result.name());
-    }
+  public static void main(String[] args) throws Exception {
+    Path log = Path.of("target/hermi-execution.jsonl");
+    var client = new LocalFindUserClient(log); 
+    var repo = new InMemorySaveUserRepository(log);
+    var messenger = new ConsoleNotifyUserFoundMessenger(log);
+    
+    var useCase = new DefaultFindUserUseCase(client, repo, messenger);
+    useCase.setAuditor(new FileAuditor<>(FindUserUseCase.class, log));
+    var result = useCase.execute(new FindUserUseCase.Context("123-45-6789"));
+    
+    if (result == null) throw new AssertionError("Result cannot be null");
+    System.out.println("✅ Happy Path Verified: " + result.name());
+  }
 }
 ```
 > [!TIP]
@@ -541,19 +542,19 @@ Wire the production implementations into the appropriate entry point for your Sh
 @Service
 @Transactional
 public class FindUserService {
-    private final FindUserUseCase findUserUseCase;
+  private final FindUserUseCase findUserUseCase;
 
-    @Autowired
-    public FindUserService(LexisNexisFindUserClient client, 
-                           JpaSaveUserRepository repo, 
-                           KafkaNotifyUserFoundMessenger messenger) {
-        // Instantiate the Use Case with production implementations
-        this.findUserUseCase = new DefaultFindUserUseCase(client, repo, messenger);
-    }
+  @Autowired
+  public FindUserService(LexisNexisFindUserClient client, 
+                          JpaSaveUserRepository repo, 
+                          KafkaNotifyUserFoundMessenger messenger) {
+      // Instantiate the Use Case with production implementations
+    this.findUserUseCase = new DefaultFindUserUseCase(client, repo, messenger);
+  }
 
-    public FindUserUseCase.Result findUser(FindUserUseCase.Context context) {
-        return findUserUseCase.execute(context);
-    }
+  public FindUserUseCase.Result findUser(FindUserUseCase.Context context) {
+    return findUserUseCase.execute(context);
+  }
 }
 ```
 
@@ -561,17 +562,17 @@ public class FindUserService {
 @RestController
 @RequestMapping("/users")
 public class FindUserController {
-    private final FindUserService findUserService;
+  private final FindUserService findUserService;
 
-    @Autowired
-    public FindUserController(FindUserService findUserService) {
-        this.findUserService = findUserService;
-    }
+  @Autowired
+  public FindUserController(FindUserService findUserService) {
+    this.findUserService = findUserService;
+  }
 
-    @GetMapping
-    public FindUserUseCase.Result findUser(@RequestBody FindUserUseCase.Context context) {
-        return findUserService.findUser(context);
-    }
+  @GetMapping
+  public FindUserUseCase.Result findUser(@RequestBody FindUserUseCase.Context context) {
+    return findUserService.findUser(context);
+  }
 }
 ```
 
@@ -592,25 +593,25 @@ public class FindUserConsumerAuditor extends PersistentAuditor<Event, String>{
 import org.hermi.shell.Consumer;
 @Component
 public class FindUserConsumer extends Consumer<Event, String>{
-    private final FindUserService findUserService;
+  private final FindUserService findUserService;
 
-    @Autowired
-    public FindUserConsumer(FindUserService findUserService, FindUserConsumerAuditor findUserConsumerAuditor) {
-      super(findUserConsumerAuditor);
-      this.findUserService = findUserService;
-    }
+  @Autowired
+  public FindUserConsumer(FindUserService findUserService, FindUserConsumerAuditor findUserConsumerAuditor) {
+    super(findUserConsumerAuditor);
+    this.findUserService = findUserService;
+  }
 
-    @KafkaListener(topics = "user.find.requests", groupId = "user-service-group")
-    public void consume(Event event) {
-      execute(event);
-    }
-    
-    @Override
-    protected String doExecute(Event event){
-      FindUserUseCase.Context context = new FindUserUseCase.Context(event.ssn);
-      FindUserUseCase.Result result = findUserService.findUser(context);
-      return result.id;
-    }
+  @KafkaListener(topics = "user.find.requests", groupId = "user-service-group")
+  public void consume(Event event) {
+    execute(event);
+  }
+  
+  @Override
+  protected String doExecute(Event event){
+    FindUserUseCase.Context context = new FindUserUseCase.Context(event.ssn);
+    FindUserUseCase.Result result = findUserService.findUser(context);
+    return result.id;
+  }
 }
 ```
 
