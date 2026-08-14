@@ -81,12 +81,12 @@ public abstract class Executor<C, R> {
     this.auditor = Objects.requireNonNull(auditor, "Auditor cannot be null");
   }
 
-  public void setContextValidator(Validator contextValidator) {
+  protected void setContextValidator(Validator contextValidator) {
     this.contextValidator =
         Objects.requireNonNull(contextValidator, "Context validator cannot be null");
   }
 
-  public void setResultValidator(Validator resultValidator) {
+  protected void setResultValidator(Validator resultValidator) {
     this.resultValidator =
         Objects.requireNonNull(resultValidator, "Result validator cannot be null");
   }
