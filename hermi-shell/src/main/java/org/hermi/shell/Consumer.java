@@ -2,7 +2,6 @@ package org.hermi.shell;
 
 import org.hermi.commons.Executor;
 import org.hermi.commons.audit.Auditor;
-import org.hermi.commons.audit.LogAuditor;
 import org.hermi.commons.validation.JakartaValidator;
 
 /**
@@ -100,11 +99,6 @@ import org.hermi.commons.validation.JakartaValidator;
  * @param <R> the result type returned after processing
  */
 public abstract class Consumer<E, R> extends Executor<E, R> {
-
-  protected Consumer() {
-    setResultValidator(new JakartaValidator());
-    setAuditor(new LogAuditor<>(getClass()));
-  }
 
   protected Consumer(Auditor<E, R> auditor) {
     setAuditor(auditor);

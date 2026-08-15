@@ -2,7 +2,6 @@ package org.hermi.shell;
 
 import org.hermi.commons.Executor;
 import org.hermi.commons.audit.Auditor;
-import org.hermi.commons.audit.LogAuditor;
 import org.hermi.commons.validation.JakartaValidator;
 
 /**
@@ -37,10 +36,6 @@ import org.hermi.commons.validation.JakartaValidator;
  * @param <R> result type received from the external system
  */
 public abstract class Client<P, R> extends Executor<P, R> {
-  protected Client() {
-    setResultValidator(new JakartaValidator());
-    setAuditor(new LogAuditor<>(getClass()));
-  }
 
   protected Client(Auditor<P, R> auditor) {
     setResultValidator(new JakartaValidator());

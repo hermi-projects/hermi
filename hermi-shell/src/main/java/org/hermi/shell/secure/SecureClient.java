@@ -62,11 +62,6 @@ public abstract class SecureClient<P, R> extends Client<P, R> {
    * @param auditor the auditor to trace and persist interactions
    * @param cryptor the cryptor to seal and unseal payloads
    */
-  protected SecureClient(Cryptor<P, R> cryptor) {
-    super();
-    this.cryptor = Objects.requireNonNull(cryptor, "Cryptor is required for SecureClient");
-  }
-
   protected SecureClient(Cryptor<P, R> cryptor, Auditor<P, R> auditor) {
     super(auditor);
     this.cryptor = Objects.requireNonNull(cryptor, "Cryptor is required for SecureClient");

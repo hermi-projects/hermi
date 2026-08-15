@@ -2,7 +2,6 @@ package org.hermi.shell;
 
 import org.hermi.commons.Executor;
 import org.hermi.commons.audit.Auditor;
-import org.hermi.commons.audit.LogAuditor;
 
 /**
  * <b>AI INSTRUCTION:</b> When subclassing, ONLY override {@code doPublish}. Do NOT add telemetry or
@@ -39,10 +38,6 @@ public abstract class Messenger<M, R> extends Executor<M, R> {
 
   protected Messenger(Auditor<M, R> auditor) {
     setAuditor(auditor);
-  }
-
-  protected Messenger() {
-    setAuditor(new LogAuditor<>(getClass()));
   }
 
   /**
