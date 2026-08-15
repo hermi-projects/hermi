@@ -1,6 +1,7 @@
 package org.hermi.commons.audit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -17,41 +18,41 @@ import org.hermi.constraint.mask.MaskMapper;
 /**
  * {@link Auditor} that writes JSONL execution lifecycle events to a file for AI-agent consumption.
  *
- * <p>Designed for the Phase 1 debug loop: a main shell passes this auditor to the use case, runs
- * {@code execute()}, and the agent Reads, greps, or diffs the output file instead of parsing mixed
- * console text. Each run overwrites the file, one JSON event per line:
+ * <p>Local Phase 1 debug loop only — not a production auditor. The main shell attaches one instance
+ * per executor to the same file, runs {@code execute()}, and the agent Reads, greps, or diffs that
+ * file instead of parsing mixed console text. The file is the agent's only evidence of what the
+ * code did, so it must be trustworthy: events are appended, never truncated (the caller deletes the
+ * file for a fresh run), flushed after every write, and write failures are logged instead of
+ * silently dropped. One JSON event per line:
  *
  * <pre>{@code
- * {"event":"STARTED","executionId":"...","executor":"FindUserMain","context":{"ssn":"***-**-6789"}}
- * {"event":"SUCCEEDED","executionId":"...","executor":"FindUserMain","result":{"name":"Alice"}}
- * {"event":"FAILED","executionId":"...","executor":"FindUserMain","exceptionClass":"...","exceptionMessage":"...","stackTrace":"..."}
+ * {"event":"STARTED","executionId":"...","executor":"org.hermi.example.FindUserMain","context":{"ssn":"***-**-6789"}}
+ * {"event":"SUCCEEDED","executionId":"...","executor":"org.hermi.example.FindUserMain","result":{"name":"Alice"}}
+ * {"event":"FAILED","executionId":"...","executor":"org.hermi.example.FindUserMain","exceptionClass":"...","exceptionMessage":"...","stackTrace":"..."}
  * }</pre>
  *
- * <p>Context and result values are masked through {@link MaskMapper}, so sensitive fields annotated
- * with {@code @Mask} or {@code @SSN} never reach the file. Events are flushed after every write, so
- * output survives a crash mid-run. The file is released when the JVM exits — no explicit close is
- * needed.
+ * <p>The {@code executor} field is the fully-qualified class name, so equally named classes in
+ * different packages stay distinguishable. Context and result values are masked through {@link
+ * MaskMapper} — {@code @Mask}/{@code @SSN} fields never reach the file. No explicit close is
+ * needed; the writer is released at JVM exit, matching the one-JVM-per-debug-run lifecycle.
  */
 public class FileAuditor<C, R> extends Auditor<C, R> {
 
   private static final ObjectMapper JSON = new ObjectMapper();
 
   private final String executor;
-  private final PrintWriter out;
+  private final BufferedWriter out;
 
   /**
-   * @param executorClass the class being audited, used to name the {@code executor} field
-   * @param file the output file, truncated at the start of each run
+   * @param executorClass the class being audited; its fully-qualified name is written to the {@code
+   *     executor} field
+   * @param file the output file, created if absent; events are appended, never overwritten
    */
   public FileAuditor(Class<?> executorClass, Path file) throws IOException {
-    this.executor = executorClass.getSimpleName();
+    this.executor = executorClass.getName();
     this.out =
-        new PrintWriter(
-            Files.newBufferedWriter(
-                file,
-                StandardCharsets.UTF_8,
-                StandardOpenOption.CREATE,
-                StandardOpenOption.TRUNCATE_EXISTING));
+        Files.newBufferedWriter(
+            file, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
   }
 
   @Override
@@ -89,9 +90,10 @@ public class FileAuditor<C, R> extends Auditor<C, R> {
     write(event);
   }
 
-  private void write(Map<String, Object> event) {
+  private synchronized void write(Map<String, Object> event) {
     try {
-      out.println(JSON.writeValueAsString(event));
+      out.write(JSON.writeValueAsString(event));
+      out.newLine();
       out.flush();
     } catch (IOException e) {
       throw new UncheckedIOException("FileAuditor failed to write event", e);
