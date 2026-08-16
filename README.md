@@ -1,11 +1,11 @@
 # Hermi: Intent-Driven Architecture
 
-Hermi is a lightweight, opinionated framework for building Java applications where business intent is protected from infrastructure complexity. It transforms the way we build systems by shifting the focus from data-processing to **Intent-Driven Execution**.
+Hermi is a lightweight, opinionated framework for building Java applications where business intent is protected from infrastructure complexity. It transforms the way we build systems by shifting the focus from data-processing to **declaring intent and fulfilling it**.
 
 > [!NOTE]
-> **The Hermi Manifesto**: In Hermi, you are driving an **Action** within a specific **Context** to achieve a definitive **Result**. This semantic focus on **Intent-Driven Architecture** is our cornerstone: we protect the **Intent**, we ignore the Delivery.
+> **The Hermi Manifesto**: In Hermi, you declare an **Intent** — an **Action** within a specific **Context** to achieve a definitive **Result**. This semantic focus on **Intent-Driven Architecture** is our cornerstone: we protect the **Intent**, we ignore the Delivery.
 
-By enforcing a strict boundary between execution intent and infrastructure delivery, Hermi ensures your system remains:
+By enforcing a strict boundary between business intent and infrastructure delivery, Hermi ensures your system remains:
 - **Independent of Delivery Layers**: Swap a Web API for a CLI, a Kafka Consumer, or an AI MCP server without touching a single line of business logic.
 - **Independent of Frameworks**: Treat Spring, Quarkus, or Micronaut as tools, not constraints. 
 - **Independent of Persistence**: Business actions know nothing about SQL or NoSQL; they only specify state intentions.
@@ -30,6 +30,7 @@ The framework is built on a single, uncompromising principle: **The Use Case is 
 3. **Semantic Integrity**: Rigid naming conventions (**Action-Resource**, **Notify-Fact**) and Just-In-Time (JIT) contract discovery ensure the code is a precise mirror of the business intention, preventing technical "bleed" into the mental model.
 
 **Key Tenets:**
+- **The Intent Contract**: Every Use Case layer component is an `Intent` — callers declare what must happen through `fulfill()`, while the `Executor` machinery enforces the validation and audit lifecycle behind it.
 - **Intent-Driven Discovery**: Contracts are defined *exactly* when business logic reveals a need — never before.
 - **Empirical Proof (No Mocks)**: Verification uses stateful, technology-agnostic **Main Shells**, proving logic against real-world state transitions rather than fragile mocks.
 
@@ -707,7 +708,7 @@ hermi-user (Parent)
 │   │   └── NotifyUserFoundMessenger.java             (I/O Contract)
 │   ├── src/test/java/org/hermi/user/find/usecase
 │   │   ├── UserUnitTest.java                         (User Test)
-│   │   ├── FindUserUseCaseConponentTest.java         (Use Case Conponent Test)
+│   │   ├── FindUserUseCaseComponentTest.java          (Use Case Component Test)
 │   │   └── FindUserUseCaseUnitTest.java              (Use Case Unit Test)
 │   └── src/test/java/org/hermi/user/find/shell
 │       ├── FindUserMain.java                         (Main Shell Runner)
@@ -739,7 +740,7 @@ Class Diagram
 ```mermaid
 graph TD
     %% Main Shell
-    S_Main[FindUserMain] -->|executes| U_UseCase
+    S_Main[FindUserMain] -->|fulfills| U_UseCase
 
     %% JUnit Shell
     S_JUnit[FindUserTest] -->|verifies logic| U_UseCase
