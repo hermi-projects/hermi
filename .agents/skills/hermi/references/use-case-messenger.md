@@ -68,7 +68,7 @@ public class KafkaNotifyUserFoundMessenger extends NotifyUserFoundMessenger {
     // 构造函数注入...
 
     @Override
-    protected Result doExecute(Context context) {
+    protected Result doFulfill(Context context) {
         ProducerRecord<String, String> record = mapper.toPayload(context);
         RecordMetadata metadata = messenger.publish(record);
         return mapper.toResult(metadata);

@@ -73,7 +73,7 @@ public class LexisNexisFindUserClient extends FindUserClient {
     }
 
     @Override
-    protected Result doExecute(Context context) {
+    protected Result doFulfill(Context context) {
         // 1. 通过 Mapper 将业务上下文转换为供应商特定的请求负载
         LexisNexisPayload apiRequest = mapper.toPayload(context);
         

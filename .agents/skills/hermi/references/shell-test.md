@@ -77,7 +77,7 @@ class FindUserShellTest {
         FindUserUseCase.Context context = new FindUserUseCase.Context("123-45-6789");
 
         // 执行业务核心
-        FindUserUseCase.Result result = useCase.execute(context);
+        FindUserUseCase.Result result = useCase.fulfill(context);
 
         // 断言业务结果
         assertNotNull(result);
@@ -96,7 +96,7 @@ class FindUserShellTest {
 
         // 验证业务边界与异常分支
         assertThrows(UserNotFoundException.class, () -> {
-            useCase.execute(context);
+            useCase.fulfill(context);
         });
     }
 }
@@ -107,7 +107,7 @@ class FindUserShellTest {
 
 class LocalFindUserClient extends FindUserClient {
     @Override
-    protected ExternalUserData doExecute(ExternalUserPayload payload) {
+    protected ExternalUserData doFulfill(ExternalUserPayload payload) {
         if ("invalid-ssn".equals(payload.getSsn())) {
             return null; // 模拟未找到
         }

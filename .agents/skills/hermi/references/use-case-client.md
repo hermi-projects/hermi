@@ -68,7 +68,7 @@ public class LexisNexisFindUserClient extends FindUserClient {
     // 构造函数注入...
 
     @Override
-    protected Result doExecute(Context context) {
+    protected Result doFulfill(Context context) {
         LexisNexisPayload apiRequest = mapper.toPayload(context);
         LexisNexisResponse apiResponse = client.exchange(apiRequest);
         return mapper.toResult(apiResponse);

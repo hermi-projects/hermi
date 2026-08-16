@@ -27,8 +27,8 @@ public final class MaskMapper {
     try {
       return MAPPER.valueToTree(obj);
     } catch (Exception e) {
-      LOG.error("Mask serialization failed, falling back to toString()", e);
-      return MAPPER.valueToTree(obj.toString());
+      LOG.error("Mask serialization failed.", e);
+      return MAPPER.valueToTree(obj.getClass());
     }
   }
 }

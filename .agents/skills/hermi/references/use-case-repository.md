@@ -68,7 +68,7 @@ public class JpaSaveUserRepository extends SaveUserRepository {
     // 构造函数注入...
 
     @Override
-    protected Result doExecute(Context context) {
+    protected Result doFulfill(Context context) {
         UserEntity entity = mapper.toPayload(context);
         UserEntity savedEntity = jpaRepository.save(entity);
         return mapper.toResult(savedEntity);

@@ -21,13 +21,13 @@ import org.hermi.commons.validation.JakartaValidator;
  *       <li>1. STATELESSNESS: Implementations MUST be strictly stateless. No request-specific
  *           instance variables. Only final, immutable dependencies (via constructor injection) are
  *           allowed.
- *       <li>2. NO BUSINESS LOGIC: The {@code doExecute} method MUST only convert the event to a Use
+ *       <li>2. NO BUSINESS LOGIC: The {@code doConsume} method MUST only convert the event to a Use
  *           Case context and delegate. All business rules, orchestration, and conditional logic
  *           live in the Use Case.
- *       <li>3. ONLY override {@code doExecute}. The {@code consume(E)} method is the framework
- *           entry point — annotate it with the broker-specific listener (e.g.
- *           {@code @KafkaListener}) and call {@link Executor#execute(Object)} to trigger the
- *           lifecycle. Never override {@code consume} with business logic.
+ *       <li>3. ONLY override {@code doConsume}. Add a broker-annotated entry method named after the
+ *           event it handles (e.g. {@code onUserFound}) carrying the listener annotation (e.g.
+ *           {@code @KafkaListener}) and call {@code consume(event)} inside it to trigger the
+ *           lifecycle. {@code consume(E)} is final — it cannot be overridden.
  *       <li>4. NAMING PROPHECY: Follow the {@code {Action}{Resource}Consumer} pattern (e.g. {@code
  *           FindUserConsumer}).
  *     </ul>
@@ -35,22 +35,24 @@ import org.hermi.commons.validation.JakartaValidator;
  * @implNote FORBIDDEN PATTERNS:
  *     <ul>
  *       <li>NEVER add business logic, orchestration, or conditional branching inside {@code
- *           doExecute} — delegate to a Use Case or Service.
+ *           doConsume} — delegate to a Use Case or Service.
  *       <li>DO NOT add try-catch blocks — the {@link Executor} lifecycle handles exception auditing
  *           and propagation.
  *       <li>DO NOT add data mapping or transformation logic — that belongs to a {@code Mapper}.
- *       <li>DO NOT call {@code doExecute} directly — always go through {@link #consume(Object)} or
- *           {@link Executor#execute(Object)}.
+ *       <li>DO NOT call {@code doConsume} directly — always go through {@link #consume(Object)}.
+ *       <li>DO NOT put business logic in the broker-annotated entry method — call {@code
+ *           consume(event)} and nothing else.
  *     </ul>
  *     <p><b>AI INSTRUCTION:</b> SCOPE: Protocol bridge only. Convert event → context, delegate,
- *     return. No business logic. LIFECYCLE: {@code consume(E)} is called by the broker. Call {@code
- *     execute(event)} inside it to trigger audit → validate → doExecute → validate → audit.
+ *     return. No business logic. LIFECYCLE: the broker calls your annotated entry method (e.g.
+ *     {@code onUserFound}). Call {@code consume(event)} inside it to trigger audit → validate →
+ *     doConsume → validate → audit.
  *     <p>DO NOT add: - try-catch (exception boundary is in Executor.execute()) - log statements
  *     (handled by Auditor) - data mapping (belongs to Mapper) - null checks on context (handled by
  *     Validatable validation)
  *     <p><b>Example AI Generation:</b>
  *     <pre>{@code
- * // CORRECT: implements consume as broker entry point, doExecute as protocol bridge
+ * // CORRECT: broker-annotated entry method delegating to consume, doConsume as protocol bridge
  * &#64;Component
  * public class FindUserConsumer extends Consumer<Event, String> {
  *   private final FindUserService findUserService;
@@ -61,12 +63,12 @@ import org.hermi.commons.validation.JakartaValidator;
  *   }
  *
  *   &#64;KafkaListener(topics = "user.find.requests", groupId = "user-service-group")
- *   public void consume(Event event) {
- *     execute(event);
+ *   public void onUserFound(Event event) {
+ *     consume(event);
  *   }
  *
  *   &#64;Override
- *   protected String doExecute(Event event) {
+ *   protected String doConsume(Event event) {
  *     FindUserUseCase.Context context = new FindUserUseCase.Context(event.ssn);
  *     FindUserUseCase.Result result = findUserService.findUser(context);
  *     return result.id;
@@ -74,7 +76,7 @@ import org.hermi.commons.validation.JakartaValidator;
  * }
  *
  * // WRONG: FindUserConsumerImpl, FindUserConsumerService — do NOT use these names
- * // WRONG: do NOT add business logic, try-catch, or logging in doExecute
+ * // WRONG: do NOT add business logic, try-catch, or logging in doConsume
  * }</pre>
  */
 
@@ -89,11 +91,12 @@ import org.hermi.commons.validation.JakartaValidator;
  *
  * <p>The event type {@code <E>} MUST implement {@link Validatable} because the event payload
  * crosses the system boundary from an untrusted external source. The framework validates the event
- * before {@code doExecute} runs, guaranteeing well-formed input.
+ * before {@code doConsume} runs, guaranteeing well-formed input.
  *
- * <p>Concrete implementations annotate {@link #consume(Object)} with the broker-specific listener
- * (e.g. {@code @KafkaListener}) and implement {@code doExecute} as a pure protocol bridge: convert
- * the event to a Use Case context, delegate to the Use Case, and return the result.
+ * <p>Concrete implementations add a broker-annotated entry method (e.g. {@code @KafkaListener} on
+ * {@code onUserFound}) that calls {@link #consume(Object)}, and implement {@code doConsume} as a
+ * pure protocol bridge: convert the event to a Use Case context, delegate to the Use Case, and
+ * return the result.
  *
  * @param <E> the inbound event type — MUST implement {@link Validatable}
  * @param <R> the result type returned after processing
@@ -106,13 +109,34 @@ public abstract class Consumer<E, R> extends Executor<E, R> {
   }
 
   /**
-   * Entry point invoked by the messaging framework when an event arrives.
+   * Seals the Executor hook: delegates to {@link #doConsume}.
    *
-   * <p>Annotate this method with the broker-specific listener (e.g. {@code @KafkaListener},
-   * {@code @JmsListener}) and call {@link Executor#execute(Object)} to route the event through the
-   * full auditing and validation lifecycle.
+   * @param event the validated inbound event
+   * @return the consumption result
+   */
+  @Override
+  protected final R doExecute(E event) {
+    return doConsume(event);
+  }
+
+  /**
+   * Protocol bridge: converts the inbound event to a Use Case context and delegates.
+   *
+   * @param event the validated inbound event
+   * @return the consumption result
+   */
+  protected abstract R doConsume(E event);
+
+  /**
+   * Routes the event through the full auditing and validation lifecycle.
+   *
+   * <p>This method is final — the wiring cannot be bypassed. Concrete consumers add a
+   * broker-annotated entry method (e.g. {@code @KafkaListener} on {@code onUserFound}) that calls
+   * {@code consume(event)}.
    *
    * @param event the inbound event received from the external message broker
    */
-  public abstract void consume(E event);
+  public final void consume(E event) {
+    execute(event);
+  }
 }

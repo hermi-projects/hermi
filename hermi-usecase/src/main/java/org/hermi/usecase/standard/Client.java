@@ -1,20 +1,21 @@
 package org.hermi.usecase.standard;
 
 import org.hermi.commons.Executor;
+import org.hermi.usecase.Intent;
 
 /**
  * <b>AI INSTRUCTION:</b> WHAT: Defines a technology-neutral contract for calling an external
  * system. Specifies input ({@code Context}) and output ({@code Result}) using plain Java types
  * only. WHY: Decouple domain intent from integration complexity. The use case expresses WHAT it
  * needs (e.g., "find user by SSN") without knowing HOW (REST vs gRPC vs GraphQL). WHO: Defined by
- * Use Case layer as an abstract contract. Called by {@code doExecute} in a use case. Implemented by
+ * Use Case layer as an abstract contract. Called by {@code doFulfill} in a use case. Implemented by
  * Shell layer with technology-specific adapters (e.g., {@code RestFindUserClient}). WHEN: Phase 1:
  * define the contract skeleton (Context/Result records only). Phase 2: implement real communication
  * logic with the chosen technology. WHERE: Use Case layer — contract definition only. The
  * implementation lives in Shell layer, prefixed with the technology name (e.g., {@code Rest},
  * {@code Grpc}, {@code Soap}). HOW: Extend with nested static {@code Context} and {@code Result}
  * records. Records use ONLY plain Java types ({@code String}, {@code UUID}, {@code BigDecimal}).
- * Name the contract {@code {Action}{Resource}Client}. Phase 1 {@code doExecute} returns {@code
+ * Name the contract {@code {Action}{Resource}Client}. Phase 1 {@code doFulfill} returns {@code
  * null}; Phase 2 adapters implement real logic.
  *
  * <p>DO NOT add: - implementation logic in Phase 1 (contract definition only) - technology-specific
@@ -45,9 +46,32 @@ import org.hermi.commons.Executor;
  * @param <C> the type of the context (use plain Java types only)
  * @param <R> the type of the result (use plain Java types only)
  */
-public abstract class Client<C, R> extends Executor<C, R> {
+public abstract class Client<C, R> extends Executor<C, R> implements Intent<C, R> {
+
   /**
-   * Executes the external system call.
+   * Fulfills the caller's intent to reach the external system.
+   *
+   * @param context the client request context
+   * @return the client response result
+   */
+  @Override
+  public final R fulfill(C context) {
+    return execute(context);
+  }
+
+  /**
+   * Seals the Executor hook: delegates to {@link #doFulfill}.
+   *
+   * @param context the validated context
+   * @return the fulfillment result
+   */
+  @Override
+  protected final R doExecute(C context) {
+    return doFulfill(context);
+  }
+
+  /**
+   * Fulfills the external system call.
    *
    * <p>Phase 1 (Use Case Layer): Define the contract by extending this class with Context/Result
    * records. Phase 2 (Shell Layer): Implement the real communication logic using specific
@@ -56,6 +80,5 @@ public abstract class Client<C, R> extends Executor<C, R> {
    * @param context the client request context
    * @return the client response result
    */
-  @Override
-  protected abstract R doExecute(C context);
+  protected abstract R doFulfill(C context);
 }

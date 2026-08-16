@@ -85,7 +85,7 @@ public class FindUserService {
 
     public FindUserUseCase.Result findUser(FindUserUseCase.Context context) {
         // 执行纯业务核心逻辑
-        return findUserUseCase.execute(context);
+        return findUserUseCase.fulfill(context);
     }
 }
 

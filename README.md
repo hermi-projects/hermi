@@ -87,7 +87,7 @@ Find a User by SSN
 Everything starts with defining the exact context (`Context`) and result (`Result`) representing the Use Case.
 
 > [!NOTE]
-> The framework's base `execute()` method automatically invokes Jakarta validation on the context before ever delegating to your `doExecute()` core logic. Your business logic is guaranteed to receive safe data.
+> The framework's base `fulfill()` method automatically invokes Jakarta validation on the context before ever delegating to your `doFulfill()` core logic. Your business logic is guaranteed to receive safe data.
 
 ```java
 import org.hermi.usecase.standard.UseCase;
@@ -107,7 +107,7 @@ public record User(String ssn, String name, String email) {}
 
 public class DefaultFindUserUseCase extends FindUserUseCase {
   @Override
-  protected Result doExecute(Context context) {
+  protected Result doFulfill(Context context) {
     // Business logic goes here
     return new Result(null, null);
   }
@@ -125,7 +125,7 @@ public class FindUserMain {
   public static void main(String[] args) throws Exception {
     var useCase = new DefaultFindUserUseCase();
     // Execute this locally to verify the logic
-    var result = useCase.execute(new FindUserUseCase.Context("123-456-789"));
+    var result = useCase.fulfill(new FindUserUseCase.Context("123-456-789"));
     System.out.println("Result: " + result);~
   }
 }
@@ -154,9 +154,9 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
   }
 
   @Override
-  protected Result doExecute(Context context) {
+  protected Result doFulfill(Context context) {
     // 1. Fetch user data via the client contract
-    var apiResult = findUserClient.execute(new FindUserClient.Context(context.ssn()));
+    var apiResult = findUserClient.fulfill(new FindUserClient.Context(context.ssn()));
     var user = new User(context.ssn(), apiResult.name(), apiResult.email());
     
     return new Result(user.name(), user.email());
@@ -189,12 +189,12 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
   }
 
   @Override
-  protected Result doExecute(Context context) {
-    var apiResult = findUserClient.execute(new FindUserClient.Context(context.ssn()));
+  protected Result doFulfill(Context context) {
+    var apiResult = findUserClient.fulfill(new FindUserClient.Context(context.ssn()));
     var user = new User(context.ssn(), apiResult.name(), apiResult.email());
     
     // 2. Save the user via the repository contract
-    saveUserRepository.execute(new SaveUserRepository.Context(user.name(), user.email()));
+    saveUserRepository.fulfill(new SaveUserRepository.Context(user.name(), user.email()));
     
     return new Result(user.name(), user.email());
   }
@@ -231,17 +231,17 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
   }
 
   @Override
-  protected Result doExecute(Context context) {
+  protected Result doFulfill(Context context) {
     // 1. Fetch user data
-    var apiResult = findUserClient.execute(new FindUserClient.Context(context.ssn()));
+    var apiResult = findUserClient.fulfill(new FindUserClient.Context(context.ssn()));
     var user = new User(context.ssn(), apiResult.name(), apiResult.email());
     
     // 2. Save user
-    saveUserRepository.execute(new SaveUserRepository.Context(user.name(), user.email()));
+    saveUserRepository.fulfill(new SaveUserRepository.Context(user.name(), user.email()));
     
     // 3. Send notification
     var notificationContext = new NotifyUserFoundMessenger.Context(user.email(), "User found: " + user.name());
-    messenger.execute(notificationContext);
+    messenger.fulfill(notificationContext);
     
     return new Result(user.name(), user.email());
   }
@@ -261,7 +261,7 @@ class InMemorySaveUserRepository extends SaveUserRepository {
   }
 
   @Override
-  protected Result doExecute(Context context) {
+  protected Result doFulfill(Context context) {
     db.put(context.email(), context.name());
     return new Result("id-001");
   }
@@ -274,7 +274,7 @@ class ConsoleNotifyUserFoundMessenger extends NotifyUserFoundMessenger {
   }
 
   @Override
-  protected Result doExecute(Context context) {
+  protected Result doFulfill(Context context) {
     System.out.println("[Notification] To: " + context.email() + ", Msg: " + context.message());
     return new Result("msg-123");
   }
@@ -288,7 +288,7 @@ class LocalFindUserClient extends FindUserClient {
     setAuditor(new FileAuditor<>(FindUserClient.class, path));
   }
   @Override
-  protected Result doExecute(Context context) {
+  protected Result doFulfill(Context context) {
     return store.get(context);
   }
 }
@@ -306,7 +306,7 @@ public class FindUserMain {
     
     var useCase = new DefaultFindUserUseCase(client, repo, messenger);
     useCase.setAuditor(new FileAuditor<>(FindUserUseCase.class, log));
-    var result = useCase.execute(new FindUserUseCase.Context("123-45-6789"));
+    var result = useCase.fulfill(new FindUserUseCase.Context("123-45-6789"));
     
     if (result == null) throw new AssertionError("Result cannot be null");
     System.out.println("✅ Happy Path Verified: " + result.name());
@@ -454,7 +454,7 @@ public class LexisNexisFindUserClient extends FindUserClient {
   }
 
   @Override
-  protected Result doExecute(Context context) {
+  protected Result doFulfill(Context context) {
     LexisNexisPayload apiRequest = mapper.toPayload(context);
     LexisNexisResponse apiResponse = client.exchange(apiRequest);
     return mapper.toResult(apiResponse);
@@ -491,7 +491,7 @@ public class JpaSaveUserRepository extends SaveUserRepository {
   }
 
   @Override
-  protected Result doExecute(Context context) {
+  protected Result doFulfill(Context context) {
     UserEntity entity = mapper.toPayload(context);
     UserEntity savedEntity = jpaRepository.save(entity);
     return mapper.toResult(savedEntity);
@@ -527,7 +527,7 @@ public class KafkaNotifyUserFoundMessenger extends NotifyUserFoundMessenger {
   }
 
   @Override
-  protected Result doExecute(Context context) {
+  protected Result doFulfill(Context context) {
     ProducerRecord<String, String> record = mapper.toPayload(context);
     RecordMetadata metadata = messenger.publish(record);
     return mapper.toResult(metadata);
@@ -553,7 +553,7 @@ public class FindUserService {
   }
 
   public FindUserUseCase.Result findUser(FindUserUseCase.Context context) {
-    return findUserUseCase.execute(context);
+    return findUserUseCase.fulfill(context);
   }
 }
 ```
@@ -602,12 +602,12 @@ public class FindUserConsumer extends Consumer<Event, String>{
   }
 
   @KafkaListener(topics = "user.find.requests", groupId = "user-service-group")
-  public void consume(Event event) {
-    execute(event);
+  public void onUserFound(Event event) {
+    consume(event);
   }
   
   @Override
-  protected String doExecute(Event event){
+  protected String doConsume(Event event){
     FindUserUseCase.Context context = new FindUserUseCase.Context(event.ssn);
     FindUserUseCase.Result result = findUserService.findUser(context);
     return result.id;
@@ -621,7 +621,7 @@ public class FindUserConsumer extends Consumer<Event, String>{
 ### The Core Logic: Functional Soul in an OOP Body
 Strictly adhering to these naming rules is not just about aesthetics; it is about preserving the **Economic and Semantic Integrity** (as defined in Section 1) of the architecture.
 
-- **Functional Soul**: Though implemented as Classes (to preserve type metadata for validation), every Client, Repository, and Messenger is a Function at heart. Every component is an **Executor** with a single `execute()` entry point.
+- **Functional Soul**: Though implemented as Classes (to preserve type metadata for validation), every Client, Repository, and Messenger is a Function at heart. Every component is an **Intent** fulfilled through a single `fulfill()` entry point — the **Executor** machinery runs the lifecycle behind it.
 - **Temporal Modeling**: We model the codebase after Time and Tense.
   - Action (Future/Present): Client, Repository, and Messenger reflect an Intention (e.g., Find, Save, Notify).
 - **Just-In-Time (JIT) Discovery**: Contracts are never designed upfront based on "what the database can do." They are discovered exactly when the business logic reveals a specific need.
@@ -661,7 +661,7 @@ Technology-specific implementations (e.g., Spring, JDBC, Kafka).
 ### 3. The Three Golden Rules
 
 #### Rule 1: The Tense Integrity
-Logic drives the tense. Every I/O component is an **Action** and MUST start with a Verb (Find, Save, Notify). Total execution is performed by a single `.execute()` method within a specific **Context**, yielding a definitive **Result**. 
+Logic drives the tense. Every I/O component is an **Action** and MUST start with a Verb (Find, Save, Notify). Total execution is performed by a single `.fulfill()` method within a specific **Context**, yielding a definitive **Result**. 
 
 #### Rule 2: Prefix Isolation
 The Core is pure; the Shell is tech-heavy. Any class containing infrastructure (JDBC, Kafka, etc.) MUST have the technology name as its very first word. No prefix means Pure Java.

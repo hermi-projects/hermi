@@ -10,32 +10,32 @@ import org.hermi.usecase.standard.UseCase;
  * that replaces if-else chains with a pluggable handler registry. WHY:
  * Strategy/Chain-of-Responsibility pattern — each Handler encapsulates its own routing condition
  * and business logic. New branches are added by registering a new Handler, not by editing
- * doExecute. WHO: Extended by concrete dispatchers (e.g., {@code DefaultPaymentDispatcher}). Calls
+ * doFulfill. WHO: Extended by concrete dispatchers (e.g., {@code DefaultPaymentDispatcher}). Calls
  * registered {@link Handler} instances in registration order — first match wins. WHEN: Handlers are
  * registered at construction time via the constructor. {@link #register(Handler)} allows dynamic
- * addition but MUST be called before {@code execute()}. Subclasses MUST NOT override {@code
- * doExecute} — the routing loop is already implemented. WHERE: Use Case layer — dispatcher
+ * addition but MUST be called before {@code fulfill()}. Subclasses MUST NOT override {@code
+ * doFulfill} — the routing loop is already implemented. WHERE: Use Case layer — dispatcher
  * sub-package. A sibling pattern to the standard {@link UseCase}, for scenarios where one context
  * maps to one of many handlers. HOW: Extend {@code DispatcherUseCase<C, R>}. Register handlers via
  * constructor. Each {@link Handler} implements {@code supports(C)} (routing condition) and {@code
- * doExecute(C)} (branch logic). Missing handler throws {@link HandlerNotFoundException}.
+ * doFulfill(C)} (branch logic). Missing handler throws {@link HandlerNotFoundException}.
  *
- * <p>DO NOT add: - override doExecute (routing logic is already implemented in the base class) -
- * try-catch around handler execution (exception boundary is in UseCase.execute()) - null checks on
+ * <p>DO NOT add: - override doFulfill (routing logic is already implemented in the base class) -
+ * try-catch around handler execution (exception boundary is in UseCase.fulfill()) - null checks on
  * handler list (constructor ensures non-null) - default/fallback handler logic (missing handler
  * MUST throw HandlerNotFoundException)
  *
  * <p><b>Example AI Generation:</b>
  *
  * <pre>{@code
- * // CORRECT: Extends DispatcherUseCase, registers handlers via constructor, does NOT override doExecute
+ * // CORRECT: Extends DispatcherUseCase, registers handlers via constructor, does NOT override doFulfill
  * public class DefaultPaymentDispatcher extends DispatcherUseCase<PaymentContext, PaymentResult> {
  *   public DefaultPaymentDispatcher(CreditCardHandler credit, ACHHandler ach) {
  *     super(credit, ach);
  *   }
  * }
  * // WRONG: PaymentDispatcherImpl, PaymentRoutingService — do NOT use these names
- * // WRONG: Do NOT override doExecute or add fallback/default routing logic
+ * // WRONG: Do NOT override doFulfill or add fallback/default routing logic
  * }</pre>
  */
 
@@ -85,10 +85,10 @@ public abstract class DispatcherUseCase<C, R> extends UseCase<C, R> {
    * @throws HandlerNotFoundException if no registered handler supports the context
    */
   @Override
-  protected R doExecute(C context) {
+  protected R doFulfill(C context) {
     for (Handler<C, R> handler : handlers) {
       if (handler.supports(context)) {
-        return handler.execute(context);
+        return handler.fulfill(context);
       }
     }
     throw new HandlerNotFoundException(

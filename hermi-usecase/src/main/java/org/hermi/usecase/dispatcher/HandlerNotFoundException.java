@@ -5,9 +5,9 @@ package org.hermi.usecase.dispatcher;
  * matches the given Context. Represents a configuration gap, not a recoverable runtime condition.
  * WHY: Fail-fast on missing routing branches — forces the developer to register the missing Handler
  * rather than silently producing incorrect results or null. WHO: Thrown by {@link
- * DispatcherUseCase#doExecute} when the handler iteration exhausts without a match. Caught or
+ * DispatcherUseCase#doFulfill} when the handler iteration exhausts without a match. Caught or
  * propagated by upstream error handling in the Shell layer. WHEN: At routing time inside {@link
- * DispatcherUseCase#doExecute}, when no handler's {@link Handler#supports(Validatable)} returns
+ * DispatcherUseCase#doFulfill}, when no handler's {@link Handler#supports(Validatable)} returns
  * {@code true}. WHERE: Use Case layer — dispatcher sub-package. Part of the conditional routing
  * error model. HOW: Throw with a descriptive message identifying the dispatcher and context. Do NOT
  * catch-and-swallow in business logic — the routing gap MUST be surfaced and fixed.

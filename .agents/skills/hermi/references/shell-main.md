@@ -52,7 +52,7 @@ public class FindUserShellMain {
 
         // 3. 构造测试 Context 并执行
         FindUserUseCase.Context context = new FindUserUseCase.Context("123-45-6789");
-        FindUserUseCase.Result result = useCase.execute(context);
+        FindUserUseCase.Result result = useCase.fulfill(context);
 
         // 4. 输出执行结果，完成闭环验证
         System.out.println("Execution Result: " + result);

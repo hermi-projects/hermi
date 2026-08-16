@@ -5,8 +5,6 @@ import java.util.UUID;
 import org.hermi.commons.audit.Auditor;
 import org.hermi.commons.audit.LogAuditor;
 import org.hermi.commons.audit.NoopAuditor;
-import org.hermi.commons.conversion.Converter;
-import org.hermi.commons.conversion.Convertible;
 import org.hermi.commons.validation.NoopValidator;
 import org.hermi.commons.validation.Validator;
 
@@ -29,10 +27,13 @@ import org.hermi.commons.validation.Validator;
  *           allowed.
  *       <li>2. NEVER subclass Executor directly. Use the semantic base classes: {@code UseCase},
  *           {@code Client}, {@code Repository}, or {@code Messenger}.
- *       <li>3. ONLY implement {@code doExecute}. The lifecycle methods ({@code execute}, {@code
- *           validateContext}, {@code validateResult}) are sealed by design.
- *       <li>4. The {@code execute(C)} method is {@code final}. Do not attempt to bypass validation
- *           or auditing.
+ *       <li>3. ONLY implement the semantic hook of your layer ({@code doFulfill} in the Use Case
+ *           layer, {@code doExchange}/{@code doPublish} in the Shell layer). {@code doExecute} is
+ *           sealed by the semantic base classes.
+ *       <li>4. The {@code execute(C)} method is {@code protected final} — callers use the public
+ *           verb of the semantic base class ({@code fulfill} in the Use Case layer, {@code
+ *           exchange}/{@code publish} in the Shell layer). Do not attempt to bypass validation or
+ *           auditing.
  *     </ul>
  *
  * @implNote FORBIDDEN PATTERNS:
@@ -55,7 +56,6 @@ import org.hermi.commons.validation.Validator;
  *   <li>Pre-execution validation of the input context.
  *   <li>Auditing of the execution lifecycle (logged via {@link LogAuditor} by default).
  *   <li>Post-execution validation of the returned result.
- *   <li>Convenience methods for conversion-based execution.
  * </ul>
  *
  * @param <C> the type of the execution context
@@ -107,10 +107,8 @@ public abstract class Executor<C, R> {
    *
    * @param context the execution context
    * @return the execution result
-   * @throws InputValidationException if the context or result is invalid
-   * @throws NullPointerException if the context or result is null
    */
-  public final R execute(C context) {
+  protected final R execute(C context) {
     UUID trackingId = auditor.recordContext(context);
     try {
       contextValidator.validate(context);
@@ -122,36 +120,5 @@ public abstract class Executor<C, R> {
       auditor.recordError(trackingId, context, e);
       throw e;
     }
-  }
-
-  /**
-   * Executes the logic by first converting the source context.
-   *
-   * @param convertibleContext the source context that can be converted to {@code C}
-   * @return the execution result
-   * @throws NullPointerException if convertibleContext is null
-   */
-  public final R execute(Convertible<C> convertibleContext) {
-    Objects.requireNonNull(
-        convertibleContext,
-        String.format("%s: convertible context cannot be null", getClass().getSimpleName()));
-    return execute(convertibleContext.convert());
-  }
-
-  /**
-   * Executes the logic by converting a source instance using the provided converter.
-   *
-   * @param <S> the type of the source instance
-   * @param source the source instance
-   * @param converter the converter to transform {@code S} to {@code C}
-   * @return the execution result
-   * @throws NullPointerException if source or converter is null
-   */
-  public final <S> R execute(S source, Converter<S, C> converter) {
-    Objects.requireNonNull(
-        source, String.format("%s: source cannot be null", getClass().getSimpleName()));
-    Objects.requireNonNull(
-        converter, String.format("%s: converter cannot be null", getClass().getSimpleName()));
-    return execute(converter.convert(source));
   }
 }

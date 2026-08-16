@@ -1,13 +1,14 @@
 package org.hermi.usecase.standard;
 
 import org.hermi.commons.Executor;
+import org.hermi.usecase.Intent;
 
 /**
  * <b>AI INSTRUCTION:</b> WHAT: Defines a technology-neutral contract for asynchronous outbound
  * notification. Specifies input ({@code Context}) and output ({@code Result}) using plain Java
  * types only. WHY: Decouple domain logic from messaging protocols. The use case announces facts
  * (e.g., "user was found") without knowing whether the transport is Kafka, RabbitMQ, or Email. WHO:
- * Defined by Use Case layer as an abstract contract. Called by {@code doExecute} in a use case.
+ * Defined by Use Case layer as an abstract contract. Called by {@code doFulfill} in a use case.
  * Implemented by Shell layer with technology-specific adapters (e.g., {@code
  * KafkaNotifyUserFoundMessenger}). WHEN: Phase 1: define the contract skeleton (Context/Result
  * records only). Phase 2: implement real messaging logic with the chosen broker or protocol. WHERE:
@@ -15,7 +16,7 @@ import org.hermi.commons.Executor;
  * the technology name (e.g., {@code Kafka}, {@code Rabbit}, {@code Email}). HOW: Extend with nested
  * static {@code Context} and {@code Result} records. Records use ONLY plain Java types ({@code
  * String}, {@code UUID}, {@code BigDecimal}). Name the contract {@code Notify{Fact}Messenger}.
- * Phase 1 {@code doExecute} returns {@code null}; Phase 2 adapters implement real logic.
+ * Phase 1 {@code doFulfill} returns {@code null}; Phase 2 adapters implement real logic.
  *
  * <p>DO NOT add: - broker-specific types ({@code ProducerRecord}, {@code Message}) in
  * Context/Result records - implementation logic in Phase 1 (contract definition only) - try-catch,
@@ -45,9 +46,31 @@ import org.hermi.commons.Executor;
  * @param <C> the type of the context (use plain Java types only)
  * @param <R> the type of the result (use plain Java types only)
  */
-public abstract class Messenger<C, R> extends Executor<C, R> {
+public abstract class Messenger<C, R> extends Executor<C, R> implements Intent<C, R> {
   /**
-   * Sends the message to an external system.
+   * Fulfills the caller's intent to notify an external system.
+   *
+   * @param context the message request context
+   * @return the message response result
+   */
+  @Override
+  public final R fulfill(C context) {
+    return execute(context);
+  }
+
+  /**
+   * Seals the Executor hook: delegates to {@link #doFulfill}.
+   *
+   * @param context the validated context
+   * @return the fulfillment result
+   */
+  @Override
+  protected final R doExecute(C context) {
+    return doFulfill(context);
+  }
+
+  /**
+   * Fulfills the outbound notification.
    *
    * <p>Phase 1 (Use Case Layer): Define the contract by extending this class with Context/Result
    * records. Phase 2 (Shell Layer): Implement the real messaging logic using specific technologies
@@ -56,6 +79,5 @@ public abstract class Messenger<C, R> extends Executor<C, R> {
    * @param context the message request context
    * @return the message response result
    */
-  @Override
-  protected abstract R doExecute(C context);
+  protected abstract R doFulfill(C context);
 }

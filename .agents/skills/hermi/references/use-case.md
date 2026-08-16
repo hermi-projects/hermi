@@ -58,10 +58,10 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
     }
 
     @Override
-    protected Result doExecute(Context context) {
+    protected Result doFulfill(Context context) {
         // 核心业务编排
-        var apiResult = findUserClient.execute(new FindUserClient.Context(context.ssn()));
-        saveUserRepository.execute(new SaveUserRepository.Context(apiResult.name(), apiResult.email()));
+        var apiResult = findUserClient.fulfill(new FindUserClient.Context(context.ssn()));
+        saveUserRepository.fulfill(new SaveUserRepository.Context(apiResult.name(), apiResult.email()));
         
         return new Result(apiResult.name(), apiResult.email());
     }

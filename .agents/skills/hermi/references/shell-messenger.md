@@ -81,7 +81,7 @@ public class KafkaNotifyUserFoundMessenger extends NotifyUserFoundMessenger {
     }
 
     @Override
-    protected Result doExecute(Context context) {
+    protected Result doFulfill(Context context) {
         // 1. 通过 Mapper 将业务上下文转换为底层消息记录（如 ProducerRecord）
         ProducerRecord<String, String> record = mapper.toPayload(context);
         
