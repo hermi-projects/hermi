@@ -73,7 +73,7 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
     // flowing downwards—mapping only the high-level milestones.
     // =================================================================
     @Override
-    protected Result doExecute(Context context) {
+    protected Result doFulfill(Context context) {
         
         User user = fetchDomainUser(context.ssn());
         
@@ -92,16 +92,16 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
     // =================================================================
     
     protected User fetchDomainUser(String ssn) {
-        var apiResult = findUserClient.execute(new FindUserClient.Context(ssn));
+        var apiResult = findUserClient.fulfill(new FindUserClient.Context(ssn));
         return new User(ssn, apiResult.name(), apiResult.email());
     }
 
     protected void persistUserToSystem(User user) {
-        saveUserRepository.execute(new SaveUserRepository.Context(user.name(), user.email()));
+        saveUserRepository.fulfill(new SaveUserRepository.Context(user.name(), user.email()));
     }
 
     protected void notifyUserHasBeenFound(User user) {
-        messenger.execute(new NotifyUserFoundMessenger.Context(
+        messenger.fulfill(new NotifyUserFoundMessenger.Context(
             user.email(), 
             "User registered successfully: " + user.name()
         ));
@@ -116,7 +116,7 @@ public class DefaultFindUserUseCase extends FindUserUseCase {
 
 ### 1. The 10-Second Architecture Review
 
-When a Tech Lead or Senior Architect opens this file to perform a Code Review, they only need to read **Section 3 (`doExecute`)**. Within 10 seconds, they can verify if the business logic is correct without being distracted by JSON mapping, database transactions, or API payloads. If the business story makes sense, the architecture passes.
+When a Tech Lead or Senior Architect opens this file to perform a Code Review, they only need to read **Section 3 (`doFulfill`)**. Within 10 seconds, they can verify if the business logic is correct without being distracted by JSON mapping, database transactions, or API payloads. If the business story makes sense, the architecture passes.
 
 ### 2. Zero "Technical Flashbacks"
 
@@ -151,29 +151,3 @@ Resilience mechanics like retries or error handling are handled entirely inside 
 Next time you are writing a Java class, apply the **Fold Test**: Press `Ctrl + Shift + -` in your IDE to collapse all methods to their signatures.
 
 Look at what remains visible. If your top-level public or protected methods still tell a cohesive, unbroken story about your business domain, you’ve written a great piece of journalism. If it reads like a machine manual, it's time to push those details down to the back page.
-
-
-
-In journalism, articles follow the **Inverted Pyramid** structure: the most critical information is delivered immediately at the top, while supporting context and fine details sit comfortably at the bottom.
-
-When we apply this narrative flow to file design, it breaks down into four clean, vertical sections:
-
-```text
-┌──────────────────────────────────────────────────────────┐
-│  Section 1: The Headline     │ High-Level Intent         │
-├──────────────────────────────┼───────────────────────────┤
-│  Section 2: The Background   │ Core Context & Relations  │
-├──────────────────────────────┼───────────────────────────┤
-│  Section 3: The Lead Story   │ Executive Summary         │
-├──────────────────────────────┼───────────────────────────┤
-│  Section 4: Secondary Body   │ Narrative Milestone Steps │
-└──────────────────────────────────────────────────────────┘
-
-```
-
-### Breaking Down the 4 Sections
-
-* **Section 1: The Headline:** Just like a front-page headline, this title must be bold and definitive. It announces the single, sovereign purpose of the entire file in less than a second.
-* **Section 2: The Background:** This section introduces the key characters, essential partnerships, or structural settings required to make the upcoming story possible. It sets the baseline context before the narrative begins.
-* **Section 3: The Lead Story (Executive Summary):** The absolute peak of the pyramid. This is a highly scannable, top-level summary of the entire scenario. It explains *what* the system accomplishes, written like a sequence of plain-language milestones completely free of technical noise.
-* **Section 4: Secondary Body:** The lower-level milestone developments. This sits further down because it focuses entirely on *how* those high-level milestones actually happen—handling individual mechanics, parameter preparation, and routing downstream assignments.
