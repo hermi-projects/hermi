@@ -45,29 +45,29 @@ import org.hermi.commons.validation.JakartaValidator;
  *     </ul>
  *     <p><b>AI INSTRUCTION:</b> SCOPE: Protocol bridge only. Convert event → context, delegate,
  *     return. No business logic. LIFECYCLE: the broker calls your annotated entry method (e.g.
- *     {@code onUserFound}). Call {@code consume(event)} inside it to trigger audit → validate →
- *     doConsume → validate → audit.
+ *     {@code onUserFound}). Call {@code consume(event)} inside it to trigger audit → validate
+ *     (event) → doConsume → audit.
  *     <p>DO NOT add: - try-catch (exception boundary is in Executor.execute()) - log statements
  *     (handled by Auditor) - data mapping (belongs to Mapper) - null checks on context (handled by
- *     Validatable validation)
+ *     validation)
  *     <p><b>Example AI Generation:</b>
  *     <pre>{@code
  * // CORRECT: broker-annotated entry method delegating to consume, doConsume as protocol bridge
- * &#64;Component
+ * @Component
  * public class FindUserConsumer extends Consumer<Event, String> {
  *   private final FindUserService findUserService;
  *
- *   &#64;Autowired
+ *   @Autowired
  *   public FindUserConsumer(FindUserService findUserService) {
  *     this.findUserService = findUserService;
  *   }
  *
- *   &#64;KafkaListener(topics = "user.find.requests", groupId = "user-service-group")
+ *   @KafkaListener(topics = "user.find.requests", groupId = "user-service-group")
  *   public void onUserFound(Event event) {
  *     consume(event);
  *   }
  *
- *   &#64;Override
+ *   @Override
  *   protected String doConsume(Event event) {
  *     FindUserUseCase.Context context = new FindUserUseCase.Context(event.ssn);
  *     FindUserUseCase.Result result = findUserService.findUser(context);
@@ -89,23 +89,22 @@ import org.hermi.commons.validation.JakartaValidator;
  * them into the Use Case core through the full {@link Executor} lifecycle. It is the inbound
  * counterpart to {@link Messenger} — Messenger publishes outbound, Consumer receives inbound.
  *
- * <p>The event type {@code <E>} MUST implement {@link Validatable} because the event payload
- * crosses the system boundary from an untrusted external source. The framework validates the event
- * before {@code doConsume} runs, guaranteeing well-formed input.
+ * <p>The inbound event type {@code <E>} is automatically validated using {@link JakartaValidator}
+ * before {@code doConsume} is invoked, ensuring that untrusted external payloads are well-formed.
  *
  * <p>Concrete implementations add a broker-annotated entry method (e.g. {@code @KafkaListener} on
  * {@code onUserFound}) that calls {@link #consume(Object)}, and implement {@code doConsume} as a
  * pure protocol bridge: convert the event to a Use Case context, delegate to the Use Case, and
  * return the result.
  *
- * @param <E> the inbound event type — MUST implement {@link Validatable}
+ * @param <E> the inbound event type (validated via JSR-380 annotations)
  * @param <R> the result type returned after processing
  */
 public abstract class Consumer<E, R> extends Executor<E, R> {
 
   protected Consumer(Auditor<E, R> auditor) {
     setAuditor(auditor);
-    setResultValidator(new JakartaValidator());
+    setContextValidator(new JakartaValidator());
   }
 
   /**
