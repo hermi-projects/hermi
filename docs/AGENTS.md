@@ -1,65 +1,67 @@
-# AGENTS.md — 项目文档治理标准
+# AGENTS.md — The documentation standard
 
-本文档定义了代码库中人类可读文档及 AI 代理上下文文档的结构、Markdown 层级与写作规范。所有开发者（人类与 AI Agent）编写或重构文档时均必须严格遵守本标准。
+This document defines the structure, Markdown tiers, and writing rules for human-facing documentation and AI agent context in this repository. All contributors (humans and AI agents) must strictly adhere to this standard when writing or refactoring documentation.
 
-## 一、 文档结构与层级原则
+---
 
-每个事实只能有一个“家”（**One home per fact**）：该事实属于哪一层级，就只写在该层级；其他地方如果需要引用，**只允许使用指向其绝对单点事实源的相对链接**。
+## I. Document Structure and Tier Principles
 
-### 文档分类表 (Tier Taxonomy)
+Each fact has **one home** (One home per fact): the tier whose job it is; elsewhere, link directly to its single source of truth using a relative path.
 
-| 层级 (Tier) | 职责 (Job) | 禁止包含的内容 (Does NOT belong there) |
+### Tier Taxonomy
+
+| Tier | Job | Does NOT belong there |
 | --- | --- | --- |
-| **根 `AGENTS.md**` | **常备指令**：AI Agent 与开发者在每次会话中都需要载入的顶级控制规则（每条 1 至 3 行），只放原则并链接至具体归属地。 | 具体的背景故事、演练示例、特定流程代码。 |
-| **子目录 `AGENTS.md**` | 针对特定子模块或包的专项常备指令。 | 根目录文件已经包含的全局通用规则。 |
-| **`architecture.md`** | **系统架构地图**：领域模型分层、核心模块关系、组件交互、扩展点。在修改业务代码前必读。 | 具体的数据传输对象/接口定义（→ 移至子系统页）、决策历史（→ 移至决策记录）。 |
-| **`subsystems/`** | **子系统参考手册**：各核心模块/微服务的一页式参考（定义接口契约、核心 API、领域事件与语义）。 | 叙事性的控制流程步骤描述（→ 移至架构地图）。 |
-| **决策记录 (`notes/`)** | **活动决策记录 (Decision Records)**：记录“为什么这样设计”、“放弃了什么方案”以及“验证条件”。 | 已经过时的迁移计划、长篇代码走查历史。 |
-| **`cookbook/`** | **实操指南**：带有明确编号验证步骤的 Step-by-Step 操作指南（如“如何添加一个新接口”）。 | 底层架构的设计依据（→ 移至决策记录）。 |
-| **模块 `README.md**` | 模块级别的对外契约：配置项说明、核心能力、边界与限制。 | 代码注释的重复陈述、其他无关模块的关注点。 |
+| **Root `AGENTS.md**` | **Standing Orders**: Core rules an AI agent and developer need in context in every session (1 to 3 lines each), linking to their true homes. | Background stories, worked examples, situational procedures. |
+| **Subtree `AGENTS.md**` | Sub-package or module-specific standing orders. | Repo-wide rules already carried by the root file. |
+| **`architecture.md`** | **System Architecture Map**: Domain model layering, core module relations, component interactions, and extension points. Read before changing business code. | Detailed DTO/interface definitions (→ subsystems), decision history (→ decision records). |
+| **`subsystems/`** | **Subsystem Reference Manuals**: Single-page references for core modules/microservices (defining API contracts, core interfaces, domain events, and semantics). | Narrative control-flow step-by-step descriptions (→ architecture map). |
+| **Decision Records (`notes/`)** | **Active Decision Records**: The "why", what was given up, and required verification conditions. | Outdated migration plans, lengthy code walkthrough histories. |
+| **`cookbook/`** | **Practical Guides**: Step-by-step how-tos with clear, numbered verification steps (e.g., "How to add a new endpoint"). | Underlying architecture design rationale (→ decision records). |
+| **Module `README.md**` | Package-level external contract: configuration item descriptions, core capabilities, boundaries, and limits. | Code comment duplication, other modules' concerns. |
 
 ---
 
-## 二、 核心写作规则
+## II. Core Writing Rules
 
-### 1. 记录当前状态，绝不记录变更历史
+### 1. Document Current State, Never Change History
 
-* 严禁在持久化文档和代码注释中使用 `"previously"`（以前）、`"now"`（现在）、`"no longer"`（不再）、`"was renamed"`（被重命名）等时间线词汇，或直接引用 PR 编号和 Git Commit。
-* **只记录当下（Current State）**：直接描述系统当前的真实机制。变更历史归 Git 提交日志和专门的决策记录管。
+* Strictly avoid words like `"previously"`, `"now"`, `"no longer"`, `"was renamed"`, PR numbers, or Git commit references in durable prose and code comments.
+* **Describe only the present reality.** Change history belongs in Git commit logs and dedicated decision records.
 
-### 2. 教程与参考手册严格分离
+### 2. Strict Separation of Tutorials and References
 
-* **教程 (Tutorial)**：必须按照“先易后难、先置条件后依赖概念”的顺序引导读者达成具体目标，不引入当前步骤无关的高级概念。
-* **参考手册 (Reference)**：定义精准的查找范围和现状行为，绝不包含教学性质的导览步骤。
+* **Tutorials**: Must guide readers to a specific outcome in a strict step-by-step order (easy to advanced, prerequisites before dependent concepts), introducing only what each step needs.
+* **References**: Define lookup scope and current behavior without any teaching sequence or narration.
 
-### 3. 一段一行 (One physical line per paragraph)
+### 3. One Physical Line Per Paragraph
 
-* 正文段落统一使用编辑器的软换行（Soft-wrap）。代码块、表格、列表等保持标准 Markdown 格式。
+* Use editor soft-wrap for prose paragraphs. Code blocks, tables, and list structures retain their standard Markdown formatting.
 
-### 4. 消除 AI “废话”与推理过程 (Anti-Slop)
+### 4. Eliminate AI Slop and Reasoning Transcripts
 
-* **不要复述代码**：禁止在注释或文档中写代码本身就一目了然的事实。
-* **删掉推导路径**：删除“首先我们考虑了……其次我们调用了……”这种流水账式的思考记录，只保留最终确定的契约、失败条件、并发约束与业务后果。
-* **拒绝模糊隐喻**：直接使用真实的 Java 类名、接口名、Bean 名、数据库表名或 API 路径（例如写 `UserController` 或 `user_id`），禁止使用“抽象网关”、“表面”、“数据通道”等模糊比喻。
+* **No code restatement**: Do not comment on facts obvious from the code itself.
+* **Delete reasoning paths**: Remove step-by-step narration like "first we considered... then we called...", keeping only the final contract, failure conditions, concurrency constraints, and business consequences.
+* **No fuzzy metaphors**: Use precise, concrete names (e.g., specific Java class names, interface names, Bean names, database table names, or API paths like `UserController` or `user_id`), avoiding metaphors like "abstract gateway", "surface", or "data channel".
 
-### 5. 代码示例必须合法且可运行
+### 5. Code Snippets Must Compile and Run
 
-* 文档中嵌入的 Java 代码块（如用 ````java` 包裹的接口定义或配置示例）必须符合语法规范，禁止在文档中手写无法编译的假代码，防止文档与实际代码漂移。
-
----
-
-## 三、 反平庸/反废话检查清单 (The Slop Checklist)
-
-在审阅或修改任何文档时，必须审计并消灭以下顽疾：
-
-1. **信息重复**：同一条业务规则或配置说明出现在多个文件里。搜索关键词，只留一份，其他地方全部替换为相对链接。
-2. **叙事历史**：如 "previously", "now", "used to", "renamed", "was moved" 等叙述历史的字眼。
-3. **腐烂的状态标记**：在文档或注释里标注 "implemented!（已实现）" 或 "future: ...（未来计划）"。系统的真实状态以代码库现状为准。
-4. **段落墙**：一个大段落里夹杂了多条不相干的规则和括号补丁。必须拆分为清晰的列表。
-5. **强调膨胀**：到处使用 **加粗**、全大写字母或 "critically（极其重要）" 等修饰词。只将强调留给真正会改变代码运行行为的条款。
+* Embedded Java code snippets (e.g., enclosed in ````java`) must conform to syntax rules. Hand-written pseudo-code that cannot compile is strictly prohibited to prevent drift from actual code.
 
 ---
 
-## 四、 交叉引用规范
+## III. The Slop Checklist
 
-所有仓库内部的文档互相引用，**必须使用相对 Markdown 路径**（如 `[用户服务参考](../subsystems/user-service.md)`），绝对不允许使用裸文件名或绝对路径，确保所有链接均可自动化校验且无死链。
+Audit and eradicate the following anti-patterns in any document:
+
+1. **Information Duplication**: The same rule or configuration note appearing in multiple places. Grep a distinctive phrase, keep one home, and replace the rest with relative links.
+2. **Narrative History**: Words like `"previously"`, `"now"`, `"used to"`, `"renamed"`, or `"was moved"`.
+3. **Rotting Status Annotations**: Implementation status tags in prose or diagrams like `"implemented!"` or `"future: ..."`. The repository code is the sole source of truth for status.
+4. **Paragraph Walls**: A single paragraph carrying multiple rules and parenthetical asides. Split them up or demote details to their proper home.
+5. **Emphasis Inflation**: Widespread bolding, ALL CAPS, or words like `"critically"` everywhere. Reserve emphasis strictly for clauses that alter runtime behavior.
+
+---
+
+## IV. Cross-Reference Standard
+
+All internal repository links **must use relative Markdown paths** (e.g., `[User Service Reference](../subsystems/user-service.md)`). Bare filenames or absolute paths are strictly prohibited to ensure link integrity.
