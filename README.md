@@ -586,7 +586,7 @@ public class Event {
 ```
 ```java
 @Component
-public class FindUserConsumerAuditor extends PersistentAuditor<Event, String>{
+public class FindUserConsumerAuditor extends Auditor<Event, String>{
   //Save the record of other party to DB before convert them to use case context.
 }
 ```
@@ -708,7 +708,7 @@ hermi-user (Parent)
 │   │   └── NotifyUserFoundMessenger.java             (I/O Contract)
 │   ├── src/test/java/org/hermi/user/find/usecase
 │   │   ├── UserUnitTest.java                         (User Test)
-│   │   ├── FindUserUseCaseComponentTest.java          (Use Case Component Test)
+│   │   ├── FindUserUseCaseComponentTest.java         (Use Case Component Test)
 │   │   └── FindUserUseCaseUnitTest.java              (Use Case Unit Test)
 │   └── src/test/java/org/hermi/user/find/shell
 │       ├── FindUserMain.java                         (Main Shell Runner)
@@ -736,6 +736,52 @@ hermi-user (Parent)
             ├── KafkaUserMapper.java                  (Vendor Mapper)
             └── KafkaUserMessenger.java               (Vendor Messenger)
 ```
+```text
+hermi-user (Single Module Project)
+├── pom.xml                                           (Single Project POM)
+│
+├── src/main/java
+│   └── org/hermi/user/find
+│       ├── usecase                                   (Phase 1 Layer: Pure Java Core & Contracts)
+│       │   ├── FindUserUseCase.java                  (Use Case Contract)
+│       │   ├── DefaultFindUserUseCase.java           (Use Case Implementation)
+│       │   ├── User.java                             (Scoped Domain Model)
+│       │   ├── FindUserClient.java                   (I/O Contract)
+│       │   ├── SaveUserRepository.java               (I/O Contract)
+│       │   └── NotifyUserFoundMessenger.java         (I/O Contract)
+│       │
+│       └── shell                                     (Phase 2 Layer: Framework & Infrastructure Adapters)
+│           ├── FindUserController.java               (Spring RestController)
+│           ├── FindUserConsumer.java                 (Spring KafkaConsumer)
+│           ├── FindUserService.java                  (Spring Transactional Service)
+│           ├── client/ln
+│           │   ├── LexisNexisFindUserClient.java     (Production Adapter Implementation)
+│           │   ├── LexisNexisUserMapper.java         (Vendor Mapper)
+│           │   ├── LexisNexisUserAuditor.java        (Vendor Auditor)
+│           │   └── LexisNexisUserClient.java         (Vendor HTTP Client)
+│           ├── repository
+│           │   ├── JpaSaveUserRepository.java        (Production Adapter Implementation)
+│           │   ├── JpaUserMapper.java                (Vendor Mapper)
+│           │   └── JpaUserRepository.java            (Spring Data JPA Repository)
+│           └── messenger
+│               ├── KafkaNotifyUserFoundMessenger.java (Production Adapter Implementation)
+│               ├── KafkaUserMapper.java              (Vendor Mapper)
+│               └── KafkaUserMessenger.java           (Spring Kafka Client)
+│
+└── src/test/java
+    └── org/hermi/user/find
+        ├── usecase                                   (Phase 1 Unit & Component Tests)
+        │   ├── UserUnitTest.java                     (User Test)
+        │   ├── FindUserUseCaseComponentTest.java     (Use Case Component Test)
+        │   └── FindUserUseCaseUnitTest.java          (Use Case Unit Test)
+        │
+        └── shell                                     (Phase 1 Local Test Harness & Adapters)
+            ├── FindUserMain.java                     (Main Shell Runner)
+            ├── LocalFindUserClient.java              (Local In-Memory Adapter)
+            ├── InMemorySaveUserRepository.java       (Local Map Adapter)
+            └── ConsoleNotifyUserFoundMessenger.java  (Console Output Adapter)
+```
+
 Class Diagram
 ```mermaid
 graph TD
@@ -783,7 +829,7 @@ graph TD
     U_Messenger -->|production implementation| A_ProdMessenger[KafkaNotifyUserFoundMessenger]
     A_ProdMessenger -->|uses| A_VendorMessenger[KafkaUserMessenger]
     A_ProdMessenger -->|uses| A_MessengerMapper[KafkaUserMapper]
-    A_VendorMessenger -->|uses| A_MessengerAuditor[NoopPersistentAuditor]
+    A_VendorMessenger -->|uses| A_MessengerAuditor[NoopAuditor]
 
     %% Styling
     classDef s_local fill:#FFFFFF,color:#000000,stroke:#000000,stroke-width:1px
