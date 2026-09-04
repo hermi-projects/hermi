@@ -13,8 +13,8 @@ import org.hermi.commons.validation.Validator;
  *
  * @apiNote
  *     <p>ROLE: Lifecycle Orchestration Engine — the execution spine of the Hermi framework.
- *     <p>DESIGN INTENT: Enforce a non-negotiable lifecycle (audit → validate → execute → validate →
- *     audit) around every unit of work, so that subclass authors only provide business logic via
+ *     <p>DESIGN INTENT: Enforce a non-negotiable lifecycle (audit → validate → execute → audit →
+ *     validate) around every unit of work, so that subclass authors only provide business logic via
  *     {@code doExecute}.
  *     <p>PURPOSE: Guarantee observability and data integrity as framework invariants, not opt-in
  *     concerns.
@@ -54,7 +54,8 @@ import org.hermi.commons.validation.Validator;
  *
  * <ul>
  *   <li>Pre-execution validation of the input context.
- *   <li>Auditing of the execution lifecycle (logged via {@link LogAuditor} by default).
+ *   <li>Auditing of the execution lifecycle (no-op by default; attach {@link LogAuditor} or {@link
+ *       FileAuditor} as needed).
  *   <li>Post-execution validation of the returned result.
  * </ul>
  *
@@ -72,7 +73,7 @@ public abstract class Executor<C, R> {
    *
    * <p>Call this during initialization to replace the default {@link NoopAuditor} with a custom
    * implementation (e.g. {@link org.hermi.commons.audit.LogAuditor} or {@link
-   * org.hermi.commons.audit.PersistentAuditor}).
+   * org.hermi.commons.audit.FileAuditor}).
    *
    * @param auditor the auditor to use (must not be null)
    * @throws NullPointerException if auditor is null
@@ -102,8 +103,10 @@ public abstract class Executor<C, R> {
   /**
    * Executes the logic with the given context.
    *
-   * <p>The lifecycle is: audit start → validate context → {@link #doExecute} → validate result →
-   * audit success. Any exception is audited before being propagated.
+   * <p>The lifecycle is: audit start → validate context → {@link #doExecute} → audit result →
+   * validate result. The result is audited before validation so that a result-validation failure
+   * still leaves an audit record of the computed result for diagnosis; any exception (including a
+   * result-validation failure) is then audited as a failure before being propagated.
    *
    * @param context the execution context
    * @return the execution result

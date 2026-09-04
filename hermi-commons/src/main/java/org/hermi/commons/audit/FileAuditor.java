@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -26,9 +27,9 @@ import org.hermi.constraint.mask.MaskMapper;
  * silently dropped. One JSON event per line:
  *
  * <pre>{@code
- * {"event":"STARTED","executionId":"...","executor":"org.hermi.example.FindUserMain","context":{"ssn":"***-**-6789"}}
- * {"event":"SUCCEEDED","executionId":"...","executor":"org.hermi.example.FindUserMain","result":{"name":"Alice"}}
- * {"event":"FAILED","executionId":"...","executor":"org.hermi.example.FindUserMain","exceptionClass":"...","exceptionMessage":"...","stackTrace":"..."}
+ * {"timestamp":"2026-09-03T23:30:00Z","event":"STARTED","executionId":"...","executor":"org.hermi.example.FindUserMain","context":{"ssn":"***-**-6789"}}
+ * {"timestamp":"2026-09-03T23:30:00Z","event":"SUCCEEDED","executionId":"...","executor":"org.hermi.example.FindUserMain","result":{"name":"Alice"}}
+ * {"timestamp":"2026-09-03T23:30:00Z","event":"FAILED","executionId":"...","executor":"org.hermi.example.FindUserMain","exceptionClass":"...","exceptionMessage":"...","stackTrace":"..."}
  * }</pre>
  *
  * <p>The {@code executor} field is the fully-qualified class name, so equally named classes in
@@ -59,6 +60,7 @@ public class FileAuditor<C, R> extends Auditor<C, R> {
   protected UUID doRecordContext(C context) {
     UUID uuid = UUID.randomUUID();
     Map<String, Object> event = new LinkedHashMap<>();
+    event.put("timestamp", Instant.now().toString());
     event.put("event", "STARTED");
     event.put("executionId", uuid);
     event.put("executor", executor);
@@ -70,6 +72,7 @@ public class FileAuditor<C, R> extends Auditor<C, R> {
   @Override
   protected void doRecordResult(UUID trackingId, R result) {
     Map<String, Object> event = new LinkedHashMap<>();
+    event.put("timestamp", Instant.now().toString());
     event.put("event", "SUCCEEDED");
     event.put("executionId", trackingId);
     event.put("executor", executor);
@@ -80,6 +83,7 @@ public class FileAuditor<C, R> extends Auditor<C, R> {
   @Override
   protected void doRecordError(UUID trackingId, C context, Exception exception) {
     Map<String, Object> event = new LinkedHashMap<>();
+    event.put("timestamp", Instant.now().toString());
     event.put("event", "FAILED");
     event.put("executionId", trackingId);
     event.put("executor", executor);
