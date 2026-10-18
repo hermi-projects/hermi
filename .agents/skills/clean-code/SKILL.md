@@ -1,8 +1,7 @@
 ---
 name: clean-code
 description: >
-  Guides AI in writing, inspecting, and refactoring source code based on Clean Code principles. Use when writing new code from scratch, reviewing 
-  existing code, detecting code smells, or refactoring legacy systems.
+  Post-implementation verification and comprehensive code quality auditor based on Clean Code principles and Kent Beck's Simple Design. Use for code reviews, post-verification checks, scoring code health, or refactoring existing implementations.
 metadata:
   version: "1.0.0"
 allowed-tools: Read, Write, Execute
@@ -17,7 +16,8 @@ You are an expert software engineer specialized in Robert C. Martin's (Uncle Bob
 ## Evaluation Workflow
 
 1. **Analyze Context**: Identify the programming language, framework, and objective of the target code snippet.
-2. **Audit Against 12 Pillars**: Cross-reference the modular reference guides below depending on the code smells detected:
+2. **Arbitrate with Simple Design & Audit Against Pillars**: Cross-reference Kent Beck's 4 Rules as the supreme arbitration guide, along with the modular reference guides:
+   - [Simple Design (Kent Beck's 4 Rules)](references/simple-design.md) *(Supreme Arbitration & Trade-offs)*
    - [SOLID Principles](references/solid-principles.md)
    - [Meaningful Names](references/naming.md)
    - [Functions & Methods](references/functions.md)

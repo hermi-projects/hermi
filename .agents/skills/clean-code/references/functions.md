@@ -14,9 +14,11 @@
 - **Rule:** A function must execute a single, cohesive task. 
 - **Constraint:** If a function's steps can be extracted into another function whose name is just a restatement of its implementation, it is doing too much.
 
-## 3. One Level of Abstraction per Function
-- **Rule:** Statements within a function must share the exact same level of abstraction.
-- **Constraint:** Do not mix high-level business concepts with low-level implementation details. Extract low-level details into separate helper methods.
+## 3. One Level of Abstraction per Function (SLAP) & The Stepdown Rule
+- **Rule:** Statements within a function must share the exact same level of abstraction, and the code should read like a top-down narrative.
+- **Constraints:**
+  - **Single Level of Abstraction:** Do not mix high-level business concepts with low-level implementation details. Extract low-level details into separate helper methods.
+  - **The Stepdown Rule (步进法则):** Every function must be followed by those at the next level of abstraction. Reading through the list of functions should descend one level of abstraction at a time ("To do A, we do B and C; To do B, we do..."). Never place lower-level helper functions above their high-level caller.
 
 ## 4. Descriptive Names
 - **Rule:** Use long, descriptive names for complex functions. 

@@ -2,13 +2,19 @@
 
 > **Core Rule:** Code formatting is about communication, and communication is the professional developer's first line of defense. A well-formatted file tells a consistent, professional story.
 
-## 1. Vertical Formatting
-- **Rule:** Control the visual flow and vertical distance between concepts in a source file.
+## 1. Vertical Formatting & The Newspaper Metaphor
+- **Rule:** A source file must be readable from top to bottom like a high-quality newspaper article: high-level intent first, granular details last.
+- **Structural Blueprint:**
+  1. **Headline (Class Declaration):** Name and type signature at the top reveal the domain concept immediately.
+  2. **Synopsis (Public APIs / High-Level Entrypoints):** The primary public orchestrator methods appear first. They narrate the complete workflow at the highest abstraction level without leaking implementation details.
+  3. **Body Paragraphs (Intermediate Sub-processes):** The private helper methods appear directly below the public method that calls them, ordered by invocation.
+  4. **Granular Footnotes (Lowest-Level Plumbing):** Low-level technical details (e.g., regex patterns, cryptography, boundary math, string parsing) sink naturally toward the bottom of the file.
 - **Constraints:**
-  - **File Size (Newspaper Metaphor):** Source files should be small—ideally under 200 lines, rarely exceeding 500 lines. The name should be simple yet descriptive enough to tell what the file contains.
-  - **Vertical Openness:** Separate concepts, distinct thoughts, and variable declarations from execution steps with blank lines. Never cluster unrelated lines together.
-  - **Vertical Proximity:** Keep closely related code concepts vertically close to each other. Do not scatter dependent functions or variables across distant parts of the file. 
-  - **Dependent Order:** Callers should ideally be defined *above* the functions they call to mirror a top-down reading flow.
+  - **Early Drop-off:** A reader should grasp the entire business workflow just by reading the first public method (the synopsis) without needing to inspect low-level implementation details.
+  - **No Inverted Narrative:** Never place low-level private helper methods above the high-level public methods that invoke them.
+  - **Dependent Order & The Stepdown Rule:** Callers must be placed *immediately or closely above* their direct callees. Reading should be a continuous downward flow with zero back-and-forth jumping.
+  - **Vertical Openness:** Separate distinct thoughts, concepts, and method declarations with single blank lines.
+  - **File Size:** Source files should be small and focused—ideally under 200 lines, rarely exceeding 500 lines.
 
 ## 2. Horizontal Formatting
 - **Rule:** Control the width of lines and horizontal spacing to avoid visual fatigue.

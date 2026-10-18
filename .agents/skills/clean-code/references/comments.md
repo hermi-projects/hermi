@@ -12,7 +12,7 @@
 ## 2. Bad Comments
 - **Rule:** Eliminate noise, redundancy, and outdated text.
 - **Constraints:** 
-  - **Redundant comments:** Do not state the obvious (e.g., `// returns the instance`).
+  - **Redundant comments:** Do not comment on facts obvious from code. (e.g., `// returns the instance`).
   - **Mumbling & Misleading:** Do not write speculative, inaccurate, or outdated notes. If a comment drifts from the code it describes, it is worse than useless.
   - **Position markers:** Do not use banner lines or comment blocks to mark sections or separate methods (e.g., `// --- Business Logic ---`). Let well-named functions and classes organize the code.
   - **Commented-out code:** Delete dead code immediately. Never leave commented-out blocks lingering in production files (version control remembers).
