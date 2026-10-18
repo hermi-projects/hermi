@@ -1,3 +1,9 @@
+---
+name: hermi
+description: >
+  Hermi Intent-Driven Architecture knowledge base and component guide. Use when designing, creating, or refactoring Hermi components including Use Cases, Context/Result boundaries, I/O Contracts (Client, Repository, Messenger), and Shell Adapters (Controller, Consumer, Vendor Client, Mapper).
+---
+
 # Hermi 架构框架：核心组件全景总结
 
 在 **Hermi 架构框架**中，整个系统由一组高度解耦、职责分明的组件构成。它们通过严格的单向依赖与契约隔离，实现了“业务核心与技术基础设施的完美解耦”。

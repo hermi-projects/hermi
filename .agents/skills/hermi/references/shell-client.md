@@ -93,3 +93,15 @@ public class LexisNexisFindUserClient extends FindUserClient {
 
 * **供应商无感切换**：如果将来需要将第三方服务从 LexisNexis 替换为 Experian，**业务核心层的 Use Case 和 Client 契约完全不用修改**，只需在 Shell 层编写一个新的 `ExperianUserClient` 及其对应的适配器和 Mapper 即可。
 * **技术栈灵活演进**：如果底层网络库需要从 `RestTemplate` 升级为 `WebClient` 或 gRPC，只需修改 Shell Client 内部的实现，外层的业务逻辑和契约不会受到任何波及。
+
+### 6. 真实网络交互测试
+**WireMock 高价值测试案例核心总结**
+
+* **防雪崩与超时控制：** 模拟第三方高延迟（`withFixedDelay`），验证 Client 读取超时（Timeout）配置与熔断降级（Fallback）逻辑是否生效，防止 Tomcat 线程池被卡死。
+* **故障自愈与 Token 动态刷新：** 模拟业务接口返回 `401 Unauthorized`，验证系统能否静默触发 `/oauth/token` 重新拉取新 Token，并在不抛出异常的前提下完成二次重试。
+* **异常网关与畸变响应处理：** 模拟第三方崩溃时返回的 HTTP `502/503` HTML 网页、非法 JSON 或 `null` 值，验证解析器不会因 `JsonParseException` 或 `NullPointerException` 挂掉。
+* **限流与指数退避：** 模拟第三方返回 HTTP `429 Too Many Requests`，验证系统是否会读取 `Retry-After` Header 并按规矩进行指数退避重试。
+* **重试幂等性传递：** 模拟网络丢包触发重试时，验证 HttpClient 发出的重试请求是否正确携带了统一的 `Idempotency-Key` / `X-Request-ID`，防止重复扣款。
+* **契约兼容性验证：** 模拟第三方返回包含新增未知字段或缺少可选字段的 JSON，验证 Jackson/Gson 的兼容解析能力（如 `FAIL_ON_UNKNOWN_PROPERTIES = false`）。
+
+> **黄金法则：** 正常流程（Happy Path）交给单元测试，各种**丢包、超时、502 报错、Token 过期**等外部不可控的网络悲观场景，才是 WireMock 的真正用武之地。
